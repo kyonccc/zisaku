@@ -106,7 +106,7 @@ def half_right(svg, ox, oy, ball_fn, alpha_ox):
 
 def legend(svg, x, y):
     items = [(C["alpha"], "英字キー"), (C["mod"], "4段目（親指・修飾キー）"),
-             (C["extra"], "左手に追加したキー")]
+             (C["extra"], "内側に追加したキー")]
     cx = x
     for fill, label in items:
         svg.add(f'<rect x="{mm(cx):.1f}" y="{mm(y):.1f}" width="{mm(6):.1f}" height="{mm(6):.1f}" rx="4" '
@@ -199,8 +199,8 @@ def plan_final():
     w = MARGIN*2 + lw + GAP + rw + 2*WALL + 14
     h = title_h + 4*U + 2*WALL + 46
     svg = Svg(mm(w), mm(h))
-    svg.text(MARGIN, 10, "確定案：FrostOrtho 型＋左右同サイズのケース＋左にエンコーダー", 30, weight="bold")
-    svg.text(MARGIN, 17, "全キーが 19.05mm の格子に一直線。左22キー＋エンコーダー／右20キー＋25mmボール（合計42キー）。左右のケースは同じ大きさ・同じ角R", 20, color=C["sub"])
+    svg.text(MARGIN, 10, "kataware：内側の列（T・G の右／Y・H の左）を追加した版", 30, weight="bold")
+    svg.text(MARGIN, 17, "全キーが 19.05mm の格子に一直線。左24キー＋エンコーダー／右22キー＋25mmボール（合計46キー）。左右のケースは同じ大きさ", 20, color=C["sub"])
     oy = title_h + WALL
     lx = MARGIN + WALL
     def case(x, y, cw, ch):
@@ -218,17 +218,19 @@ def plan_final():
     for c in range(5):
         svg.key(lx + c*U, oy + 3*U, LROW4[c], C["mod"])
     svg.key(lx + 5*U, oy + 3*U, "英数", C["mod"])
-    svg.key(lx + 6*U, oy + 3*U, "Raise", C["extra"])
+    svg.key(lx + 6*U, oy + 3*U, "Raise", C["mod"])
     svg.thumb(lx + 4*U, oy + 3*U)
     ex, ey = lx + 5.5*U, oy + 2.5*U
     svg.add(f'<circle cx="{mm(ex):.1f}" cy="{mm(ey):.1f}" r="{mm(7.5):.1f}" fill="#5d6d7e" stroke="{C["stroke"]}" stroke-width="2"/>')
     svg.add(f'<circle cx="{mm(ex):.1f}" cy="{mm(ey):.1f}" r="{mm(5.5):.1f}" fill="#85929e"/>')
     svg.add(f'<line x1="{mm(ex):.1f}" y1="{mm(ey-5):.1f}" x2="{mm(ex):.1f}" y2="{mm(ey-1.5):.1f}" stroke="#fff" stroke-width="3"/>')
-    svg.text(lx + 6*U + 1, ey + 1, "エンコーダー", 16, "start", C["sub"])
-    svg.add(f'<rect x="{mm(lx+5*U+1):.1f}" y="{mm(oy+1):.1f}" width="{mm(STRIP-2):.1f}" height="{mm(2*U-6):.1f}" rx="8" '
+    svg.text(lx + 6.5*U, ey + 1, "エンコーダー", 13, "middle", C["sub"])
+    svg.key(lx + 5*U, oy, "-", C["extra"])
+    svg.key(lx + 5*U, oy + U, "'", C["extra"])
+    svg.add(f'<rect x="{mm(lx+6*U+1):.1f}" y="{mm(oy+1):.1f}" width="{mm(U-2):.1f}" height="{mm(2*U-2):.1f}" rx="8" '
             f'fill="none" stroke="{C["empty"]}" stroke-width="2" stroke-dasharray="6 5"/>')
-    svg.text(lx + 5*U + STRIP/2, oy + U - 1, "マイコン", 17, "middle", C["sub"])
-    svg.text(lx + 5*U + STRIP/2, oy + U + 4, "電源SW", 17, "middle", C["sub"])
+    svg.text(lx + 6.5*U, oy + U - 1, "マイコン", 15, "middle", C["sub"])
+    svg.text(lx + 6.5*U, oy + U + 4, "電源SW", 15, "middle", C["sub"])
 
     # 右手: 内側にボール帯
     gx = rx + STRIP
@@ -239,14 +241,16 @@ def plan_final():
     for c in range(5):
         svg.key(gx + c*U, oy + 3*U, RROW4[c], C["mod"])
     svg.add(f'<circle cx="{mm(gx+3.2):.1f}" cy="{mm(oy+3*U+3.2):.1f}" r="{mm(2.6):.1f}" fill="{C["thumb"]}"/>')
-    svg.add(f'<rect x="{mm(rx+1):.1f}" y="{mm(oy+1):.1f}" width="{mm(STRIP-2):.1f}" height="{mm(2*U-6):.1f}" rx="8" '
+    svg.key(gx - U, oy, "[", C["extra"])
+    svg.key(gx - U, oy + U, "]", C["extra"])
+    svg.add(f'<rect x="{mm(rx+1):.1f}" y="{mm(oy+1):.1f}" width="{mm(U-2):.1f}" height="{mm(2*U-2):.1f}" rx="8" '
             f'fill="none" stroke="{C["empty"]}" stroke-width="2" stroke-dasharray="6 5"/>')
-    svg.text(rx + STRIP/2, oy + U - 1, "マイコン", 17, "middle", C["sub"])
-    svg.text(rx + STRIP/2, oy + U + 4, "電源SW", 17, "middle", C["sub"])
+    svg.text(rx + U/2, oy + U - 1, "マイコン", 15, "middle", C["sub"])
+    svg.text(rx + U/2, oy + U + 4, "電源SW", 15, "middle", C["sub"])
     svg.ball(rx + STRIP/2, oy + 3.25*U)
 
-    svg.text(lx + lw/2, oy + 4*U + WALL + 8, "左手（22キー＋エンコーダー）", 24, "middle", weight="bold")
-    svg.text(rx + rw/2, oy + 4*U + WALL + 8, "右手（ボールあり・20キー）", 24, "middle", weight="bold")
+    svg.text(lx + lw/2, oy + 4*U + WALL + 8, "左手（24キー＋エンコーダー）", 24, "middle", weight="bold")
+    svg.text(rx + rw/2, oy + 4*U + WALL + 8, "右手（22キー＋25mmボール）", 24, "middle", weight="bold")
     svg.dim_h(lx, lx + lw, oy - WALL - 2.5, "約133mm（右と同じ）")
     svg.dim_h(rx, rx + rw, oy - WALL - 2.5, "約133mm")
     svg.dim_v(rx + rw + WALL + 6, oy, oy + 4*U, "約76mm")

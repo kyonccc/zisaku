@@ -2,8 +2,8 @@
  * 物理レイアウト(キーの見た目上の位置)
  * ZMK Studio などでキー配置を表示するときに使われます。
  * 単位は 1キー = 100 (= 19.05mm)。オーソリニア。
- *   左手: 5列 x 4段 + 4段目の内側に2キー (22キー) + エンコーダー押し込み
- *   右手: 内側にトラックボール帯 + 5列 x 4段 (20キー)
+ *   左手: 5列 x 4段 + T・G の内側に2キー + 4段目の内側に2キー (24キー) + エンコーダー押し込み
+ *   右手: 5列 x 4段 + Y・H の内側に2キー (22キー) + トラックボール
  */
 
 #include <physical_layouts.dtsi>
@@ -19,6 +19,8 @@
             , <&key_physical_attrs 100 100  200    0    0   0   0>
             , <&key_physical_attrs 100 100  300    0    0   0   0>
             , <&key_physical_attrs 100 100  400    0    0   0   0>
+            , <&key_physical_attrs 100 100  500    0    0   0   0>
+            , <&key_physical_attrs 100 100  900    0    0   0   0>
             , <&key_physical_attrs 100 100 1000    0    0   0   0>
             , <&key_physical_attrs 100 100 1100    0    0   0   0>
             , <&key_physical_attrs 100 100 1200    0    0   0   0>
@@ -29,6 +31,8 @@
             , <&key_physical_attrs 100 100  200  100    0   0   0>
             , <&key_physical_attrs 100 100  300  100    0   0   0>
             , <&key_physical_attrs 100 100  400  100    0   0   0>
+            , <&key_physical_attrs 100 100  500  100    0   0   0>
+            , <&key_physical_attrs 100 100  900  100    0   0   0>
             , <&key_physical_attrs 100 100 1000  100    0   0   0>
             , <&key_physical_attrs 100 100 1100  100    0   0   0>
             , <&key_physical_attrs 100 100 1200  100    0   0   0>
