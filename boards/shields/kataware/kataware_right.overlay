@@ -2,7 +2,7 @@
  * 右手側 (セントラル: PC/スマホとBluetooth接続する側) + トラックボール
  */
 
-#include "mykb.dtsi"
+#include "kataware.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 // 右手側はキーマップ上で 6列目から始まる

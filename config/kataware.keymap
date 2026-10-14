@@ -1,5 +1,5 @@
 /*
- * mykb キーマップ
+ * kataware キーマップ
  *
  * キーの割り当てはこのファイルを編集して変更します。
  * キーコード一覧: https://zmk.dev/docs/keymaps/list-of-keycodes

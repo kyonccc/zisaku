@@ -2,7 +2,7 @@
  * 左手側 (ペリフェラル: 右手側と無線でつながる側)
  */
 
-#include "mykb.dtsi"
+#include "kataware.dtsi"
 
 &kscan0 {
     col-gpios

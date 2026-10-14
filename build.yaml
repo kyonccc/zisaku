@@ -4,9 +4,9 @@
 ---
 include:
   - board: nice_nano//zmk
-    shield: mykb_left
+    shield: kataware_left
   - board: nice_nano//zmk
-    shield: mykb_right
+    shield: kataware_right
   # 左右の接続がおかしくなった時用のリセットファームウェア
   - board: nice_nano//zmk
     shield: settings_reset

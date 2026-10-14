@@ -1,0 +1,12 @@
+file_format: "1"
+id: kataware
+name: kataware
+type: shield
+url: https://github.com/kyonccc/zisaku
+requires: [pro_micro]
+features:
+  - keys
+  - pointer
+siblings:
+  - kataware_left
+  - kataware_right

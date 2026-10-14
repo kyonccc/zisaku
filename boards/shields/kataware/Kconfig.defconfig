@@ -1,8 +1,8 @@
 # 右手側 = セントラル(PCとBluetooth接続する側) + トラックボール搭載
-if SHIELD_MYKB_RIGHT
+if SHIELD_KATAWARE_RIGHT
 
 config ZMK_KEYBOARD_NAME
-    default "mykb"
+    default "kataware"
 
 config ZMK_SPLIT_ROLE_CENTRAL
     default y
@@ -17,7 +17,7 @@ config PMW3610_ALT
 endif
 
 # 左右共通の設定
-if SHIELD_MYKB_LEFT || SHIELD_MYKB_RIGHT
+if SHIELD_KATAWARE_LEFT || SHIELD_KATAWARE_RIGHT
 
 # 分割キーボードとして動作させる
 config ZMK_SPLIT

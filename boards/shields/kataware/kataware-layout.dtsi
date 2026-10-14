@@ -8,7 +8,7 @@
 #include <physical_layouts.dtsi>
 
 / {
-    mykb_layout: mykb_layout {
+    kataware_layout: kataware_layout {
         compatible = "zmk,physical-layout";
         display-name = "Default";
 

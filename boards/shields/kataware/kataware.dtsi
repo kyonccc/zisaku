@@ -1,5 +1,5 @@
 /*
- * mykb 左右共通の定義
+ * kataware 左右共通の定義
  *
  * マイコン: ProMicro nRF52840 互換 (nice!nano v2 等)
  * キー数 : 片手 3行x6列 + 親指3キー = 21キー / 合計42キー
@@ -9,17 +9,17 @@
  */
 
 #include <dt-bindings/zmk/matrix_transform.h>
-#include "mykb-layout.dtsi"
+#include "kataware-layout.dtsi"
 
 // 物理レイアウトとマトリックス変換を結びつける
-&mykb_layout {
+&kataware_layout {
     transform = <&default_transform>;
 };
 
 / {
     chosen {
         zmk,kscan = &kscan0;
-        zmk,physical-layout = &mykb_layout;
+        zmk,physical-layout = &kataware_layout;
     };
 
     /*

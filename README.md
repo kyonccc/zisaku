@@ -1,6 +1,6 @@
-# mykb — 左右無線・トラックボール付き分割キーボード（ZMK 設定）
+# kataware — 左右無線・トラックボール付き分割キーボード（ZMK 設定）
 
-自作の分割キーボード「mykb」（仮の名前）用の ZMK ファームウェア設定です。
+自作の分割キーボード「kataware」用の ZMK ファームウェア設定です。
 基板がまだない段階から使えるように、**「この通りに配線すればこのファームがそのまま動く」**という形で作ってあります。
 
 > この一式は 2026年10月時点の ZMK `main` で、左手・右手・リセット用の
@@ -59,7 +59,7 @@
 ### 「オーソリニア」か「カラムスタッガード」か
 
 ファームウェア上は**どちらでも同じ**です（配線のつながり方が同じなら、キーの見た目の位置は関係ありません）。
-キーの見た目の位置を変えたい場合だけ `boards/shields/mykb/mykb-layout.dtsi` の数字を変えます。
+キーの見た目の位置を変えたい場合だけ `boards/shields/kataware/kataware-layout.dtsi` の数字を変えます。
 
 ---
 
@@ -116,22 +116,22 @@
 ## 4. ファイルの構成と役割
 
 ```
-mykb-zmk-config/
-├── .github/workflows/build.yml   … GitHub が自動でビルドするための設定
-├── build.yaml                    … 何をビルドするか（左・右・リセット）
-├── zephyr/module.yml             … boards/ フォルダを読み込ませるための設定
+zisaku/
+├── .github/workflows/build.yml       … GitHub が自動でビルドするための設定
+├── build.yaml                        … 何をビルドするか（左・右・リセット）
+├── zephyr/module.yml                 … boards/ フォルダを読み込ませるための設定
 ├── config/
-│   ├── west.yml                  … ZMK本体とトラックボールドライバの取得元
-│   ├── mykb.keymap               … ★キー配置（一番よく編集するファイル）
-│   └── mykb.conf                 … ★スリープ時間などの設定
-└── boards/shields/mykb/          … キーボードの「ハードウェア定義」
-    ├── Kconfig.shield            … シールド名の登録
-    ├── Kconfig.defconfig         … 右がセントラル、分割、トラックボール有効 など
-    ├── mykb.dtsi                 … 左右共通：マトリックス、行ピン
-    ├── mykb_left.overlay         … 左手：列ピン
-    ├── mykb_right.overlay        … 右手：列ピン＋トラックボール
-    ├── mykb-layout.dtsi          … キーの見た目上の位置
-    └── mykb.zmk.yml              … キーボードの説明情報
+│   ├── west.yml                      … ZMK本体とトラックボールドライバの取得元
+│   ├── kataware.keymap               … ★キー配置（一番よく編集するファイル）
+│   └── kataware.conf                 … ★スリープ時間などの設定
+└── boards/shields/kataware/          … キーボードの「ハードウェア定義」
+    ├── Kconfig.shield                … シールド名の登録
+    ├── Kconfig.defconfig             … 右がセントラル、分割、トラックボール有効 など
+    ├── kataware.dtsi                 … 左右共通：マトリックス、行ピン
+    ├── kataware_left.overlay         … 左手：列ピン
+    ├── kataware_right.overlay        … 右手：列ピン＋トラックボール
+    ├── kataware-layout.dtsi          … キーの見た目上の位置
+    └── kataware.zmk.yml              … キーボードの説明情報
 ```
 
 普段さわるのは **★の2つ** だけです。
@@ -139,17 +139,15 @@ mykb-zmk-config/
 
 ---
 
-## 5. 新しいリポジトリに移してファームを作る手順
+## 5. ファームウェアの作り方（GitHub Actions）
 
-1. GitHub で新しいリポジトリを作る（例：`zmk-config-mykb`）
-2. この `mykb-zmk-config/` フォルダの**中身すべて**（`.github` フォルダも含む）を、
-   新しいリポジトリの**一番上の階層**にコピーして push する
-3. GitHub のリポジトリ画面で **Actions** タブを開く
-4. 数分待ってビルドが ✅ になったら、そのビルドを開いて下の方の
+1. このリポジトリのファイルを編集して push する
+2. GitHub のリポジトリ画面で **Actions** タブを開く
+3. 数分待ってビルドが ✅ になったら、そのビルドを開いて下の方の
    **Artifacts** から `firmware` をダウンロード
-5. zip を解凍すると次の3つが入っています
-   - `mykb_left-nice_nano__zmk-zmk.uf2` … 左手用
-   - `mykb_right-nice_nano__zmk-zmk.uf2` … 右手用
+4. zip を解凍すると次の3つが入っています
+   - `kataware_left-nice_nano__zmk-zmk.uf2` … 左手用
+   - `kataware_right-nice_nano__zmk-zmk.uf2` … 右手用
    - `settings_reset-nice_nano__zmk-zmk.uf2` … 設定リセット用
 
 （ファイル名はバージョンにより少し違うことがあります）
@@ -160,9 +158,9 @@ mykb-zmk-config/
 
 1. キーボードを USB で PC につなぐ
 2. **リセットボタンを素早く2回押す** → PC に `NICENANO` などのドライブが現れる
-3. 左手なら `mykb_left…uf2` をそのドライブにドラッグ＆ドロップ
+3. 左手なら `kataware_left…uf2` をそのドライブにドラッグ＆ドロップ
 4. 自動で再起動したら完了。右手も同じように書き込む
-5. PC の Bluetooth 設定で **「mykb」** を探してペアリング
+5. PC の Bluetooth 設定で **「kataware」** を探してペアリング
 
 ### 左右がつながらない時
 
@@ -192,11 +190,11 @@ mykb-zmk-config/
 ## 8. よくあるカスタマイズ
 
 ### キーの割り当てを変える
-`config/mykb.keymap` の `&kp Q` などを書き換えます。
+`config/kataware.keymap` の `&kp Q` などを書き換えます。
 キーの名前一覧：https://zmk.dev/docs/keymaps/list-of-keycodes
 
 ### カーソルの速さを変える
-`boards/shields/mykb/mykb_right.overlay` の `cpi = <600>;` を変更（200〜3200、200刻み）。
+`boards/shields/kataware/kataware_right.overlay` の `cpi = <600>;` を変更（200〜3200、200刻み）。
 大きいほど速くなります。
 
 ### カーソルの向きがおかしい
@@ -204,21 +202,21 @@ mykb-zmk-config/
 センサーをケースにどの向きで付けたかで変わるので、実物で試しながら決めます。
 
 ### スクロールの向きが逆
-`config/mykb.keymap` の `scroller` の部分を次のように変えます。
+`config/kataware.keymap` の `scroller` の部分を次のように変えます。
 ```
 input-processors = <&zip_xy_to_scroll_mapper &zip_scroll_transform INPUT_TRANSFORM_Y_INVERT &zip_scroll_scaler 1 8>;
 ```
 （ファイル先頭に `#include <dt-bindings/zmk/input_transform.h>` も追加）
 
 ### キーボードの名前を変える
-`mykb` という文字をすべて新しい名前に置き換え、ファイル名の `mykb` も同じように変えます。
+`kataware` という文字をすべて新しい名前に置き換え、ファイル名の `kataware` も同じように変えます。
 Bluetooth に表示される名前は `Kconfig.defconfig` の `ZMK_KEYBOARD_NAME` です（16文字以内）。
 
 ### キーの数を増やす・減らす
 次の3か所の数を揃える必要があります。
-1. `mykb.dtsi` の `default_transform` の `map`（どのスイッチがどの位置か）
-2. `mykb-layout.dtsi` の `keys`（見た目の位置）
-3. `mykb.keymap` の各レイヤーの `bindings`（割り当て）
+1. `kataware.dtsi` の `default_transform` の `map`（どのスイッチがどの位置か）
+2. `kataware-layout.dtsi` の `keys`（見た目の位置）
+3. `kataware.keymap` の各レイヤーの `bindings`（割り当て）
 
 例えば右手の親指キーを1つ減らしてトラックボールを置く場合は、
 3か所すべてから同じ1キーを消します。
