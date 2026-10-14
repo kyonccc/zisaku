@@ -148,9 +148,9 @@ mykb-zmk-config/
 4. 数分待ってビルドが ✅ になったら、そのビルドを開いて下の方の
    **Artifacts** から `firmware` をダウンロード
 5. zip を解凍すると次の3つが入っています
-   - `mykb_left-nice_nano-zmk.uf2` … 左手用
-   - `mykb_right-nice_nano-zmk.uf2` … 右手用
-   - `settings_reset-nice_nano-zmk.uf2` … 設定リセット用
+   - `mykb_left-nice_nano__zmk-zmk.uf2` … 左手用
+   - `mykb_right-nice_nano__zmk-zmk.uf2` … 右手用
+   - `settings_reset-nice_nano__zmk-zmk.uf2` … 設定リセット用
 
 （ファイル名はバージョンにより少し違うことがあります）
 

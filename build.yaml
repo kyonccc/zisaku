@@ -1,11 +1,12 @@
 # GitHub Actions でビルドするファームウェアの一覧
 # 左右それぞれ別のファームウェアになる
+# nice_nano//zmk = nice!nano v2 を ZMK 用の設定で使う、という意味
 ---
 include:
-  - board: nice_nano
+  - board: nice_nano//zmk
     shield: mykb_left
-  - board: nice_nano
+  - board: nice_nano//zmk
     shield: mykb_right
   # 左右の接続がおかしくなった時用のリセットファームウェア
-  - board: nice_nano
+  - board: nice_nano//zmk
     shield: settings_reset
