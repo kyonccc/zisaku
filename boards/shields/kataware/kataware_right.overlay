@@ -5,18 +5,18 @@
 
 #include "kataware.dtsi"
 
-// 右手側はキーマップ上で 6列目から始まる
+// 右手側はキーマップ上で 7列目から始まる (0〜6列目は左手)
 &default_transform {
-    col-offset = <6>;
+    col-offset = <7>;
 };
 
 &kscan0 {
     col-gpios
-        = <&pro_micro 14 GPIO_ACTIVE_HIGH>  // COL6  = D14 (一番内側)
-        , <&pro_micro 15 GPIO_ACTIVE_HIGH>  // COL7  = D15
-        , <&pro_micro 18 GPIO_ACTIVE_HIGH>  // COL8  = D18
-        , <&pro_micro 19 GPIO_ACTIVE_HIGH>  // COL9  = D19
-        , <&pro_micro 20 GPIO_ACTIVE_HIGH>  // COL10 = D20 (一番外側)
+        = <&pro_micro 14 GPIO_ACTIVE_HIGH>  // COL7  = D14 (一番内側)
+        , <&pro_micro 15 GPIO_ACTIVE_HIGH>  // COL8  = D15
+        , <&pro_micro 18 GPIO_ACTIVE_HIGH>  // COL9  = D18
+        , <&pro_micro 19 GPIO_ACTIVE_HIGH>  // COL10 = D19
+        , <&pro_micro 20 GPIO_ACTIVE_HIGH>  // COL11 = D20 (一番外側)
         ;
     // 右手は5列なので D21 は使わない
 };

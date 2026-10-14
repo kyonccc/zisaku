@@ -106,7 +106,7 @@ def half_right(svg, ox, oy, ball_fn, alpha_ox):
 
 def legend(svg, x, y):
     items = [(C["alpha"], "英字キー"), (C["mod"], "4段目（親指・修飾キー）"),
-             (C["extra"], "ボールなし側だけの追加キー")]
+             (C["extra"], "左手に追加したキー")]
     cx = x
     for fill, label in items:
         svg.add(f'<rect x="{mm(cx):.1f}" y="{mm(y):.1f}" width="{mm(6):.1f}" height="{mm(6):.1f}" rx="4" '
@@ -191,7 +191,7 @@ def plan2():
 
 def plan_final():
     """確定案: FrostOrtho 型。右手=5x4+内側にボール帯、左手=5x4+4段目内側に1キー"""
-    STRIP = 36.0          # ボール帯の幅 (受け皿約34mm + 余裕)
+    STRIP = 2 * U         # 内側の帯 = キー2つ分 (38.1mm)。ボールの受け皿(約34mm)も収まる
     WALL = 4.0            # ケースの縁 (目安)
     title_h = 30
     rw = STRIP + 5 * U
@@ -200,7 +200,7 @@ def plan_final():
     h = title_h + 4*U + 2*WALL + 46
     svg = Svg(mm(w), mm(h))
     svg.text(MARGIN, 10, "確定案：FrostOrtho 型＋左右同サイズのケース＋左にエンコーダー", 30, weight="bold")
-    svg.text(MARGIN, 17, "全キーが 19.05mm の格子に一直線。左21キー＋エンコーダー／右20キー＋25mmボール。左右のケースは同じ大きさ・同じ角R", 20, color=C["sub"])
+    svg.text(MARGIN, 17, "全キーが 19.05mm の格子に一直線。左22キー＋エンコーダー／右20キー＋25mmボール（合計42キー）。左右のケースは同じ大きさ・同じ角R", 20, color=C["sub"])
     oy = title_h + WALL
     lx = MARGIN + WALL
     def case(x, y, cw, ch):
@@ -217,7 +217,8 @@ def plan_final():
             svg.key(lx + c*U, oy + r*U, LEFT_ALPHA[r][c], C["alpha"])
     for c in range(5):
         svg.key(lx + c*U, oy + 3*U, LROW4[c], C["mod"])
-    svg.key(lx + 5*U, oy + 3*U, "英数", C["extra"])
+    svg.key(lx + 5*U, oy + 3*U, "英数", C["mod"])
+    svg.key(lx + 6*U, oy + 3*U, "Raise", C["extra"])
     svg.thumb(lx + 4*U, oy + 3*U)
     ex, ey = lx + 5.5*U, oy + 2.5*U
     svg.add(f'<circle cx="{mm(ex):.1f}" cy="{mm(ey):.1f}" r="{mm(7.5):.1f}" fill="#5d6d7e" stroke="{C["stroke"]}" stroke-width="2"/>')
@@ -244,10 +245,10 @@ def plan_final():
     svg.text(rx + STRIP/2, oy + U + 4, "電源SW", 17, "middle", C["sub"])
     svg.ball(rx + STRIP/2, oy + 3.25*U)
 
-    svg.text(lx + lw/2, oy + 4*U + WALL + 8, "左手（21キー＋エンコーダー）", 24, "middle", weight="bold")
+    svg.text(lx + lw/2, oy + 4*U + WALL + 8, "左手（22キー＋エンコーダー）", 24, "middle", weight="bold")
     svg.text(rx + rw/2, oy + 4*U + WALL + 8, "右手（ボールあり・20キー）", 24, "middle", weight="bold")
-    svg.dim_h(lx, lx + lw, oy - WALL - 2.5, "約131mm（右と同じ）")
-    svg.dim_h(rx, rx + rw, oy - WALL - 2.5, "約131mm")
+    svg.dim_h(lx, lx + lw, oy - WALL - 2.5, "約133mm（右と同じ）")
+    svg.dim_h(rx, rx + rw, oy - WALL - 2.5, "約133mm")
     svg.dim_v(rx + rw + WALL + 6, oy, oy + 4*U, "約76mm")
     legend(svg, MARGIN, h - 9)
     return svg.render()
