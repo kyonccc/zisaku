@@ -194,25 +194,24 @@ def plan_final():
     STRIP = 36.0          # ボール帯の幅 (受け皿約34mm + 余裕)
     WALL = 4.0            # ケースの縁 (目安)
     title_h = 30
-    lw = 6 * U
     rw = STRIP + 5 * U
+    lw = rw               # 左右のケースを同じ大きさにする
     w = MARGIN*2 + lw + GAP + rw + 2*WALL + 14
     h = title_h + 4*U + 2*WALL + 46
     svg = Svg(mm(w), mm(h))
-    svg.text(MARGIN, 10, "確定案：FrostOrtho 型（ボールは右手・内側の4段目の高さ）", 30, weight="bold")
-    svg.text(MARGIN, 17, "全キーが 19.05mm の格子に一直線。右20キー＋左21キー＝合計41キー。ケースは長方形", 20, color=C["sub"])
+    svg.text(MARGIN, 10, "確定案：FrostOrtho 型＋左右同サイズのケース＋左にエンコーダー", 30, weight="bold")
+    svg.text(MARGIN, 17, "全キーが 19.05mm の格子に一直線。左21キー＋エンコーダー／右20キー＋25mmボール。左右のケースは同じ大きさ・同じ角R", 20, color=C["sub"])
     oy = title_h + WALL
     lx = MARGIN + WALL
-    # ケース外形 (目安)
     def case(x, y, cw, ch):
         svg.add(f'<rect x="{mm(x-WALL):.1f}" y="{mm(y-WALL):.1f}" width="{mm(cw+2*WALL):.1f}" '
-                f'height="{mm(ch+2*WALL):.1f}" rx="{mm(3):.1f}" fill="#ffffff" stroke="#9aa3ad" stroke-width="2"/>')
+                f'height="{mm(ch+2*WALL):.1f}" rx="{mm(6):.1f}" fill="#ffffff" stroke="#9aa3ad" stroke-width="2"/>')
     case(lx, oy, lw, 4*U)
     rx = lx + lw + WALL + GAP + WALL
     case(rx, oy, rw, 4*U)
 
-    # 左手
-    LROW4 = ["Esc", "Tab", "Ctrl", "Lower", "Space"]
+    # 左手: 5x4 + 内側の帯 (4段目に英数キー、その上にエンコーダー、上部にマイコン)
+    LROW4 = ["Shift", "Tab", "Ctrl", "Lower", "Space"]
     for r in range(3):
         for c in range(5):
             svg.key(lx + c*U, oy + r*U, LEFT_ALPHA[r][c], C["alpha"])
@@ -220,11 +219,15 @@ def plan_final():
         svg.key(lx + c*U, oy + 3*U, LROW4[c], C["mod"])
     svg.key(lx + 5*U, oy + 3*U, "英数", C["extra"])
     svg.thumb(lx + 4*U, oy + 3*U)
-    # 左の内側帯: マイコン・電源スイッチ置き場
-    svg.add(f'<rect x="{mm(lx+5*U+1):.1f}" y="{mm(oy+1):.1f}" width="{mm(U-2):.1f}" height="{mm(3*U-2):.1f}" rx="8" '
+    ex, ey = lx + 5.5*U, oy + 2.5*U
+    svg.add(f'<circle cx="{mm(ex):.1f}" cy="{mm(ey):.1f}" r="{mm(7.5):.1f}" fill="#5d6d7e" stroke="{C["stroke"]}" stroke-width="2"/>')
+    svg.add(f'<circle cx="{mm(ex):.1f}" cy="{mm(ey):.1f}" r="{mm(5.5):.1f}" fill="#85929e"/>')
+    svg.add(f'<line x1="{mm(ex):.1f}" y1="{mm(ey-5):.1f}" x2="{mm(ex):.1f}" y2="{mm(ey-1.5):.1f}" stroke="#fff" stroke-width="3"/>')
+    svg.text(lx + 6*U + 1, ey + 1, "エンコーダー", 16, "start", C["sub"])
+    svg.add(f'<rect x="{mm(lx+5*U+1):.1f}" y="{mm(oy+1):.1f}" width="{mm(STRIP-2):.1f}" height="{mm(2*U-6):.1f}" rx="8" '
             f'fill="none" stroke="{C["empty"]}" stroke-width="2" stroke-dasharray="6 5"/>')
-    svg.text(lx + 5.5*U, oy + 1.4*U, "マイコン", 17, "middle", C["sub"])
-    svg.text(lx + 5.5*U, oy + 1.4*U + 5, "電源SW", 17, "middle", C["sub"])
+    svg.text(lx + 5*U + STRIP/2, oy + U - 1, "マイコン", 17, "middle", C["sub"])
+    svg.text(lx + 5*U + STRIP/2, oy + U + 4, "電源SW", 17, "middle", C["sub"])
 
     # 右手: 内側にボール帯
     gx = rx + STRIP
@@ -241,10 +244,10 @@ def plan_final():
     svg.text(rx + STRIP/2, oy + U + 4, "電源SW", 17, "middle", C["sub"])
     svg.ball(rx + STRIP/2, oy + 3.25*U)
 
-    svg.text(lx + 3*U, oy + 4*U + WALL + 8, "左手（ボールなし・21キー）", 24, "middle", weight="bold")
+    svg.text(lx + lw/2, oy + 4*U + WALL + 8, "左手（21キー＋エンコーダー）", 24, "middle", weight="bold")
     svg.text(rx + rw/2, oy + 4*U + WALL + 8, "右手（ボールあり・20キー）", 24, "middle", weight="bold")
-    svg.dim_h(lx, lx + lw, oy - WALL - 2.5, "キー部分 約114mm")
-    svg.dim_h(rx, rx + rw, oy - WALL - 2.5, "キー＋ボール帯 約131mm")
+    svg.dim_h(lx, lx + lw, oy - WALL - 2.5, "約131mm（右と同じ）")
+    svg.dim_h(rx, rx + rw, oy - WALL - 2.5, "約131mm")
     svg.dim_v(rx + rw + WALL + 6, oy, oy + 4*U, "約76mm")
     legend(svg, MARGIN, h - 9)
     return svg.render()

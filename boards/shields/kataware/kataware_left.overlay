@@ -1,5 +1,5 @@
 /*
- * 左手側 (5列 x 4段 + 4段目の内側に1キー)
+ * 左手側 (5列 x 4段 + 4段目の内側に1キー + ロータリーエンコーダー)
  */
 
 #include "kataware.dtsi"
@@ -11,6 +11,11 @@
         , <&pro_micro 19 GPIO_ACTIVE_HIGH>  // COL2 = D19
         , <&pro_micro 18 GPIO_ACTIVE_HIGH>  // COL3 = D18
         , <&pro_micro 15 GPIO_ACTIVE_HIGH>  // COL4 = D15
-        , <&pro_micro 14 GPIO_ACTIVE_HIGH>  // COL5 = D14 (一番内側: 4段目に追加した1キーだけ)
+        , <&pro_micro 14 GPIO_ACTIVE_HIGH>  // COL5 = D14 (一番内側: 英数キーとエンコーダー押し込みだけ)
         ;
+};
+
+// ロータリーエンコーダーを有効化 (左手だけ)
+&left_encoder {
+    status = "okay";
 };
