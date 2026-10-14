@@ -1,0 +1,12 @@
+file_format: "1"
+id: mykb
+name: mykb
+type: shield
+url: https://github.com/YOUR_NAME/mykb
+requires: [pro_micro]
+features:
+  - keys
+  - pointer
+siblings:
+  - mykb_left
+  - mykb_right

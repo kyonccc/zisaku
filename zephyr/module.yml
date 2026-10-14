@@ -1,0 +1,4 @@
+# このリポジトリ内の boards/ フォルダをビルド時に読み込ませるための設定
+build:
+  settings:
+    board_root: .

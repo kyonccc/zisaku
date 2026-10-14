@@ -1,0 +1,104 @@
+/*
+ * mykb キーマップ
+ *
+ * キーの割り当てはこのファイルを編集して変更します。
+ * キーコード一覧: https://zmk.dev/docs/keymaps/list-of-keycodes
+ */
+
+#include <behaviors.dtsi>
+#include <dt-bindings/zmk/keys.h>
+#include <dt-bindings/zmk/bt.h>
+#include <dt-bindings/zmk/pointing.h>
+#include <input/processors.dtsi>
+
+// レイヤー番号に名前を付けておく (数字を直接書くより分かりやすい)
+#define BASE   0
+#define LOWER  1
+#define RAISE  2
+#define MOUSE  3
+#define SCROLL 4
+
+/*
+ * ===== トラックボールの動作設定 =====
+ * - ボールを動かすと MOUSE レイヤーが自動でONになる (オートマウスレイヤー)
+ *   → 右手ホームポジションのキーがクリックになる
+ * - SCROLL レイヤー中はボールでスクロールする
+ */
+&zip_temp_layer {
+    // 文字入力の直後 300ms はボールに触れてもマウスレイヤーにしない (誤爆防止)
+    require-prior-idle-ms = <300>;
+};
+
+&trackball_listener {
+    // 通常時: ボールを動かすと MOUSE レイヤーを 700ms だけONにする
+    input-processors = <&zip_temp_layer MOUSE 700>;
+
+    scroller {
+        layers = <SCROLL>;
+        // XY移動をスクロールに変換し、速度を 1/8 に落とす
+        // スクロール方向が逆なら &zip_scroll_transform INPUT_TRANSFORM_Y_INVERT を追加
+        input-processors = <&zip_xy_to_scroll_mapper &zip_scroll_scaler 1 8>;
+    };
+};
+
+/ {
+    keymap {
+        compatible = "zmk,keymap";
+
+        // 0: 基本レイヤー (QWERTY)
+        base_layer {
+            display-name = "Base";
+            bindings = <
+&kp TAB   &kp Q &kp W &kp E    &kp R     &kp T        &kp Y   &kp U     &kp I     &kp O   &kp P    &kp BSPC
+&kp LCTRL &kp A &kp S &kp D    &kp F     &kp G        &kp H   &kp J     &kp K     &kp L   &kp SEMI &kp SQT
+&kp LSHFT &kp Z &kp X &kp C    &kp V     &kp B        &kp N   &kp M     &kp COMMA &kp DOT &kp FSLH &kp ESC
+                      &kp LGUI &mo LOWER &kp SPACE    &kp RET &mo RAISE &kp RALT
+            >;
+        };
+
+        // 1: 数字・記号
+        lower_layer {
+            display-name = "Lower";
+            bindings = <
+&kp TAB   &kp N1    &kp N2    &kp N3   &kp N4    &kp N5       &kp N6   &kp N7    &kp N8    &kp N9    &kp N0   &kp BSPC
+&kp LCTRL &kp LANG2 &kp LANG1 &trans   &trans    &trans       &kp LEFT &kp DOWN  &kp UP    &kp RIGHT &trans   &trans
+&kp LSHFT &trans    &trans    &trans   &trans    &trans       &trans   &trans    &trans    &trans    &trans   &trans
+                              &kp LGUI &trans    &kp SPACE    &kp RET  &trans    &kp RALT
+            >;
+        };
+
+        // 2: 記号・ファンクション・Bluetooth
+        raise_layer {
+            display-name = "Raise";
+            bindings = <
+&kp TILDE    &kp EXCL     &kp AT       &kp HASH     &kp DLLR     &kp PRCNT    &kp CARET &kp AMPS  &kp ASTRK &kp LPAR &kp RPAR &kp BSPC
+&bt BT_SEL 0 &bt BT_SEL 1 &bt BT_SEL 2 &bt BT_SEL 3 &bt BT_SEL 4 &bt BT_CLR   &kp MINUS &kp EQUAL &kp LBKT  &kp RBKT &kp BSLH &kp GRAVE
+&kp LSHFT    &kp F1       &kp F2       &kp F3       &kp F4       &kp F5       &kp UNDER &kp PLUS  &kp LBRC  &kp RBRC &kp PIPE &kp TILDE
+                                       &kp LGUI     &trans       &kp SPACE    &kp RET   &trans    &kp RALT
+            >;
+        };
+
+        // 3: マウス (ボールを動かすと自動でON)
+        //    右手 J=左クリック K=中クリック L=右クリック ;=スクロール
+        mouse_layer {
+            display-name = "Mouse";
+            bindings = <
+&trans &trans &trans &trans &trans &trans    &trans &trans    &trans    &trans    &trans     &trans
+&trans &trans &trans &trans &trans &trans    &trans &mkp LCLK &mkp MCLK &mkp RCLK &mo SCROLL &trans
+&trans &trans &trans &trans &trans &trans    &trans &mkp MB4  &mkp MB5  &trans    &trans     &trans
+                     &trans &trans &trans    &trans &trans    &trans
+            >;
+        };
+
+        // 4: スクロール (MOUSE レイヤーの ; キーを押している間)
+        scroll_layer {
+            display-name = "Scroll";
+            bindings = <
+&trans &trans &trans &trans &trans &trans    &trans &trans    &trans    &trans    &trans &trans
+&trans &trans &trans &trans &trans &trans    &trans &mkp LCLK &mkp MCLK &mkp RCLK &trans &trans
+&trans &trans &trans &trans &trans &trans    &trans &trans    &trans    &trans    &trans &trans
+                     &trans &trans &trans    &trans &trans    &trans
+            >;
+        };
+    };
+};

@@ -1,0 +1,6 @@
+# どのシールド(キーボード)をビルドしているかを判定するための設定
+config SHIELD_MYKB_LEFT
+    def_bool $(shields_list_contains,mykb_left)
+
+config SHIELD_MYKB_RIGHT
+    def_bool $(shields_list_contains,mykb_right)

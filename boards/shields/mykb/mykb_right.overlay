@@ -1,0 +1,91 @@
+/*
+ * 右手側 (セントラル: PC/スマホとBluetooth接続する側) + トラックボール
+ */
+
+#include "mykb.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+// 右手側はキーマップ上で 6列目から始まる
+&default_transform {
+    col-offset = <6>;
+};
+
+&kscan0 {
+    col-gpios
+        = <&pro_micro 14 GPIO_ACTIVE_HIGH>  // COL6  = D14 (一番内側)
+        , <&pro_micro 15 GPIO_ACTIVE_HIGH>  // COL7  = D15
+        , <&pro_micro 18 GPIO_ACTIVE_HIGH>  // COL8  = D18
+        , <&pro_micro 19 GPIO_ACTIVE_HIGH>  // COL9  = D19
+        , <&pro_micro 20 GPIO_ACTIVE_HIGH>  // COL10 = D20
+        , <&pro_micro 21 GPIO_ACTIVE_HIGH>  // COL11 = D21 (一番外側)
+        ;
+};
+
+/*
+ * ===== トラックボール (PMW3610 センサー) =====
+ *
+ * 配線 (センサー基板 → ProMicro):
+ *   SCLK   → D8  (nRF52840 の P1.04)
+ *   SDIO   → D9  (nRF52840 の P1.06)  ※PMW3610 は送受信を1本で行う
+ *   NCS    → D2
+ *   MOTION → D3
+ *   VDD    → VCC (3.3V)
+ *   GND    → GND
+ *
+ * SPI のピンだけは D番号ではなく nRF52840 本来のピン名 (P1.04 など) で書く必要がある。
+ * NRF_PSEL(機能, ポート番号, ピン番号) → P1.04 なら (1, 4)
+ */
+&pinctrl {
+    trackball_spi_default: trackball_spi_default {
+        group1 {
+            psels = <NRF_PSEL(SPIM_SCK, 1, 4)>,
+                    <NRF_PSEL(SPIM_MOSI, 1, 6)>,
+                    <NRF_PSEL(SPIM_MISO, 1, 6)>;
+        };
+    };
+
+    trackball_spi_sleep: trackball_spi_sleep {
+        group1 {
+            psels = <NRF_PSEL(SPIM_SCK, 1, 4)>,
+                    <NRF_PSEL(SPIM_MOSI, 1, 6)>,
+                    <NRF_PSEL(SPIM_MISO, 1, 6)>;
+            low-power-enable;
+        };
+    };
+};
+
+// spi2 は I2C と共用しない SPI 専用ブロックなので衝突しにくい
+&spi2 {
+    status = "okay";
+    compatible = "nordic,nrf-spim";
+    pinctrl-0 = <&trackball_spi_default>;
+    pinctrl-1 = <&trackball_spi_sleep>;
+    pinctrl-names = "default", "sleep";
+    cs-gpios = <&pro_micro 2 GPIO_ACTIVE_LOW>;  // NCS = D2
+
+    trackball: trackball@0 {
+        status = "okay";
+        compatible = "pixart,pmw3610-alt";
+        reg = <0>;
+        spi-max-frequency = <2000000>;
+        irq-gpios = <&pro_micro 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;  // MOTION = D3
+
+        // カーソル速度(感度)。200〜3200 の範囲で 200 刻み
+        cpi = <600>;
+
+        // カーソルの向きがおかしい時はここのコメントを外して調整
+        // swap-xy;
+        // invert-x;
+        // invert-y;
+
+        evt-type = <INPUT_EV_REL>;
+        x-input-code = <INPUT_REL_X>;
+        y-input-code = <INPUT_REL_Y>;
+    };
+};
+
+// 共通ファイルで無効にしておいたリスナーを、右手側だけ有効化
+&trackball_listener {
+    status = "okay";
+    device = <&trackball>;
+};

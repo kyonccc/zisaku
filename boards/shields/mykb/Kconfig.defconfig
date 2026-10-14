@@ -1,0 +1,30 @@
+# 右手側 = セントラル(PCとBluetooth接続する側) + トラックボール搭載
+if SHIELD_MYKB_RIGHT
+
+config ZMK_KEYBOARD_NAME
+    default "mykb"
+
+config ZMK_SPLIT_ROLE_CENTRAL
+    default y
+
+# トラックボールセンサー(PMW3610)はSPIで通信する
+config SPI
+    default y
+
+config PMW3610_ALT
+    default y
+
+endif
+
+# 左右共通の設定
+if SHIELD_MYKB_LEFT || SHIELD_MYKB_RIGHT
+
+# 分割キーボードとして動作させる
+config ZMK_SPLIT
+    default y
+
+# マウス機能(マウスボタン・カーソル移動)を有効化
+config ZMK_POINTING
+    default y
+
+endif

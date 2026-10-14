@@ -1,0 +1,11 @@
+# GitHub Actions でビルドするファームウェアの一覧
+# 左右それぞれ別のファームウェアになる
+---
+include:
+  - board: nice_nano
+    shield: mykb_left
+  - board: nice_nano
+    shield: mykb_right
+  # 左右の接続がおかしくなった時用のリセットファームウェア
+  - board: nice_nano
+    shield: settings_reset
