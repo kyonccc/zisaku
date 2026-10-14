@@ -42,8 +42,18 @@
 };
 
 /*
- * キー配置図 (オーソリニア 4段 x 6列 x 左右)
- * トラックボールを付けた側は、ボールの場所のキーは押せない (使われないだけで害はない)
+ * キー配置図 (オーソリニア / 左21キー + 右20キー = 41キー)
+ *
+ *  Q    W    E    R     T                  Y     U     I    O    P
+ *  A    S    D    F     G                  H     J     K    L    ;
+ *  Z    X    C    V     B             ●    N     M     ,    .    /
+ *  Sft  Tab  Ctl  Lower Space 英数        Enter Raise BS   かな  Sft
+ *                                     ↑ トラックボール (右手・内側)
+ *
+ * &mt A B = 「タップで B、長押しで A」
+ *   Ctl  : タップで Esc、長押しで Ctrl
+ *   英数 : タップで 英数、長押しで GUI(Win/Cmd)
+ *   かな : タップで かな、長押しで Alt(Option)
  */
 / {
     keymap {
@@ -53,10 +63,10 @@
         base_layer {
             display-name = "Base";
             bindings = <
-&kp TAB   &kp Q    &kp W    &kp E     &kp R     &kp T        &kp Y   &kp U     &kp I     &kp O    &kp P    &kp BSPC
-&kp LCTRL &kp A    &kp S    &kp D     &kp F     &kp G        &kp H   &kp J     &kp K     &kp L    &kp SEMI &kp SQT
-&kp LSHFT &kp Z    &kp X    &kp C     &kp V     &kp B        &kp N   &kp M     &kp COMMA &kp DOT  &kp FSLH &kp RET
-&kp ESC   &kp LGUI &kp LALT &kp LANG2 &mo LOWER &kp SPACE    &kp RET &mo RAISE &kp LANG1 &kp RALT &kp DEL  &kp RSHFT
+&kp Q     &kp W   &kp E           &kp R     &kp T                         &kp Y   &kp U     &kp I     &kp O            &kp P
+&kp A     &kp S   &kp D           &kp F     &kp G                         &kp H   &kp J     &kp K     &kp L            &kp SEMI
+&kp Z     &kp X   &kp C           &kp V     &kp B                         &kp N   &kp M     &kp COMMA &kp DOT          &kp FSLH
+&kp LSHFT &kp TAB &mt LCTRL ESC   &mo LOWER &kp SPACE &mt LGUI LANG2      &kp RET &mo RAISE &kp BSPC  &mt LALT LANG1   &kp RSHFT
             >;
         };
 
@@ -64,10 +74,10 @@
         lower_layer {
             display-name = "Lower";
             bindings = <
-&kp GRAVE &kp N1   &kp N2   &kp N3   &kp N4   &kp N5       &kp N6   &kp N7   &kp N8   &kp N9    &kp N0   &kp BSPC
-&trans    &trans   &trans   &trans   &trans   &trans       &kp LEFT &kp DOWN &kp UP   &kp RIGHT &trans   &trans
-&trans    &trans   &trans   &trans   &trans   &trans       &kp HOME &kp PG_DN &kp PG_UP &kp END &trans   &trans
-&trans    &trans   &trans   &trans   &trans   &trans       &trans   &trans   &trans   &trans    &trans   &trans
+&kp N1    &kp N2  &kp N3  &kp N4  &kp N5                     &kp N6   &kp N7    &kp N8    &kp N9    &kp N0
+&kp GRAVE &trans  &trans  &trans  &trans                     &kp LEFT &kp DOWN  &kp UP    &kp RIGHT &kp SQT
+&trans    &trans  &trans  &trans  &trans                     &kp HOME &kp PG_DN &kp PG_UP &kp END   &trans
+&trans    &trans  &trans  &trans  &trans  &trans             &trans   &trans    &kp DEL   &trans    &trans
             >;
         };
 
@@ -75,23 +85,23 @@
         raise_layer {
             display-name = "Raise";
             bindings = <
-&kp TILDE    &kp EXCL     &kp AT       &kp HASH     &kp DLLR     &kp PRCNT    &kp CARET &kp AMPS  &kp ASTRK &kp LPAR &kp RPAR &kp BSPC
-&bt BT_SEL 0 &bt BT_SEL 1 &bt BT_SEL 2 &bt BT_SEL 3 &bt BT_SEL 4 &bt BT_CLR   &kp MINUS &kp EQUAL &kp LBKT  &kp RBKT &kp BSLH &kp GRAVE
-&kp F1       &kp F2       &kp F3       &kp F4       &kp F5       &kp F6       &kp UNDER &kp PLUS  &kp LBRC  &kp RBRC &kp PIPE &kp TILDE
-&kp F7       &kp F8       &kp F9       &kp F10      &kp F11      &kp F12      &trans    &trans    &trans    &trans   &trans   &trans
+&kp EXCL     &kp AT       &kp HASH     &kp DLLR     &kp PRCNT                 &kp CARET &kp AMPS  &kp ASTRK &kp LPAR &kp RPAR
+&bt BT_SEL 0 &bt BT_SEL 1 &bt BT_SEL 2 &bt BT_SEL 3 &bt BT_SEL 4              &kp MINUS &kp EQUAL &kp LBKT  &kp RBKT &kp BSLH
+&kp F1       &kp F2       &kp F3       &kp F4       &kp F5                    &kp UNDER &kp PLUS  &kp LBRC  &kp RBRC &kp PIPE
+&kp F6       &kp F7       &kp F8       &kp F9       &kp F10  &bt BT_CLR       &trans    &trans    &kp F11   &kp F12  &trans
             >;
         };
 
         // 3: マウス (ボールを動かすと自動でON)
         //    右手 J=左クリック K=中クリック L=右クリック ;=スクロール
-        //    左手 F=左クリック D=中クリック S=右クリック A=スクロール (ボールが左手側でも使えるように)
+        //    左手 F=左クリック D=中クリック S=右クリック A=スクロール
         mouse_layer {
             display-name = "Mouse";
             bindings = <
-&trans &trans     &trans    &trans    &trans    &trans    &trans &trans    &trans    &trans    &trans     &trans
-&trans &mo SCROLL &mkp RCLK &mkp MCLK &mkp LCLK &trans    &trans &mkp LCLK &mkp MCLK &mkp RCLK &mo SCROLL &trans
-&trans &trans     &trans    &mkp MB5  &mkp MB4  &trans    &trans &mkp MB4  &mkp MB5  &trans    &trans     &trans
-&trans &trans     &trans    &trans    &trans    &trans    &trans &trans    &trans    &trans    &trans     &trans
+&trans     &trans    &trans    &trans    &trans              &trans &trans    &trans    &trans    &trans
+&mo SCROLL &mkp RCLK &mkp MCLK &mkp LCLK &trans              &trans &mkp LCLK &mkp MCLK &mkp RCLK &mo SCROLL
+&trans     &trans    &mkp MB5  &mkp MB4  &trans              &trans &mkp MB4  &mkp MB5  &trans    &trans
+&trans     &trans    &trans    &trans    &trans    &trans    &trans &trans    &trans    &trans    &trans
             >;
         };
 
@@ -99,10 +109,10 @@
         scroll_layer {
             display-name = "Scroll";
             bindings = <
-&trans &trans &trans    &trans    &trans    &trans    &trans &trans    &trans    &trans    &trans &trans
-&trans &trans &mkp RCLK &mkp MCLK &mkp LCLK &trans    &trans &mkp LCLK &mkp MCLK &mkp RCLK &trans &trans
-&trans &trans &trans    &trans    &trans    &trans    &trans &trans    &trans    &trans    &trans &trans
-&trans &trans &trans    &trans    &trans    &trans    &trans &trans    &trans    &trans    &trans &trans
+&trans &trans    &trans    &trans    &trans                  &trans &trans    &trans    &trans    &trans
+&trans &mkp RCLK &mkp MCLK &mkp LCLK &trans                  &trans &mkp LCLK &mkp MCLK &mkp RCLK &trans
+&trans &trans    &trans    &trans    &trans                  &trans &trans    &trans    &trans    &trans
+&trans &trans    &trans    &trans    &trans    &trans        &trans &trans    &trans    &trans    &trans
             >;
         };
     };

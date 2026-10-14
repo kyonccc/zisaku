@@ -1,22 +1,14 @@
 # GitHub Actions でビルドするファームウェアの一覧
 # nice_nano//zmk = nice!nano v2 を ZMK 用の設定で使う、という意味
 #
-# トラックボールは左右どちらにも付けられる。書き込むファイルの組み合わせ:
-#   右にボール: 左手に kataware_left           / 右手に kataware_right-trackball
-#   左にボール: 左手に kataware_left-trackball / 右手に kataware_right
+# トラックボールは右手に固定。
+#   左手に kataware_left / 右手に kataware_right-trackball を書き込む
 ---
 include:
-  # ボールなし側
   - board: nice_nano//zmk
     shield: kataware_left
     artifact-name: kataware_left
-  - board: nice_nano//zmk
-    shield: kataware_right
-    artifact-name: kataware_right
-  # ボールあり側 (PCとつながる側)
-  - board: nice_nano//zmk
-    shield: kataware_left kataware_trackball
-    artifact-name: kataware_left-trackball
+  # 右手 = トラックボール付き = PCとつながる側
   - board: nice_nano//zmk
     shield: kataware_right kataware_trackball
     artifact-name: kataware_right-trackball

@@ -1,6 +1,6 @@
 /*
- * 右手側
- * トラックボールを右に付ける場合は kataware_trackball と一緒にビルドする
+ * 右手側 (5列 x 4段 + 内側にトラックボール)
+ * kataware_trackball と一緒にビルドする (ボール付き = PCとつながる側)
  */
 
 #include "kataware.dtsi"
@@ -16,7 +16,7 @@
         , <&pro_micro 15 GPIO_ACTIVE_HIGH>  // COL7  = D15
         , <&pro_micro 18 GPIO_ACTIVE_HIGH>  // COL8  = D18
         , <&pro_micro 19 GPIO_ACTIVE_HIGH>  // COL9  = D19
-        , <&pro_micro 20 GPIO_ACTIVE_HIGH>  // COL10 = D20
-        , <&pro_micro 21 GPIO_ACTIVE_HIGH>  // COL11 = D21 (一番外側)
+        , <&pro_micro 20 GPIO_ACTIVE_HIGH>  // COL10 = D20 (一番外側)
         ;
+    // 右手は5列なので D21 は使わない
 };

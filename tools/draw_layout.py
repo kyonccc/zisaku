@@ -189,7 +189,69 @@ def plan2():
     return svg.render()
 
 
+def plan_final():
+    """確定案: FrostOrtho 型。右手=5x4+内側にボール帯、左手=5x4+4段目内側に1キー"""
+    STRIP = 36.0          # ボール帯の幅 (受け皿約34mm + 余裕)
+    WALL = 4.0            # ケースの縁 (目安)
+    title_h = 30
+    lw = 6 * U
+    rw = STRIP + 5 * U
+    w = MARGIN*2 + lw + GAP + rw + 2*WALL + 14
+    h = title_h + 4*U + 2*WALL + 46
+    svg = Svg(mm(w), mm(h))
+    svg.text(MARGIN, 10, "確定案：FrostOrtho 型（ボールは右手・内側の4段目の高さ）", 30, weight="bold")
+    svg.text(MARGIN, 17, "全キーが 19.05mm の格子に一直線。右20キー＋左21キー＝合計41キー。ケースは長方形", 20, color=C["sub"])
+    oy = title_h + WALL
+    lx = MARGIN + WALL
+    # ケース外形 (目安)
+    def case(x, y, cw, ch):
+        svg.add(f'<rect x="{mm(x-WALL):.1f}" y="{mm(y-WALL):.1f}" width="{mm(cw+2*WALL):.1f}" '
+                f'height="{mm(ch+2*WALL):.1f}" rx="{mm(3):.1f}" fill="#ffffff" stroke="#9aa3ad" stroke-width="2"/>')
+    case(lx, oy, lw, 4*U)
+    rx = lx + lw + WALL + GAP + WALL
+    case(rx, oy, rw, 4*U)
+
+    # 左手
+    LROW4 = ["Esc", "Tab", "Ctrl", "Lower", "Space"]
+    for r in range(3):
+        for c in range(5):
+            svg.key(lx + c*U, oy + r*U, LEFT_ALPHA[r][c], C["alpha"])
+    for c in range(5):
+        svg.key(lx + c*U, oy + 3*U, LROW4[c], C["mod"])
+    svg.key(lx + 5*U, oy + 3*U, "英数", C["extra"])
+    svg.thumb(lx + 4*U, oy + 3*U)
+    # 左の内側帯: マイコン・電源スイッチ置き場
+    svg.add(f'<rect x="{mm(lx+5*U+1):.1f}" y="{mm(oy+1):.1f}" width="{mm(U-2):.1f}" height="{mm(3*U-2):.1f}" rx="8" '
+            f'fill="none" stroke="{C["empty"]}" stroke-width="2" stroke-dasharray="6 5"/>')
+    svg.text(lx + 5.5*U, oy + 1.4*U, "マイコン", 17, "middle", C["sub"])
+    svg.text(lx + 5.5*U, oy + 1.4*U + 5, "電源SW", 17, "middle", C["sub"])
+
+    # 右手: 内側にボール帯
+    gx = rx + STRIP
+    RROW4 = ["Enter", "Raise", "BS", "かな", "Shift"]
+    for r in range(3):
+        for c in range(5):
+            svg.key(gx + c*U, oy + r*U, RIGHT_ALPHA[r][c], C["alpha"])
+    for c in range(5):
+        svg.key(gx + c*U, oy + 3*U, RROW4[c], C["mod"])
+    svg.add(f'<circle cx="{mm(gx+3.2):.1f}" cy="{mm(oy+3*U+3.2):.1f}" r="{mm(2.6):.1f}" fill="{C["thumb"]}"/>')
+    svg.add(f'<rect x="{mm(rx+1):.1f}" y="{mm(oy+1):.1f}" width="{mm(STRIP-2):.1f}" height="{mm(2*U-6):.1f}" rx="8" '
+            f'fill="none" stroke="{C["empty"]}" stroke-width="2" stroke-dasharray="6 5"/>')
+    svg.text(rx + STRIP/2, oy + U - 1, "マイコン", 17, "middle", C["sub"])
+    svg.text(rx + STRIP/2, oy + U + 4, "電源SW", 17, "middle", C["sub"])
+    svg.ball(rx + STRIP/2, oy + 3.25*U)
+
+    svg.text(lx + 3*U, oy + 4*U + WALL + 8, "左手（ボールなし・21キー）", 24, "middle", weight="bold")
+    svg.text(rx + rw/2, oy + 4*U + WALL + 8, "右手（ボールあり・20キー）", 24, "middle", weight="bold")
+    svg.dim_h(lx, lx + lw, oy - WALL - 2.5, "キー部分 約114mm")
+    svg.dim_h(rx, rx + rw, oy - WALL - 2.5, "キー＋ボール帯 約131mm")
+    svg.dim_v(rx + rw + WALL + 6, oy, oy + 4*U, "約76mm")
+    legend(svg, MARGIN, h - 9)
+    return svg.render()
+
+
 if __name__ == "__main__":
     out = sys.argv[1]
     open(f"{out}/plan1.svg", "w").write(plan1())
     open(f"{out}/plan2.svg", "w").write(plan2())
+    open(f"{out}/final.svg", "w").write(plan_final())
