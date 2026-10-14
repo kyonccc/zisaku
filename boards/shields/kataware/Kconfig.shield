@@ -4,3 +4,7 @@ config SHIELD_KATAWARE_LEFT
 
 config SHIELD_KATAWARE_RIGHT
     def_bool $(shields_list_contains,kataware_right)
+
+# トラックボール追加用。ボールを付けた側に kataware_left / kataware_right と一緒に指定する
+config SHIELD_KATAWARE_TRACKBALL
+    def_bool $(shields_list_contains,kataware_trackball)

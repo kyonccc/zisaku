@@ -1,5 +1,6 @@
-# 右手側 = セントラル(PCとBluetooth接続する側) + トラックボール搭載
-if SHIELD_KATAWARE_RIGHT
+# トラックボールを付けた側 = セントラル(PC/スマホとBluetooth接続する側)
+# 左右どちらでも、kataware_trackball を一緒に指定した側がセントラルになる
+if SHIELD_KATAWARE_TRACKBALL
 
 config ZMK_KEYBOARD_NAME
     default "kataware"

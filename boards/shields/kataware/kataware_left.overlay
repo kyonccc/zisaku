@@ -1,5 +1,6 @@
 /*
- * 左手側 (ペリフェラル: 右手側と無線でつながる側)
+ * 左手側
+ * トラックボールを左に付ける場合は kataware_trackball と一緒にビルドする
  */
 
 #include "kataware.dtsi"

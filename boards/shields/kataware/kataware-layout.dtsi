@@ -1,7 +1,8 @@
 /*
  * 物理レイアウト(キーの見た目上の位置)
  * ZMK Studio などでキー配置を表示するときに使われます。
- * 単位は 1キー = 100。x/y を変えるとカラムスタッガードにもできます。
+ * 単位は 1キー = 100 (= 19.05mm)。オーソリニア 4段 x 6列 x 左右。
+ * x/y を変えるとカラムスタッガードにもできます。
  * (例: 中指列の y を -25 すると 1/4キー分上にずれる)
  */
 
@@ -52,12 +53,18 @@
             , <&key_physical_attrs 100 100 1200  200    0   0   0>
             , <&key_physical_attrs 100 100 1300  200    0   0   0>
 
+            , <&key_physical_attrs 100 100    0  300    0   0   0>
+            , <&key_physical_attrs 100 100  100  300    0   0   0>
+            , <&key_physical_attrs 100 100  200  300    0   0   0>
             , <&key_physical_attrs 100 100  300  300    0   0   0>
             , <&key_physical_attrs 100 100  400  300    0   0   0>
             , <&key_physical_attrs 100 100  500  300    0   0   0>
             , <&key_physical_attrs 100 100  800  300    0   0   0>
             , <&key_physical_attrs 100 100  900  300    0   0   0>
             , <&key_physical_attrs 100 100 1000  300    0   0   0>
+            , <&key_physical_attrs 100 100 1100  300    0   0   0>
+            , <&key_physical_attrs 100 100 1200  300    0   0   0>
+            , <&key_physical_attrs 100 100 1300  300    0   0   0>
             ;
     };
 };
