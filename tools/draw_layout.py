@@ -253,8 +253,59 @@ def plan_final():
     return svg.render()
 
 
+def left_options():
+    """左手にもう1キー追加する2案の比較 (内側の帯 = 2キー幅 38.1mm)"""
+    STRIP = 2 * U
+    WALL = 4.0
+    lw = 5*U + STRIP
+    title_h = 30
+    gap = 30.0
+    w = MARGIN*2 + 2*(lw + 2*WALL) + gap
+    h = title_h + 4*U + 2*WALL + 40
+    svg = Svg(mm(w), mm(h))
+    svg.text(MARGIN, 10, "左手にもう1キー：2つの候補（内側の帯を2キー幅＝38.1mmに）", 30, weight="bold")
+    svg.text(MARGIN, 17, "どちらも格子に一直線。右手のボール帯も同じ幅にして、左右のケースは同じ大きさ（約133 × 76mm）", 20, color=C["sub"])
+    LROW4 = ["Shift", "Tab", "Ctrl", "Lower", "Space"]
+
+    def base(lx, oy, label):
+        svg.add(f'<rect x="{mm(lx-WALL):.1f}" y="{mm(oy-WALL):.1f}" width="{mm(lw+2*WALL):.1f}" '
+                f'height="{mm(4*U+2*WALL):.1f}" rx="{mm(6):.1f}" fill="#ffffff" stroke="#9aa3ad" stroke-width="2"/>')
+        for r in range(3):
+            for c in range(5):
+                svg.key(lx + c*U, oy + r*U, LEFT_ALPHA[r][c], C["alpha"])
+        for c in range(5):
+            svg.key(lx + c*U, oy + 3*U, LROW4[c], C["mod"])
+        svg.key(lx + 5*U, oy + 3*U, "英数", C["mod"])
+        svg.thumb(lx + 4*U, oy + 3*U)
+        ex, ey = lx + 5.5*U, oy + 2.5*U
+        svg.add(f'<circle cx="{mm(ex):.1f}" cy="{mm(ey):.1f}" r="{mm(7.5):.1f}" fill="#5d6d7e" stroke="{C["stroke"]}" stroke-width="2"/>')
+        svg.add(f'<circle cx="{mm(ex):.1f}" cy="{mm(ey):.1f}" r="{mm(5.5):.1f}" fill="#85929e"/>')
+        svg.text(lx + lw/2, oy + 4*U + WALL + 8, label, 24, "middle", weight="bold")
+
+    # 案1: 4段目をさらに内側へ (親指キー)
+    lx1 = MARGIN + WALL
+    oy = title_h + WALL
+    base(lx1, oy, "案1：親指の段をもう1つ内側へ")
+    svg.key(lx1 + 6*U, oy + 3*U, "追加", C["extra"])
+    svg.add(f'<rect x="{mm(lx1+5*U+1):.1f}" y="{mm(oy+1):.1f}" width="{mm(STRIP-2):.1f}" height="{mm(2*U-2):.1f}" rx="8" '
+            f'fill="none" stroke="{C["empty"]}" stroke-width="2" stroke-dasharray="6 5"/>')
+    svg.text(lx1 + 5*U + STRIP/2, oy + U - 1, "マイコン", 17, "middle", C["sub"])
+    svg.text(lx1 + 5*U + STRIP/2, oy + U + 4, "電源SW", 17, "middle", C["sub"])
+
+    # 案2: 人差し指の内側 (G の右) に追加。マイコンは帯の外寄りへ
+    lx2 = lx1 + lw + 2*WALL + gap
+    base(lx2, oy, "案2：人差し指の内側（G の右）")
+    svg.key(lx2 + 5*U, oy + 1*U, "追加", C["extra"])
+    svg.add(f'<rect x="{mm(lx2+6*U+1):.1f}" y="{mm(oy+1):.1f}" width="{mm(U-2):.1f}" height="{mm(2*U-2):.1f}" rx="8" '
+            f'fill="none" stroke="{C["empty"]}" stroke-width="2" stroke-dasharray="6 5"/>')
+    svg.text(lx2 + 6.5*U, oy + U - 1, "マイコン", 15, "middle", C["sub"])
+    svg.text(lx2 + 6.5*U, oy + U + 4, "電源SW", 15, "middle", C["sub"])
+    return svg.render()
+
+
 if __name__ == "__main__":
     out = sys.argv[1]
     open(f"{out}/plan1.svg", "w").write(plan1())
     open(f"{out}/plan2.svg", "w").write(plan2())
     open(f"{out}/final.svg", "w").write(plan_final())
+    open(f"{out}/left-options.svg", "w").write(left_options())
