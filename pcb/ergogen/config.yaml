@@ -100,11 +100,11 @@ outlines:
       corner: corner
 
   # --- 穴・窓 ---
-  ball_hole:            # ボールケースが通る穴 (受け皿の外径 約34mm)
+  ball_hole:            # ボールユニット (外径34mm) が通る穴。まわりにすき間1mm (ガスケットで基板が動いても当たらない)
     - what: circle
       where: right_e_top
       adjust.shift: [-0.5kx, -2.75ky]
-      radius: 17
+      radius: 18
   encoder_cut:          # エンコーダー本体の逃げ (プレート用)
     - what: rectangle
       where: left_c5_top

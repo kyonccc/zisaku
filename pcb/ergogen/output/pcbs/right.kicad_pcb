@@ -1696,7 +1696,7 @@
 (gr_arc (start 199.47500000000002 -71.67500000000001) (mid 189.57550510000002 -67.57449490000002) (end 185.47500000000002 -57.67500000000001) (layer Edge.Cuts) (stroke (width 0.15) (type default)))
 (gr_line (start 185.47500000000002 -57.67500000000001) (end 185.47500000000002 0.524999999999995) (layer Edge.Cuts) (stroke (width 0.15) (type default)))
 (gr_arc (start 185.47500000000002 0.524999999999995) (mid 189.57550510000002 10.424494899999996) (end 199.47500000000002 14.524999999999995) (layer Edge.Cuts) (stroke (width 0.15) (type default)))
-(gr_circle (center 209.525 -4.762500000000003) (end 226.525 -4.762500000000003) (layer Edge.Cuts) (stroke (width 0.15) (type default)) (fill none))
+(gr_circle (center 209.525 -4.762500000000003) (end 227.525 -4.762500000000003) (layer Edge.Cuts) (stroke (width 0.15) (type default)) (fill none))
 
 )
 
