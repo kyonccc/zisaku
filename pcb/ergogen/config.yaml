@@ -8,8 +8,11 @@
 #   - 左手は Q の列・親指の段 (left_c0_thumb) が原点
 #   - 右手は左手と重ならないよう x = rx の位置に置く
 #
-# スイッチは Kailh Choc (ロープロファイル) のみ。v1 / v2 両対応のホットスワップ
+# スイッチは Kailh Choc v2 (ロープロファイル) のみ。ホットスワップ
 # (MX と Choc はソケットの穴が重なり同じ基板に載せられないため、Choc に絞った)
+#
+# footprints/ceoloide/ の部品は ceoloide/ergogen-footprints から取り込んだもの。
+# 一部は CC-BY-NC-SA-4.0 (非営利) なので、販売する時は footprints/ceoloide/README.md を確認すること
 
 meta:
   engine: 4.1.0
@@ -117,7 +120,7 @@ outlines:
       adjust.shift: [-kx, -0.5ky]
       size: [14.6, 36.6]
       corner: 1
-  keys_choc:            # Choc 用プレートのスイッチ穴 (13.8mm 角)
+  keys_choc:            # Choc v2 用プレートのスイッチ穴 (13.8mm 角)
     - what: rectangle
       where: true
       size: [13.8, 13.8]
@@ -152,12 +155,15 @@ pcbs:
         layer: Edge.Cuts
     footprints:
       switch:
-        what: choc_v1v2
+        what: ceoloide/switch_choc_v1_v2
         where: /^left_/
-        params:
+        params: &switch_params
           from: "{{column_net}}"
           to: "{{name}}"
+          side: B
           hotswap: true
+          choc_v1_support: false
+          choc_v2_support: true
       diode:
         what: diode
         where: /^left_/
@@ -166,12 +172,12 @@ pcbs:
           from: "{{name}}"
           to: "{{row_net}}"
       encoder:
-        what: rotary
+        what: ceoloide/rotary_encoder_ec11_ec12
         where: left_c5_top
         adjust.shift: [0.5kx, -2ky]
         params:
-          from: COL5
-          to: ENC_SW
+          S1: COL5
+          S2: ENC_SW
           A: ENC_A
           B: GND
           C: ENC_B
@@ -192,15 +198,20 @@ pcbs:
           label: "XIAO nRF52840 Plus (裏)"
           side: B
       nice_view:
-        what: box
+        what: ceoloide/display_nice_view
         where: left_c6_thumb
-        adjust.shift: [0, 2.5ky]
-        params:
-          width: 14
-          height: 36
-          label: "nice!view"
+        adjust:                 # ピンを奥側 (XIAO・USB-C の近く) に向ける
+          shift: [0, 2.5ky]
+          rotate: 180
+        params: &view_params
+          side: F
+          MOSI: VIEW_MOSI
+          SCK: VIEW_SCK
+          VCC: 3V3
+          GND: GND
+          CS: VIEW_CS
       power_switch:       # 水平スライドスイッチ (内側の側面)
-        what: slider
+        what: ceoloide/power_switch_smd_side
         where: left_c6_thumb
         adjust:
           shift: [0.5kx + 1.5, 3.5ky - 10]
@@ -209,13 +220,13 @@ pcbs:
           from: BAT_P
           to: BAT_SW
       battery:
-        what: jstph
+        what: ceoloide/battery_connector_jst_ph_2
         where: left_c0_thumb
         adjust.shift: [0.5kx, 0.5ky]
         params:
           side: B
-          pos: BAT_P
-          neg: GND
+          BAT_P: BAT_P
+          BAT_N: GND
   # ===================== 右手 =====================
   right:
     template: kicad8
@@ -225,12 +236,9 @@ pcbs:
         layer: Edge.Cuts
     footprints:
       switch:
-        what: choc_v1v2
+        what: ceoloide/switch_choc_v1_v2
         where: /^right_/
-        params:
-          from: "{{column_net}}"
-          to: "{{name}}"
-          hotswap: true
+        params: *switch_params
       diode:
         what: diode
         where: /^right_/
@@ -259,15 +267,14 @@ pcbs:
           label: "XIAO nRF52840 Plus (裏)"
           side: B
       nice_view:
-        what: box
+        what: ceoloide/display_nice_view
         where: right_e_top
-        adjust.shift: [-kx, -0.5ky]
-        params:
-          width: 14
-          height: 36
-          label: "nice!view"
+        adjust:
+          shift: [-kx, -0.5ky]
+          rotate: 180
+        params: *view_params
       power_switch:
-        what: slider
+        what: ceoloide/power_switch_smd_side
         where: right_e_top
         adjust:
           shift: [-1.5kx - 1.5, 0.5ky - 10]
@@ -276,10 +283,10 @@ pcbs:
           from: BAT_P
           to: BAT_SW
       battery:
-        what: jstph
+        what: ceoloide/battery_connector_jst_ph_2
         where: right_c12_thumb
         adjust.shift: [-0.5kx, 0.5ky]
         params:
           side: B
-          pos: BAT_P
-          neg: GND
+          BAT_P: BAT_P
+          BAT_N: GND
