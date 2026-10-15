@@ -1,18 +1,19 @@
 # GitHub Actions でビルドするファームウェアの一覧
-# nice_nano//zmk = nice!nano v2 を ZMK 用の設定で使う、という意味
+# xiao_ble//zmk = Seeed XIAO nRF52840 (Plus も同じ) を ZMK 用の設定で使う、という意味
 #
-# トラックボールは右手に固定。
+# トラックボールは右手に固定。画面 (nice!view) は左右とも付ける設定。
 #   左手に kataware_left / 右手に kataware_right-trackball を書き込む
+#   画面を付けない側は、shield から nice_view を消す
 ---
 include:
-  - board: nice_nano//zmk
-    shield: kataware_left
+  - board: xiao_ble//zmk
+    shield: kataware_left nice_view
     artifact-name: kataware_left
   # 右手 = トラックボール付き = PCとつながる側
-  - board: nice_nano//zmk
-    shield: kataware_right kataware_trackball
+  - board: xiao_ble//zmk
+    shield: kataware_right kataware_trackball nice_view
     artifact-name: kataware_right-trackball
   # 左右の接続がおかしくなった時用のリセットファームウェア
-  - board: nice_nano//zmk
+  - board: xiao_ble//zmk
     shield: settings_reset
     artifact-name: settings_reset

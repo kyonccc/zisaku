@@ -3,7 +3,7 @@ id: kataware
 name: kataware
 type: shield
 url: https://github.com/kyonccc/zisaku
-requires: [pro_micro]
+requires: [seeed_xiao]
 features:
   - keys
   - pointer

@@ -12,11 +12,11 @@
 
 &kscan0 {
     col-gpios
-        = <&pro_micro 21 GPIO_ACTIVE_HIGH>  // COL7  = D21 (一番内側: Y・H の左の追加キーだけ)
-        , <&pro_micro 14 GPIO_ACTIVE_HIGH>  // COL8  = D14 (Y H N の列)
-        , <&pro_micro 15 GPIO_ACTIVE_HIGH>  // COL9  = D15
-        , <&pro_micro 18 GPIO_ACTIVE_HIGH>  // COL10 = D18
-        , <&pro_micro 19 GPIO_ACTIVE_HIGH>  // COL11 = D19
-        , <&pro_micro 20 GPIO_ACTIVE_HIGH>  // COL12 = D20 (一番外側)
+        = <&xiao_d 4 GPIO_ACTIVE_HIGH>  // COL7  = D4 (一番内側: Y・H の左の追加キーだけ)
+        , <&xiao_d 5 GPIO_ACTIVE_HIGH>  // COL8  = D5 (Y H N の列)
+        , <&xiao_d 6 GPIO_ACTIVE_HIGH>  // COL9  = D6
+        , <&xiao_d 7 GPIO_ACTIVE_HIGH>  // COL10 = D7
+        , <&xiao_d 8 GPIO_ACTIVE_HIGH>  // COL11 = D8
+        , <&xiao_d 9 GPIO_ACTIVE_HIGH>  // COL12 = D9 (一番外側)
         ;
 };

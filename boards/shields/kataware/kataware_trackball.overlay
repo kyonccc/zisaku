@@ -6,16 +6,15 @@
  *   例) 右にボール: shield: kataware_right kataware_trackball
  *       左にボール: shield: kataware_left kataware_trackball
  *
- * 配線 (センサー基板 → ProMicro) ※左右どちらの基板も同じピン:
- *   SCLK   → D8  (nRF52840 の P1.04)
- *   SDIO   → D9  (nRF52840 の P1.06)  ※PMW3610 は送受信を1本で行う
- *   NCS    → D2
- *   MOTION → D3
+ * 配線 (センサー基板 → XIAO nRF52840 Plus):
+ *   SCLK   → D10 (nRF52840 の P1.15)
+ *   SDIO   → D13 (nRF52840 の P1.01)  ※PMW3610 は送受信を1本で行う
+ *   NCS    → D11 (P0.15)
+ *   MOTION → D12 (P0.19)
  *   VDD    → VCC (3.3V)
  *   GND    → GND
  *
- * SPI のピンだけは D番号ではなく nRF52840 本来のピン名 (P1.04 など) で書く必要がある。
- * NRF_PSEL(機能, ポート番号, ピン番号) → P1.04 なら (1, 4)
+ * SPI のピンは nRF52840 本来のピン名で書く。NRF_PSEL(機能, ポート番号, ピン番号) → P1.15 なら (1, 15)
  */
 
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -23,37 +22,37 @@
 &pinctrl {
     trackball_spi_default: trackball_spi_default {
         group1 {
-            psels = <NRF_PSEL(SPIM_SCK, 1, 4)>,
-                    <NRF_PSEL(SPIM_MOSI, 1, 6)>,
-                    <NRF_PSEL(SPIM_MISO, 1, 6)>;
+            psels = <NRF_PSEL(SPIM_SCK, 1, 15)>,
+                    <NRF_PSEL(SPIM_MOSI, 1, 1)>,
+                    <NRF_PSEL(SPIM_MISO, 1, 1)>;
         };
     };
 
     trackball_spi_sleep: trackball_spi_sleep {
         group1 {
-            psels = <NRF_PSEL(SPIM_SCK, 1, 4)>,
-                    <NRF_PSEL(SPIM_MOSI, 1, 6)>,
-                    <NRF_PSEL(SPIM_MISO, 1, 6)>;
+            psels = <NRF_PSEL(SPIM_SCK, 1, 15)>,
+                    <NRF_PSEL(SPIM_MOSI, 1, 1)>,
+                    <NRF_PSEL(SPIM_MISO, 1, 1)>;
             low-power-enable;
         };
     };
 };
 
-// spi2 は I2C と共用しない SPI 専用ブロックなので衝突しにくい
+// spi2 (XIAO の初期設定の SPI。kataware.dtsi で一度無効にしたものを、ここで設定し直して使う)
 &spi2 {
     status = "okay";
     compatible = "nordic,nrf-spim";
     pinctrl-0 = <&trackball_spi_default>;
     pinctrl-1 = <&trackball_spi_sleep>;
     pinctrl-names = "default", "sleep";
-    cs-gpios = <&pro_micro 2 GPIO_ACTIVE_LOW>;  // NCS = D2
+    cs-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;  // NCS = D11 (P0.15)
 
     trackball: trackball@0 {
         status = "okay";
         compatible = "pixart,pmw3610-alt";
         reg = <0>;
         spi-max-frequency = <2000000>;
-        irq-gpios = <&pro_micro 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;  // MOTION = D3
+        irq-gpios = <&gpio0 19 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;  // MOTION = D12 (P0.19)
 
         // カーソル速度(感度)。200〜3200 の範囲で 200 刻み
         cpi = <600>;
