@@ -1,0 +1,330 @@
+# kataware — Ergogen 設定 (基板・プレートの下書き)
+#
+# 使い方:
+#   npx ergogen@4.1.0 pcb/ergogen -o pcb/ergogen/output
+#
+# 座標の決まり:
+#   - 1キー = 19.05mm (kx, ky)。y は上がプラス (Ergogen の決まり)
+#   - 左手は Q の列・親指の段 (left_c0_thumb) が原点
+#   - 右手は左手と重ならないよう x = rx の位置に置く
+#
+# MX と Choc はソケットの穴が重なるため、同じ基板には両方載せられない。
+# そのため基板は「Choc 版」と「MX 版」を作り分ける (キー以外は同じ)。
+
+meta:
+  engine: 4.1.0
+  name: kataware
+  version: 0.1
+  author: kyonccc
+
+units:
+  kx: 19.05
+  ky: 19.05
+  wall: 5        # ケースの縁
+  corner: 14     # 外周の角の丸み
+  rx: 200        # 右手の原点 (マイコン列の中心)
+
+points:
+  zones:
+    # ===== 左手: 5列 x 4段 + T・G の右 (c5) + 親指の段の内側 (c5, c6) =====
+    left:
+      key:
+        spread: kx
+        padding: ky
+        width: kx
+        height: ky
+      columns:
+        c0.key.column_net: COL0
+        c1.key.column_net: COL1
+        c2.key.column_net: COL2
+        c3.key.column_net: COL3
+        c4.key.column_net: COL4
+        c5:
+          key.column_net: COL5
+          rows.bottom.skip: true      # ここはエンコーダー
+        c6:
+          key.column_net: COL6
+          rows:
+            bottom.skip: true
+            home.skip: true
+            top.skip: true            # 親指の段 (Raise) だけ
+      rows:
+        thumb.row_net: ROW3
+        bottom.row_net: ROW2
+        home.row_net: ROW1
+        top.row_net: ROW0
+
+    # ===== 右手: Y・H の左 (e) + 5列 x 4段。e のさらに内側がマイコン列、その下がボール =====
+    right:
+      anchor.shift: [rx + kx, 0]
+      key:
+        spread: kx
+        padding: ky
+        width: kx
+        height: ky
+      columns:
+        e:
+          key.column_net: COL7
+          rows:
+            thumb.skip: true
+            bottom.skip: true
+        c8.key.column_net: COL8
+        c9.key.column_net: COL9
+        c10.key.column_net: COL10
+        c11.key.column_net: COL11
+        c12.key.column_net: COL12
+      rows:
+        thumb.row_net: ROW3
+        bottom.row_net: ROW2
+        home.row_net: ROW1
+        top.row_net: ROW0
+
+outlines:
+  # --- 外形 (左右同じ大きさ) ---
+  board_left:
+    - what: rectangle
+      where: left_c0_thumb
+      adjust.shift: [3kx, 1.5ky]
+      size: [7kx + 2wall, 4ky + 2wall]
+      corner: corner
+  board_right:
+    - what: rectangle
+      where: right_e_top
+      adjust.shift: [2kx, -1.5ky]
+      size: [7kx + 2wall, 4ky + 2wall]
+      corner: corner
+
+  # --- 穴・窓 ---
+  ball_hole:            # ボールケースが通る穴 (受け皿の外径 約34mm)
+    - what: circle
+      where: right_e_top
+      adjust.shift: [-0.5kx, -2.75ky]
+      radius: 17
+  encoder_cut:          # エンコーダー本体の逃げ (プレート用)
+    - what: rectangle
+      where: left_c5_top
+      adjust.shift: [0.5kx, -2ky]
+      size: [13, 13]
+  view_window_left:     # nice!view の窓 (36 x 14mm + 余裕)
+    - what: rectangle
+      where: left_c6_thumb
+      adjust.shift: [0, 2.5ky]
+      size: [14.6, 36.6]
+      corner: 1
+  view_window_right:
+    - what: rectangle
+      where: right_e_top
+      adjust.shift: [-kx, -0.5ky]
+      size: [14.6, 36.6]
+      corner: 1
+  keys_choc:            # Choc 用プレートのスイッチ穴
+    - what: rectangle
+      where: true
+      size: [13.8, 13.8]
+  keys_mx:              # MX 用プレートのスイッチ穴
+    - what: rectangle
+      where: true
+      size: [14, 14]
+
+  # --- 基板の外形 ---
+  pcb_left:
+    - name: board_left
+  pcb_right:
+    - name: board_right
+    - operation: subtract
+      name: ball_hole
+
+  # --- プレート (キースイッチを固定する板) ---
+  plate_choc_left:
+    - name: board_left
+    - {operation: subtract, name: keys_choc}
+    - {operation: subtract, name: encoder_cut}
+    - {operation: subtract, name: view_window_left}
+  plate_choc_right:
+    - name: board_right
+    - {operation: subtract, name: keys_choc}
+    - {operation: subtract, name: ball_hole}
+    - {operation: subtract, name: view_window_right}
+  plate_mx_left:
+    - name: board_left
+    - {operation: subtract, name: keys_mx}
+    - {operation: subtract, name: encoder_cut}
+    - {operation: subtract, name: view_window_left}
+  plate_mx_right:
+    - name: board_right
+    - {operation: subtract, name: keys_mx}
+    - {operation: subtract, name: ball_hole}
+    - {operation: subtract, name: view_window_right}
+
+pcbs:
+  # ===================== 左手 =====================
+  left_choc:
+    template: kicad8
+    outlines:
+      edge:
+        outline: pcb_left
+        layer: Edge.Cuts
+    footprints: &left_common
+      switch:
+        what: choc
+        where: /^left_/
+        params:
+          from: "{{column_net}}"
+          to: "{{name}}"
+          hotswap: true
+      diode:
+        what: diode
+        where: /^left_/
+        adjust.shift: [0, -5]
+        params:
+          from: "{{name}}"
+          to: "{{row_net}}"
+      encoder:
+        what: rotary
+        where: left_c5_top
+        adjust.shift: [0.5kx, -2ky]
+        params:
+          from: COL5
+          to: ENC_SW
+          A: ENC_A
+          B: GND
+          C: ENC_B
+      encoder_diode:
+        what: diode
+        where: left_c5_top
+        adjust.shift: [0.5kx, -2ky - 9.2]
+        params:
+          from: ENC_SW
+          to: ROW2
+      xiao:               # 基板の裏側。KiCad で Seeed 公式フットプリントに置き換える
+        what: box
+        where: left_c6_thumb
+        adjust.shift: [0, 3.5ky - 8]
+        params:
+          width: 17.8
+          height: 21
+          label: "XIAO nRF52840 Plus (裏)"
+          side: B
+      nice_view:
+        what: box
+        where: left_c6_thumb
+        adjust.shift: [0, 2.5ky]
+        params:
+          width: 14
+          height: 36
+          label: "nice!view"
+      power_switch:       # 水平スライドスイッチ (内側の側面)
+        what: slider
+        where: left_c6_thumb
+        adjust:
+          shift: [0.5kx + 1.5, 3.5ky - 10]
+          rotate: 90
+        params:
+          from: BAT_P
+          to: BAT_SW
+      battery:
+        what: jstph
+        where: left_c0_thumb
+        adjust.shift: [0.5kx, 0.5ky]
+        params:
+          side: B
+          pos: BAT_P
+          neg: GND
+  left_mx:
+    template: kicad8
+    outlines:
+      edge:
+        outline: pcb_left
+        layer: Edge.Cuts
+    footprints:
+      <<: *left_common
+      switch:
+        what: mx
+        where: /^left_/
+        params:
+          from: "{{column_net}}"
+          to: "{{name}}"
+          hotswap: true
+
+  # ===================== 右手 =====================
+  right_choc:
+    template: kicad8
+    outlines:
+      edge:
+        outline: pcb_right
+        layer: Edge.Cuts
+    footprints: &right_common
+      switch:
+        what: choc
+        where: /^right_/
+        params:
+          from: "{{column_net}}"
+          to: "{{name}}"
+          hotswap: true
+      diode:
+        what: diode
+        where: /^right_/
+        adjust.shift: [0, -5]
+        params:
+          from: "{{name}}"
+          to: "{{row_net}}"
+      trackball_header:   # PMW3610 センサーへのケーブルをつなぐ所 (ボールの穴のすぐ上)
+        what: header6
+        where: right_e_top
+        adjust.shift: [-0.5kx, -2.75ky + 20.5]
+        params:
+          P1: 3V3
+          P2: GND
+          P3: TB_SCLK
+          P4: TB_SDIO
+          P5: TB_NCS
+          P6: TB_MOTION
+      xiao:
+        what: box
+        where: right_e_top
+        adjust.shift: [-kx, 0.5ky - 8]
+        params:
+          width: 17.8
+          height: 21
+          label: "XIAO nRF52840 Plus (裏)"
+          side: B
+      nice_view:
+        what: box
+        where: right_e_top
+        adjust.shift: [-kx, -0.5ky]
+        params:
+          width: 14
+          height: 36
+          label: "nice!view"
+      power_switch:
+        what: slider
+        where: right_e_top
+        adjust:
+          shift: [-1.5kx - 1.5, 0.5ky - 10]
+          rotate: -90
+        params:
+          from: BAT_P
+          to: BAT_SW
+      battery:
+        what: jstph
+        where: right_c12_thumb
+        adjust.shift: [-0.5kx, 0.5ky]
+        params:
+          side: B
+          pos: BAT_P
+          neg: GND
+  right_mx:
+    template: kicad8
+    outlines:
+      edge:
+        outline: pcb_right
+        layer: Edge.Cuts
+    footprints:
+      <<: *right_common
+      switch:
+        what: mx
+        where: /^right_/
+        params:
+          from: "{{column_net}}"
+          to: "{{name}}"
+          hotswap: true

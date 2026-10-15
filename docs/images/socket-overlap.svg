@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="580" font-family="IPAPGothic">
+<rect width="100%" height="100%" fill="#f7f7f5"/>
+<text x="20" y="38" font-size="26" font-weight="bold" fill="#333">MX と Choc のソケットを同じキーに重ねた図（1キー分）</text>
+<rect x="32.0" y="82.0" width="456" height="456" fill="#fff" stroke="#999" stroke-dasharray="6 4"/><circle cx="260.0" cy="310.0" r="47.9" fill="#1f77b4" fill-opacity="0.1" stroke="#1f77b4" stroke-width="2"/><circle cx="321.0" cy="188.1" r="36.0" fill="#1f77b4" fill-opacity="0.5" stroke="#1f77b4" stroke-width="2"/><circle cx="168.6" cy="249.0" r="36.0" fill="#1f77b4" fill-opacity="0.5" stroke="#1f77b4" stroke-width="2"/><rect x="59.4" y="219.0" width="61.2" height="60.0" fill="#1f77b4" fill-opacity="0.5" stroke="#1f77b4" stroke-width="2"/><rect x="369.6" y="158.1" width="61.2" height="60.0" fill="#1f77b4" fill-opacity="0.5" stroke="#1f77b4" stroke-width="2"/><circle cx="260.0" cy="310.0" r="41.1" fill="#d62728" fill-opacity="0.1" stroke="#d62728" stroke-width="2"/><circle cx="380.0" cy="220.0" r="36.0" fill="#d62728" fill-opacity="0.5" stroke="#d62728" stroke-width="2"/><circle cx="260.0" cy="167.2" r="36.0" fill="#d62728" fill-opacity="0.5" stroke="#d62728" stroke-width="2"/><rect x="150.2" y="136.0" width="62.4" height="62.4" fill="#d62728" fill-opacity="0.5" stroke="#d62728" stroke-width="2"/><rect x="427.4" y="188.8" width="62.4" height="62.4" fill="#d62728" fill-opacity="0.5" stroke="#d62728" stroke-width="2"/><circle cx="290.5" cy="178.0" r="62.4" fill="none" stroke="#f0a500" stroke-width="4"/><circle cx="350.5" cy="204.4" r="62.4" fill="none" stroke="#f0a500" stroke-width="4"/>
+<text x="530" y="140" font-size="21" fill="#1f77b4">● 青＝MX ソケットの穴・パッド</text>
+<text x="530" y="175" font-size="21" fill="#d62728">● 赤＝Choc ソケットの穴・パッド</text>
+<text x="530" y="210" font-size="21" fill="#c88a00">○ オレンジ＝重なってしまう所</text>
+<text x="530" y="265" font-size="18" fill="#333">・MX の穴と Choc の穴が約2.7mm しか離れていない</text>
+<text x="530" y="292" font-size="18" fill="#333">  （穴はどちらも直径3mm → 重なる）</text>
+<text x="530" y="324" font-size="18" fill="#333">・MX のはんだパッドが Choc の穴で削られる</text>
+<text x="530" y="370" font-size="18" fill="#333">→ 1枚の基板に両方のソケットは載せられない</text>
+<text x="530" y="398" font-size="18" fill="#333">→ Choc 版・MX 版の2種類の基板を作り分ける</text>
+</svg>
