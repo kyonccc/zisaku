@@ -11,8 +11,10 @@
 # スイッチは Kailh Choc v2 (ロープロファイル) のみ。ホットスワップ
 # (MX と Choc はソケットの穴が重なり同じ基板に載せられないため、Choc に絞った)
 #
-# footprints/ceoloide/ の部品は ceoloide/ergogen-footprints から取り込んだもの。
-# 一部は CC-BY-NC-SA-4.0 (非営利) なので、販売する時は footprints/ceoloide/README.md を確認すること
+# 部品データ:
+#   footprints/kataware/  … kataware 用に作ったもの (販売可能。Ergogen 内蔵 (MIT) をもとにしたものを含む)
+#   footprints/ceoloide/  … ceoloide/ergogen-footprints から取り込んだ MIT ライセンスのもの
+#   footprints/box.js, header6.js … kataware 用の補助部品
 
 meta:
   engine: 4.1.0
@@ -155,15 +157,11 @@ pcbs:
         layer: Edge.Cuts
     footprints:
       switch:
-        what: ceoloide/switch_choc_v1_v2
+        what: kataware/choc_v2_hotswap
         where: /^left_/
         params: &switch_params
           from: "{{column_net}}"
           to: "{{name}}"
-          side: B
-          hotswap: true
-          choc_v1_support: false
-          choc_v2_support: true
       diode:
         what: diode
         where: /^left_/
@@ -188,30 +186,44 @@ pcbs:
         params:
           from: ENC_SW
           to: ROW2
-      xiao:               # 基板の裏側。KiCad で Seeed 公式フットプリントに置き換える
-        what: box
+      xiao:               # 基板の裏側。KiCad で Seeed 公式フットプリントに置き換える (仮)
+        what: kataware/xiao_plus_placeholder
         where: left_c6_thumb
         adjust.shift: [0, 3.5ky - 8]
         params:
-          width: 17.8
-          height: 21
-          label: "XIAO nRF52840 Plus (裏)"
-          side: B
+          D0: ROW0
+          D1: ROW1
+          D2: ROW2
+          D3: ROW3
+          D4: COL0
+          D5: COL1
+          D6: COL2
+          D7: COL3
+          D8: COL4
+          D9: COL5
+          D10: COL6
+          D11: ENC_A
+          D12: ENC_B
+          D17: VIEW_MOSI
+          D18: VIEW_CS
+          D19: VIEW_SCK
+          V3V3: 3V3
+          GND: GND
+          BATP: BAT_SW
       nice_view:
-        what: ceoloide/display_nice_view
+        what: kataware/nice_view
         where: left_c6_thumb
         adjust:                 # ピンを奥側 (XIAO・USB-C の近く) に向ける
           shift: [0, 2.5ky]
           rotate: 180
         params: &view_params
-          side: F
           MOSI: VIEW_MOSI
           SCK: VIEW_SCK
           VCC: 3V3
           GND: GND
           CS: VIEW_CS
       power_switch:       # 水平スライドスイッチ (内側の側面)
-        what: ceoloide/power_switch_smd_side
+        what: kataware/power_switch_placeholder
         where: left_c6_thumb
         adjust:
           shift: [0.5kx + 1.5, 3.5ky - 10]
@@ -236,7 +248,7 @@ pcbs:
         layer: Edge.Cuts
     footprints:
       switch:
-        what: ceoloide/switch_choc_v1_v2
+        what: kataware/choc_v2_hotswap
         where: /^right_/
         params: *switch_params
       diode:
@@ -258,23 +270,39 @@ pcbs:
           P5: TB_NCS
           P6: TB_MOTION
       xiao:
-        what: box
+        what: kataware/xiao_plus_placeholder
         where: right_e_top
         adjust.shift: [-kx, 0.5ky - 8]
         params:
-          width: 17.8
-          height: 21
-          label: "XIAO nRF52840 Plus (裏)"
-          side: B
+          D0: ROW0
+          D1: ROW1
+          D2: ROW2
+          D3: ROW3
+          D4: COL7
+          D5: COL8
+          D6: COL9
+          D7: COL10
+          D8: COL11
+          D9: COL12
+          D10: TB_SCLK
+          D11: TB_NCS
+          D12: TB_MOTION
+          D13: TB_SDIO
+          D17: VIEW_MOSI
+          D18: VIEW_CS
+          D19: VIEW_SCK
+          V3V3: 3V3
+          GND: GND
+          BATP: BAT_SW
       nice_view:
-        what: ceoloide/display_nice_view
+        what: kataware/nice_view
         where: right_e_top
         adjust:
           shift: [-kx, -0.5ky]
           rotate: 180
         params: *view_params
       power_switch:
-        what: ceoloide/power_switch_smd_side
+        what: kataware/power_switch_placeholder
         where: right_e_top
         adjust:
           shift: [-1.5kx - 1.5, 0.5ky - 10]

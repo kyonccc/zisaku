@@ -291,12 +291,23 @@ MX と Choc のソケットを同じキーに置くと、**穴どうし・穴と
 
 ### まだ下書きの部分（KiCad で仕上げる）
 
-- **XIAO nRF52840 Plus** は使える部品データがまだないので、**置き場所の枠だけ**入れてある。
-  KiCad で Seeed 公式などの正式なフットプリントに置き換える
-- スイッチ（Choc v2）・nice!view・エンコーダー・電源スイッチ・電池コネクタは、
-  [ceoloide/ergogen-footprints](https://github.com/ceoloide/ergogen-footprints) の部品データを使用
-  （`pcb/ergogen/footprints/ceoloide/`）。⚠️ **一部は非営利ライセンス（CC-BY-NC-SA-4.0）**なので、
-  販売する場合は差し替えが必要（詳しくは同フォルダの README）
+- **XIAO nRF52840 Plus** は**仮の部品**（ピン番号 1〜14 と、Plus の裏面パッドを仮の位置に置いたもの）。
+  各ピンのつながり（ネット）はファームウェアのピン割り当てどおりに入っているので、KiCad で Seeed 公式の
+  フットプリントに置き換えて、つながりを移す
+- **電源スイッチ**も仮の部品。KiCad で標準ライブラリの `Button_Switch_SMD:SW_SPDT_PCM12`
+  （Alps SSSS811101 と同じ形）に置き換える。パッド番号 1・2・3 のつながりは引き継がれる
+
+### 部品データとライセンス（販売するため）
+
+| フォルダ | 中身 | ライセンス |
+| --- | --- | --- |
+| `pcb/ergogen/footprints/kataware/` | Choc v2 スイッチ・nice!view・XIAO（仮）・電源スイッチ（仮） | kataware 用に作成。Choc v2 は Ergogen 内蔵（MIT）をもとにしたもの |
+| `pcb/ergogen/footprints/ceoloide/` | エンコーダー・電池コネクタ | MIT（[ceoloide/ergogen-footprints](https://github.com/ceoloide/ergogen-footprints)） |
+| Ergogen 内蔵 | ダイオード | MIT |
+
+**非営利ライセンス（CC-BY-NC-SA）の部品は使っていない**ので、この基板は販売できる形になっている。
+KiCad で追加する部品も、KiCad 標準ライブラリ（設計に使った基板は自由に販売できる）か、
+販売可能なライセンスのものを選ぶこと
 - **配線（パターン）はまだ**。部品どうしのつながり（ネット）は入っているので、KiCad で線を引く
 - 電源スイッチ・電池コネクタの位置と向きは仮。KiCad で実物の大きさに合わせて調整する
 - トラックボールセンサーへの接続は、ボールの穴のすぐ上の6ピン端子（3V3 / GND / SCLK / SDIO / NCS / MOTION）
