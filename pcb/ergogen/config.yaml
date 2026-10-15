@@ -8,8 +8,8 @@
 #   - 左手は Q の列・親指の段 (left_c0_thumb) が原点
 #   - 右手は左手と重ならないよう x = rx の位置に置く
 #
-# MX と Choc はソケットの穴が重なるため、同じ基板には両方載せられない。
-# そのため基板は「Choc 版」と「MX 版」を作り分ける (キー以外は同じ)。
+# スイッチは Kailh Choc (ロープロファイル) のみ。v1 / v2 両対応のホットスワップ
+# (MX と Choc はソケットの穴が重なり同じ基板に載せられないため、Choc に絞った)
 
 meta:
   engine: 4.1.0
@@ -117,14 +117,10 @@ outlines:
       adjust.shift: [-kx, -0.5ky]
       size: [14.6, 36.6]
       corner: 1
-  keys_choc:            # Choc 用プレートのスイッチ穴
+  keys_choc:            # Choc 用プレートのスイッチ穴 (13.8mm 角)
     - what: rectangle
       where: true
       size: [13.8, 13.8]
-  keys_mx:              # MX 用プレートのスイッチ穴
-    - what: rectangle
-      where: true
-      size: [14, 14]
 
   # --- 基板の外形 ---
   pcb_left:
@@ -135,38 +131,28 @@ outlines:
       name: ball_hole
 
   # --- プレート (キースイッチを固定する板) ---
-  plate_choc_left:
+  plate_left:
     - name: board_left
     - {operation: subtract, name: keys_choc}
     - {operation: subtract, name: encoder_cut}
     - {operation: subtract, name: view_window_left}
-  plate_choc_right:
+  plate_right:
     - name: board_right
     - {operation: subtract, name: keys_choc}
-    - {operation: subtract, name: ball_hole}
-    - {operation: subtract, name: view_window_right}
-  plate_mx_left:
-    - name: board_left
-    - {operation: subtract, name: keys_mx}
-    - {operation: subtract, name: encoder_cut}
-    - {operation: subtract, name: view_window_left}
-  plate_mx_right:
-    - name: board_right
-    - {operation: subtract, name: keys_mx}
     - {operation: subtract, name: ball_hole}
     - {operation: subtract, name: view_window_right}
 
 pcbs:
   # ===================== 左手 =====================
-  left_choc:
+  left:
     template: kicad8
     outlines:
       edge:
         outline: pcb_left
         layer: Edge.Cuts
-    footprints: &left_common
+    footprints:
       switch:
-        what: choc
+        what: choc_v1v2
         where: /^left_/
         params:
           from: "{{column_net}}"
@@ -230,32 +216,16 @@ pcbs:
           side: B
           pos: BAT_P
           neg: GND
-  left_mx:
-    template: kicad8
-    outlines:
-      edge:
-        outline: pcb_left
-        layer: Edge.Cuts
-    footprints:
-      <<: *left_common
-      switch:
-        what: mx
-        where: /^left_/
-        params:
-          from: "{{column_net}}"
-          to: "{{name}}"
-          hotswap: true
-
   # ===================== 右手 =====================
-  right_choc:
+  right:
     template: kicad8
     outlines:
       edge:
         outline: pcb_right
         layer: Edge.Cuts
-    footprints: &right_common
+    footprints:
       switch:
-        what: choc
+        what: choc_v1v2
         where: /^right_/
         params:
           from: "{{column_net}}"
@@ -313,18 +283,3 @@ pcbs:
           side: B
           pos: BAT_P
           neg: GND
-  right_mx:
-    template: kicad8
-    outlines:
-      edge:
-        outline: pcb_right
-        layer: Edge.Cuts
-    footprints:
-      <<: *right_common
-      switch:
-        what: mx
-        where: /^right_/
-        params:
-          from: "{{column_net}}"
-          to: "{{name}}"
-          hotswap: true
