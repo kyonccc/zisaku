@@ -267,7 +267,7 @@ kataware では次の2つを用意します。
 | 保護回路 | 過充電・過放電・過電流の保護回路付き |
 | 厚さ | **5mm 以下**（基板の下のすき間 5.5mm に入れるため） |
 | 容量 | 左右とも 250mAh（GA-011） |
-| コネクタ | 電池側のコネクタに合わせて、基板側のコネクタを決める（Gexa は 1.25mm ピッチ。今の下書きは JST PH 2.0 なので KiCad で変更） |
+| コネクタ | 電池側に合わせる（Gexa は 1.25mm ピッチ・PicoBlade 互換と思われる） |
 
 **採用：左右とも ジイエクサ Gexa GA-011（軽さ優先）**
 
@@ -277,14 +277,15 @@ kataware では次の2つを用意します。
 | 容量 | 250mAh（moNa2 の 170mAh の約1.5倍） |
 | 大きさ | 約 20 × 30 × 5mm（幅 × 長さ × 厚さ） |
 | 重さ | 約 6g |
-| コネクタ | 1.25mm ピッチ（マイクロコネクタ） |
+| コネクタ | 1.25mm ピッチ 2ピン（白・ロック爪なし → **Molex PicoBlade 互換と思われる**）。**端子面から見て 左＝黒（−）／右＝赤（＋）** |
 
 - 左右同じ電池にして、仕入れを1種類にする。左右の重さもそろう
 - 持ち時間の目安：右手（PC とつながる側＋トラックボール）は moNa2 の約1.5倍、左手はそれより長持ち（実物で要測定）
 - もっと長持ちさせたい時の予備案：GA-012（500mAh・約 30 × 48 × 4mm・約 12g）。同じコネクタなので基板はそのまま使える
 - キーの下の空いたスペースに置く（XIAO の真下とボールの穴は避ける）
-- ⚠️ **コネクタが JST PH 2.0 ではなく 1.25mm ピッチ**。電池を買ったら実物のコネクタの種類（Molex PicoBlade 互換など）と
-  ＋/−の向きを確認し、**基板側のコネクタを同じ 1.25mm ピッチの物に変える**（今の下書きは JST PH 2.0 のまま）
+- 基板側は **1.25mm ピッチ 2ピンの仮の部品**（パッド1＝−、パッド2＝＋）にしてある。KiCad で Molex PicoBlade の
+  2ピン（KiCad 標準ライブラリ）に置き換える
+- ⚠️ 置き換えた後、**実物の電池を挿してテスターで＋/−を確認**してから XIAO につなぐ（逆だと XIAO が壊れる）
 
 - PSE の対象は「体積エネルギー密度 400Wh/L 以上」のリチウムイオン電池。とても小さい電池は対象外で、
   PSE マークが付いていないこともある。kataware では**安全を優先して PSE マーク付きの物だけ**を使う
@@ -338,8 +339,8 @@ MX と Choc のソケットを同じキーに置くと、**穴どうし・穴と
 
 | フォルダ | 中身 | ライセンス |
 | --- | --- | --- |
-| `pcb/ergogen/footprints/kataware/` | Choc v2 スイッチ・nice!view・XIAO（仮）・電源スイッチ（仮） | kataware 用に作成。Choc v2 は Ergogen 内蔵（MIT）をもとにしたもの |
-| `pcb/ergogen/footprints/ceoloide/` | エンコーダー・電池コネクタ | MIT（[ceoloide/ergogen-footprints](https://github.com/ceoloide/ergogen-footprints)） |
+| `pcb/ergogen/footprints/kataware/` | Choc v2 スイッチ・nice!view・XIAO（仮）・電源スイッチ（仮）・電池コネクタ（仮） | kataware 用に作成。Choc v2 は Ergogen 内蔵（MIT）をもとにしたもの |
+| `pcb/ergogen/footprints/ceoloide/` | エンコーダー | MIT（[ceoloide/ergogen-footprints](https://github.com/ceoloide/ergogen-footprints)） |
 | Ergogen 内蔵 | ダイオード | MIT |
 
 **非営利ライセンス（CC-BY-NC-SA）の部品は使っていない**ので、この基板は販売できる形になっている。

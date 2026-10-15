@@ -127,8 +127,6 @@
 (net 43 "3V3")
 (net 44 "BAT_SW")
 (net 45 "BAT_P")
-(net 46 "JST1_1")
-(net 47 "JST1_2")
 
   
     (module kataware_choc_v2_hotswap (layer F.Cu) (tedit 0)
@@ -1870,47 +1868,21 @@
     )
   
 
-    (footprint "ceoloide:battery_connector_jst_ph_2"
-        (layer "B.Cu")
-        (at 9.525 -9.525 0)
-        (property "Reference" "JST1"
-            (at 0 4.8 0)
-            (layer "B.SilkS")
-            hide
-            (effects (font (size 1 1) (thickness 0.15)))
-        )
-        
-        (fp_line (start -2.95 -1.35) (end -2.25 -1.35) (stroke (width 0.1) (type solid)) (layer "B.Fab"))
-        (fp_line (start -2.95 6.25) (end -2.95 -1.35) (stroke (width 0.1) (type solid)) (layer "B.Fab"))
-        (fp_line (start -2.25 -1.35) (end -2.25 0.25) (stroke (width 0.1) (type solid)) (layer "B.Fab"))
-        (fp_line (start -2.25 0.25) (end 2.25 0.25) (stroke (width 0.1) (type solid)) (layer "B.Fab"))
-        (fp_line (start 2.25 -1.35) (end 2.95 -1.35) (stroke (width 0.1) (type solid)) (layer "B.Fab"))
-        (fp_line (start 2.25 0.25) (end 2.25 -1.35) (stroke (width 0.1) (type solid)) (layer "B.Fab"))
-        (fp_line (start 2.95 -1.35) (end 2.95 6.25) (stroke (width 0.1) (type solid)) (layer "B.Fab"))
-        (fp_line (start 2.95 6.25) (end -2.95 6.25) (stroke (width 0.1) (type solid)) (layer "B.Fab"))
-        
-        (fp_line (start -3.45 -1.85) (end -3.45 10.5) (stroke (width 0.05) (type solid)) (layer "B.CrtYd"))
-        (fp_line (start -3.45 10.5) (end 3.45 10.5) (stroke (width 0.05) (type solid)) (layer "B.CrtYd"))
-        (fp_line (start 3.45 -1.85) (end -3.45 -1.85) (stroke (width 0.05) (type solid)) (layer "B.CrtYd"))
-        (fp_line (start 3.45 10.5) (end 3.45 -1.85) (stroke (width 0.05) (type solid)) (layer "B.CrtYd"))
-        
-        (fp_line (start 1.5 7.40) (end 0.5 7.40) (stroke (width 0.1) (type solid)) (layer "B.SilkS"))
-        (fp_line (start -1.5 7.40) (end -0.5 7.40) (stroke (width 0.1) (type solid)) (layer "B.SilkS"))
-        (fp_line (start -1 6.90) (end -1 7.90) (stroke (width 0.1) (type solid)) (layer "B.SilkS"))
-        (fp_line (start -2.06 -1.46) (end -3.06 -1.46) (stroke (width 0.12) (type solid)) (layer "B.SilkS"))
-        (fp_line (start -3.06 -1.46) (end -3.06 -0.46) (stroke (width 0.12) (type solid)) (layer "B.SilkS"))
-        (fp_line (start 2.14 -1.46) (end 3.06 -1.46) (stroke (width 0.12) (type solid)) (layer "B.SilkS"))
-        (fp_line (start 3.06 -1.46) (end 3.06 -0.46) (stroke (width 0.12) (type solid)) (layer "B.SilkS"))
-        (fp_line (start -2.14 6.36) (end -3.06 6.36) (stroke (width 0.12) (type solid)) (layer "B.SilkS"))
-        (fp_line (start -3.06 6.36) (end -3.06 5.36) (stroke (width 0.12) (type solid)) (layer "B.SilkS"))
-        (fp_line (start 2.14 6.36) (end 3.06 6.36) (stroke (width 0.12) (type solid)) (layer "B.SilkS"))
-        (fp_line (start 3.06 6.36) (end 3.06 5.36) (stroke (width 0.12) (type solid)) (layer "B.SilkS"))
-        
-        (pad "1" thru_hole roundrect (at 1 0 0) (size 1.2 1.75) (drill 0.75) (layers "*.Cu" "*.Mask") (roundrect_rratio 0.20) (net 38 "GND"))
-        (pad "2" thru_hole oval (at -1 0 0) (size 1.2 1.75) (drill 0.75) (layers "*.Cu" "*.Mask") (net 45 "BAT_P"))
-        
+    (module kataware_battery_125_placeholder (layer B.Cu) (tedit 0)
+    (at 9.525 -9.525 0)
+    (fp_text reference "BAT1" (at 0 -3) (layer B.SilkS) hide (effects (font (size 1 1) (thickness 0.15)) (justify mirror)))
+    (fp_text value "" (at 0 0) (layer B.SilkS) hide (effects (font (size 1 1) (thickness 0.15)) (justify mirror)))
+    (fp_text user "BAT 1.25mm (仮)" (at 0 3 0) (layer B.Fab) (effects (font (size 0.8 0.8) (thickness 0.12)) (justify mirror)))
+    (fp_text user "-" (at -0.625 -1.8 0) (layer B.SilkS) (effects (font (size 1 1) (thickness 0.15)) (justify mirror)))
+    (fp_text user "+" (at 0.625 -1.8 0) (layer B.SilkS) (effects (font (size 1 1) (thickness 0.15)) (justify mirror)))
+    (fp_line (start -2.5 -1) (end 2.5 -1) (layer B.Fab) (width 0.12))
+    (fp_line (start 2.5 -1) (end 2.5 2.2) (layer B.Fab) (width 0.12))
+    (fp_line (start 2.5 2.2) (end -2.5 2.2) (layer B.Fab) (width 0.12))
+    (fp_line (start -2.5 2.2) (end -2.5 -1) (layer B.Fab) (width 0.12))
+    (pad 1 smd rect (at -0.625 0 0) (size 0.8 1.6) (layers B.Cu B.Paste B.Mask) (net 38 "GND"))
+    (pad 2 smd rect (at 0.625 0 0) (size 0.8 1.6) (layers B.Cu B.Paste B.Mask) (net 45 "BAT_P"))
     )
-        
+  
   (gr_line (start -0.5249999999999986 14.525000000000002) (end 114.82499999999999 14.525000000000002) (layer Edge.Cuts) (stroke (width 0.15) (type default)))
 (gr_arc (start 114.82499999999999 14.525000000000002) (mid 124.7244949 10.424494900000003) (end 128.825 0.5250000000000021) (layer Edge.Cuts) (stroke (width 0.15) (type default)))
 (gr_line (start 128.825 0.5250000000000021) (end 128.825 -57.675) (layer Edge.Cuts) (stroke (width 0.15) (type default)))

@@ -232,13 +232,13 @@ pcbs:
           from: BAT_P
           to: BAT_SW
       battery:
-        what: ceoloide/battery_connector_jst_ph_2
+        what: kataware/battery_125_placeholder   # Gexa GA-011 (1.25mm ピッチ)。KiCad で PicoBlade に置き換え
         where: left_c0_thumb
         adjust.shift: [0.5kx, 0.5ky]
         params:
           side: B
-          BAT_P: BAT_P
-          BAT_N: GND
+          pos: BAT_P
+          neg: GND
   # ===================== 右手 =====================
   right:
     template: kicad8
@@ -311,10 +311,10 @@ pcbs:
           from: BAT_P
           to: BAT_SW
       battery:
-        what: ceoloide/battery_connector_jst_ph_2
+        what: kataware/battery_125_placeholder
         where: right_c12_thumb
         adjust.shift: [-0.5kx, 0.5ky]
         params:
           side: B
-          BAT_P: BAT_P
-          BAT_N: GND
+          pos: BAT_P
+          neg: GND
