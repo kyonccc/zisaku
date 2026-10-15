@@ -192,13 +192,19 @@ def plan2():
 def plan_final():
     """確定案: FrostOrtho 型。右手=5x4+内側にボール帯、左手=5x4+4段目内側に1キー"""
     STRIP = 2 * U         # 内側の帯 = キー2つ分 (38.1mm)。ボールの受け皿(約34mm)も収まる
-    WALL = 4.0            # ケースの縁 (目安)
+    WALL = 5.0            # ケースの縁 (目安)
+    RADIUS = 14.0         # 外周の角の丸み (これ以上大きいと角のキーキャップにかかる)
     def island(kx, ky, ex, ey):
         """2キー(kx..kx+2U, ky..ky+U) とエンコーダー(ex,ey) を包む丸みのある三角形"""
         import math
         pad = 1.0
-        pts = [(kx - pad, ky + U + pad), (kx + 2*U + pad, ky + U + pad),
-               (kx + 2*U + pad, ky + 2.0), (kx - pad, ky + 2.0)]
+        # 下側の角は外周の丸みに当たらないよう、半径4mm で丸める
+        rr = 4.0
+        pts = [(kx - pad, ky + 2.0), (kx + 2*U + pad, ky + 2.0)]
+        for cx_, cy_, a0 in ((kx + 2*U + pad - rr, ky + U + pad - rr, 0), (kx - pad + rr, ky + U + pad - rr, 90)):
+            for k in range(0, 91, 15):
+                t = math.radians(a0 + k)
+                pts.append((cx_ + rr*math.cos(t), cy_ + rr*math.sin(t)))
         for k in range(0, 181, 15):
             t = math.radians(180 + k)
             pts.append((ex + 9.0*math.cos(t), ey + 9.0*math.sin(t)))
@@ -225,12 +231,12 @@ def plan_final():
     h = title_h + 4*U + 2*WALL + 46
     svg = Svg(mm(w), mm(h))
     svg.text(MARGIN, 10, "kataware：左の「塊」（エンコーダー＋英数＋Raise）と右のボールが対になる", 30, weight="bold")
-    svg.text(MARGIN, 17, "全キーが 19.05mm の格子に一直線。左24キー＋エンコーダー／右22キー＋25mmボール（合計46キー）。左右のケースは同じ大きさ", 20, color=C["sub"])
+    svg.text(MARGIN, 17, "全キーが 19.05mm の格子に一直線。合計46キー。左右のケースは同じ大きさ・角の丸み R14mm", 20, color=C["sub"])
     oy = title_h + WALL
     lx = MARGIN + WALL
     def case(x, y, cw, ch):
         svg.add(f'<rect x="{mm(x-WALL):.1f}" y="{mm(y-WALL):.1f}" width="{mm(cw+2*WALL):.1f}" '
-                f'height="{mm(ch+2*WALL):.1f}" rx="{mm(6):.1f}" fill="#ffffff" stroke="#9aa3ad" stroke-width="2"/>')
+                f'height="{mm(ch+2*WALL):.1f}" rx="{mm(RADIUS):.1f}" fill="#ffffff" stroke="#9aa3ad" stroke-width="2"/>')
     case(lx, oy, lw, 4*U)
     rx = lx + lw + WALL + GAP + WALL
     case(rx, oy, rw, 4*U)
@@ -277,9 +283,9 @@ def plan_final():
 
     svg.text(lx + lw/2, oy + 4*U + WALL + 8, "左手（24キー＋エンコーダー）", 24, "middle", weight="bold")
     svg.text(rx + rw/2, oy + 4*U + WALL + 8, "右手（22キー＋25mmボール）", 24, "middle", weight="bold")
-    svg.dim_h(lx, lx + lw, oy - WALL - 2.5, "約133mm（右と同じ）")
-    svg.dim_h(rx, rx + rw, oy - WALL - 2.5, "約133mm")
-    svg.dim_v(rx + rw + WALL + 6, oy, oy + 4*U, "約76mm")
+    svg.dim_h(lx - WALL, lx + lw + WALL, oy - WALL - 2.5, "外形 約143mm（右と同じ）")
+    svg.dim_h(rx - WALL, rx + rw + WALL, oy - WALL - 2.5, "外形 約143mm")
+    svg.dim_v(rx + rw + WALL + 6, oy - WALL, oy + 4*U + WALL, "外形 約86mm")
     legend(svg, MARGIN, h - 9)
     return svg.render()
 
