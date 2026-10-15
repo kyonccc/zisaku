@@ -17,7 +17,8 @@ RADIUS = 14.0    # 外周の角の丸み
 BALL = 25.0
 HOUSING = 34.0
 KNOB = 15.0      # エンコーダーのつまみ (目安)
-MCU_W, MCU_H = 18.0, 33.0   # ProMicro nRF52840 互換の大きさ
+MCU_W, MCU_H = 17.8, 21.0   # XIAO nRF52840 Plus (基板の裏側)
+VIEW_W, VIEW_H = 14.0, 36.0  # nice!view (基板の表側)
 PAGE_W, PAGE_H = 297.0, 210.0
 
 INK = "#222"
@@ -51,11 +52,17 @@ def case_outline(w, h):
             f'fill="none" stroke="{INK}" stroke-width="0.5"/>')
 
 
-def mcu(x, y):
-    return (f'<rect x="{x:.2f}" y="{y:.2f}" width="{MCU_W}" height="{MCU_H}" rx="1" fill="none" '
+def mcu(col_x):
+    """col_x: マイコン列の左端。nice!view (表) と XIAO (裏・点線) を重ねて描く"""
+    vx, vy = col_x + (U - VIEW_W)/2, (2*U - VIEW_H)/2
+    xx, xy = col_x + (U - MCU_W)/2, -2.5
+    return (f'<rect x="{xx:.2f}" y="{xy:.2f}" width="{MCU_W}" height="{MCU_H}" rx="1" fill="none" '
             f'stroke="{FAINT}" stroke-width="0.3" stroke-dasharray="1.5 1"/>'
-            f'<text x="{x+MCU_W/2:.2f}" y="{y+MCU_H/2-1:.2f}" font-size="2.6" text-anchor="middle" fill="{SUB}">マイコン</text>'
-            f'<text x="{x+MCU_W/2:.2f}" y="{y+MCU_H/2+2.5:.2f}" font-size="2.2" text-anchor="middle" fill="{SUB}">18×33</text>')
+            f'<rect x="{vx:.2f}" y="{vy:.2f}" width="{VIEW_W}" height="{VIEW_H}" rx="0.8" fill="none" '
+            f'stroke="{INK}" stroke-width="0.35"/>'
+            f'<text x="{vx+VIEW_W/2:.2f}" y="{vy+VIEW_H/2-1:.2f}" font-size="2.4" text-anchor="middle" fill="{SUB}">nice!view</text>'
+            f'<text x="{vx+VIEW_W/2:.2f}" y="{vy+VIEW_H/2+2.5:.2f}" font-size="2.0" text-anchor="middle" fill="{SUB}">36×14</text>'
+            )
 
 
 def hull_path(points):
@@ -101,7 +108,7 @@ def left_half():
     o.append(f'<circle cx="{ex:.2f}" cy="{ey:.2f}" r="{KNOB/2}" fill="none" stroke="{INK}" stroke-width="0.4"/>'
              f'<line x1="{ex:.2f}" y1="{ey-KNOB/2+1.5:.2f}" x2="{ex:.2f}" y2="{ey-2:.2f}" stroke="{INK}" stroke-width="0.4"/>'
              f'<text x="{ex:.2f}" y="{ey+3.5:.2f}" font-size="2.2" text-anchor="middle" fill="{SUB}">エンコーダー</text>')
-    o.append(mcu(6*U + (U - MCU_W)/2, (2*U - MCU_H)/2))
+    o.append(mcu(6*U))
     return "".join(o), 7*U, 4*U
 
 
@@ -118,7 +125,7 @@ def right_half():
              f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{BALL/2}" fill="none" stroke="{INK}" stroke-width="0.5"/>'
              f'<text x="{cx:.2f}" y="{cy+1.5:.2f}" font-size="4" text-anchor="middle" fill="{INK}">25mm</text>'
              f'<text x="{cx:.2f}" y="{cy+6:.2f}" font-size="2.2" text-anchor="middle" fill="{SUB}">ボール</text>')
-    o.append(mcu((U - MCU_W)/2, (2*U - MCU_H)/2))
+    o.append(mcu(0))
     return "".join(o), 7*U, 4*U
 
 
@@ -131,6 +138,7 @@ def page(title, body, w, h):
 <text x="12" y="16" font-size="6" font-weight="bold" fill="{INK}">kataware 実寸テンプレート — {title}</text>
 <text x="12" y="23" font-size="3.4" fill="{SUB}">印刷は「実際のサイズ（100%）」で。下の線が 50mm ちょうどか定規で確認してから使ってください。</text>
 <text x="12" y="28" font-size="3.4" fill="{SUB}">外形 約{ow:.0f} × {oh:.0f}mm／角の丸み R{RADIUS:.0f}mm／キー間隔 19.05mm／キーキャップは 18mm 角の目安</text>
+<text x="12" y="33" font-size="3.4" fill="{SUB}">実線の縦長の枠 = nice!view（36×14mm・表側）、点線の枠 = XIAO nRF52840 Plus（21×17.8mm・基板の裏側）</text>
 <g transform="translate({ox:.2f},{oy:.2f})">{body}</g>
 <line x1="12" y1="196" x2="62" y2="196" stroke="{INK}" stroke-width="0.6"/>
 <line x1="12" y1="193.5" x2="12" y2="198.5" stroke="{INK}" stroke-width="0.6"/>

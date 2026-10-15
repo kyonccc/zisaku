@@ -13,9 +13,9 @@ C = {"bg": "#f7f7f5", "ink": "#333", "sub": "#666", "case": "#ffffff", "edge": "
      "key": "#ffffff", "view": "#1f2a33", "viewact": "#7f8c8d", "xiao": "#2e7d32", "usb": "#90a4ae",
      "sw": "#f0a500", "rst": "#c0392b", "ball": "#c0392b", "housing": "#f3d6d2", "enc": "#5d6d7e"}
 
-XIAO_W, XIAO_H = 17.8, 21.0
+XIAO_W, XIAO_H = 17.8, 21.0       # XIAO nRF52840 Plus (厚さ 約5mm)
 VIEW_W, VIEW_H = 14.0, 32.0       # nice!view のガラス (Sharp LS011B7DH03 外形 32 x 14mm)
-VIEW_PCB_W, VIEW_PCB_H = 16.0, 35.0  # 基板込みの目安
+VIEW_PCB_W, VIEW_PCB_H = 14.0, 36.0  # nice!view 本体 36 x 14 x 2.9mm
 ACT_W, ACT_H = 10.74, 25.28       # 表示部
 SW_W, SW_H = 3.5, 8.5             # スライドスイッチ (横向きに側面へ)
 
@@ -85,7 +85,7 @@ def strip(svg, ox, oy, side):
     svg.add(f'<circle cx="{px(rx_):.1f}" cy="{px(xy+3.0):.1f}" r="{px(1.6):.1f}" fill="{C["rst"]}"/>')
     # nice!view (基板の表側)
     vx = ctrl_x + (U - VIEW_PCB_W)/2
-    vy = oy + (2*U - VIEW_PCB_H)/2 + 0.8
+    vy = oy + (2*U - VIEW_PCB_H)/2
     svg.rect(vx, vy, VIEW_PCB_W, VIEW_PCB_H, "#3d4b57", C["ink"], rx=1.0)
     svg.rect(ctrl_x + (U - ACT_W)/2, vy + (VIEW_PCB_H - ACT_H)/2, ACT_W, ACT_H, "#b8c4c9", None, rx=0.4)
     svg.text(ctrl_x + U/2, vy + VIEW_PCB_H/2 - 2, "nice!", 14, "middle", "#2b3640", "bold")
@@ -120,7 +120,7 @@ def top_view():
     svg = Svg()
     W, H = 1500, 980
     svg.text(3, 6, "マイコンまわりの配置（上から見た図・内側の帯を拡大）", 30, weight="bold")
-    svg.text(3, 11, "XIAO は基板の裏側（点線）、nice!view は表側に重ねる。寸法は目安で、実物を測って確定する", 19, color=C["sub"])
+    svg.text(3, 11, "XIAO（21×17.8×厚さ約5mm）は基板の裏側（点線）、nice!view（36×14×2.9mm）は表側に重ねる", 19, color=C["sub"])
     oy = 26
     strip(svg, 50, oy, "L")
     strip(svg, 128, oy, "R")
@@ -156,39 +156,40 @@ def section():
         y -= h
         svg.rect(xa, y, xb - xa, h, fill, C["ink"], dash=dash, rx=0.3, op=0.9)
         layers.append((y + h/2, label))
-    layer(1.5, "底板（リセット用の穴あり）", "#d9dde3")
+    layer(1.5, "底板（リセット穴）", "#d9dde3")
     y_air_bottom = y
-    y -= 4.5
-    svg.rect(70, y + 0.5, 30, 3.6, C["xiao"], C["ink"], rx=0.3, op=0.8)      # XIAO
-    svg.rect(110, y + 0.3, 40, 4.0, "#cfd8dc", C["ink"], rx=0.6, op=0.9)      # 電池
-    svg.text(85, y + 3.0, "XIAO（裏付け）", 18, "middle", "#fff")
-    svg.text(130, y + 3.1, "電池", 18, "middle")
-    svg.rect(66, y + 0.5, 3.5, 3.0, C["usb"], C["ink"], rx=0.3)
+    y -= 5.5
+    svg.rect(70, y + 0.5, 21, 5.0, C["xiao"], C["ink"], rx=0.3, op=0.8)      # XIAO (21mm, 厚さ5mm)
+    svg.rect(110, y + 0.5, 40, 5.0, "#cfd8dc", C["ink"], rx=0.6, op=0.9)      # 電池
+    svg.text(80.5, y + 3.6, "XIAO 厚さ約5mm", 16, "middle", "#fff")
+    svg.text(130, y + 3.6, "電池（厚さ5mm前後）", 17, "middle")
+    svg.rect(66, y + 1.2, 4.0, 3.2, C["usb"], C["ink"], rx=0.3)
     svg.text(62, y + 3.0, "USB-C →", 16, "end", C["sub"])
     # リセットの穴と押し棒
-    svg.rect(92, y_air_bottom - 0.2, 3, 1.9, C["bg"], None)
-    svg.line(93.5, y + 4.1, 93.5, base + 4, C["rst"], 4)
-    svg.text(96, base + 4.5, "← 細い棒・ピンで裏から押す", 17, color=C["rst"])
+    svg.rect(86, y_air_bottom - 0.2, 3, 1.9, C["bg"], None)
+    svg.line(87.5, y + 5.5, 87.5, base + 4, C["rst"], 4)
+    svg.text(90, base + 4.5, "← 細い棒・ピンで裏から押す", 17, color=C["rst"])
     layer(1.6, "メイン基板（PCB）", "#2e7d32")
     # nice!view とキー
     pcb_top = y
-    svg.rect(72, pcb_top - 4.0, 22, 1.2, "#3d4b57", C["ink"], rx=0.2)
-    svg.rect(74, pcb_top - 5.5, 18, 1.5, "#b8c4c9", C["ink"], rx=0.2)
-    svg.text(70, pcb_top - 4.0, "nice!view（表側） →", 17, "end")
-    for kx in (110, 130):
+    svg.rect(70, pcb_top - 2.9, 36, 2.9, "#3d4b57", C["ink"], rx=0.2)      # nice!view 36mm, 2.9mm
+    svg.rect(72, pcb_top - 3.4, 32, 0.6, "#b8c4c9", C["ink"], rx=0.1)
+    svg.text(68, pcb_top - 1.0, "nice!view 厚さ2.9mm →", 16, "end")
+    for kx in (112, 132):
         svg.rect(kx, pcb_top - 5.0, 14, 5.0, "#bbbbbb", C["ink"], rx=0.4)
         svg.rect(kx - 2, pcb_top - 9.5, 18, 4.5, "#ffffff", C["ink"], rx=1.0)
     svg.text(127, pcb_top - 11, "キースイッチ＋キーキャップ", 18, "middle")
     # トップケースと窓
     tc = pcb_top - 8.5
     svg.rect(x0, tc, 50, 1.6, "#e6e6e6", C["ink"], rx=0.3)
-    svg.rect(96, tc, 6, 1.6, "#e6e6e6", C["ink"], rx=0.3)
-    svg.text(83, tc - 1.8, "↓ 画面の窓（透明板）", 17, "middle", C["sub"])
-    svg.rect(72, tc, 24, 1.0, "#d6eaf8", C["ink"], rx=0.2, op=0.8)
+    svg.rect(106, tc, 2, 1.6, "#e6e6e6", C["ink"], rx=0.3)
+    svg.text(88, tc - 1.8, "↓ 画面の窓（透明板）", 17, "middle", C["sub"])
+    svg.rect(70, tc, 36, 1.0, "#d6eaf8", C["ink"], rx=0.2, op=0.8)
     svg.text(x0 + 2, tc - 1.5, "トップケース", 17)
     # 机
     svg.line(x0 - 5, base, x1 + 5, base, C["ink"], 2)
     svg.text(x1 + 5, base + 4.5, "机", 16, "end", C["sub"])
+    svg.text(x1 + 3, base - 3.2, "↕ 基板の下は 5.5mm 以上", 17, color=C["sub"])
     # ラベル
     for yy, lab in layers:
         svg.text(x1 + 3, yy + 1.0, lab, 17, color=C["sub"])
