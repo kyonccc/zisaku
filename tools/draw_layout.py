@@ -106,7 +106,7 @@ def half_right(svg, ox, oy, ball_fn, alpha_ox):
 
 def legend(svg, x, y):
     items = [(C["alpha"], "英字キー"), (C["mod"], "4段目（親指・修飾キー）"),
-             (C["extra"], "内側に追加したキー")]
+             (C["extra"], "内側に追加したキー"), (C["housing"], "左右で対になる「塊」")]
     cx = x
     for fill, label in items:
         svg.add(f'<rect x="{mm(cx):.1f}" y="{mm(y):.1f}" width="{mm(6):.1f}" height="{mm(6):.1f}" rx="4" '
@@ -193,13 +193,38 @@ def plan_final():
     """確定案: FrostOrtho 型。右手=5x4+内側にボール帯、左手=5x4+4段目内側に1キー"""
     STRIP = 2 * U         # 内側の帯 = キー2つ分 (38.1mm)。ボールの受け皿(約34mm)も収まる
     WALL = 4.0            # ケースの縁 (目安)
+    def island(kx, ky, ex, ey):
+        """2キー(kx..kx+2U, ky..ky+U) とエンコーダー(ex,ey) を包む丸みのある三角形"""
+        import math
+        pad = 1.0
+        pts = [(kx - pad, ky + U + pad), (kx + 2*U + pad, ky + U + pad),
+               (kx + 2*U + pad, ky + 2.0), (kx - pad, ky + 2.0)]
+        for k in range(0, 181, 15):
+            t = math.radians(180 + k)
+            pts.append((ex + 9.0*math.cos(t), ey + 9.0*math.sin(t)))
+        # 凸包
+        pts = sorted(set(pts))
+        def cross(o, a, b):
+            return (a[0]-o[0])*(b[1]-o[1]) - (a[1]-o[1])*(b[0]-o[0])
+        lower, upper = [], []
+        for p_ in pts:
+            while len(lower) >= 2 and cross(lower[-2], lower[-1], p_) <= 0: lower.pop()
+            lower.append(p_)
+        for p_ in reversed(pts):
+            while len(upper) >= 2 and cross(upper[-2], upper[-1], p_) <= 0: upper.pop()
+            upper.append(p_)
+        hull = lower[:-1] + upper[:-1]
+        d = "M" + " L".join(f"{mm(x):.1f},{mm(y):.1f}" for x, y in hull) + " Z"
+        svg.add(f'<path d="{d}" fill="{C["housing"]}" stroke="{C["housing"]}" stroke-width="6" stroke-linejoin="round"/>')
+        svg.add(f'<path d="{d}" fill="none" stroke="{C["ball"]}" stroke-width="2" stroke-dasharray="8 5" stroke-linejoin="round"/>')
+
     title_h = 30
     rw = STRIP + 5 * U
     lw = rw               # 左右のケースを同じ大きさにする
     w = MARGIN*2 + lw + GAP + rw + 2*WALL + 14
     h = title_h + 4*U + 2*WALL + 46
     svg = Svg(mm(w), mm(h))
-    svg.text(MARGIN, 10, "kataware：内側の列（T・G の右／Y・H の左）を追加した版", 30, weight="bold")
+    svg.text(MARGIN, 10, "kataware：左の「塊」（エンコーダー＋英数＋Raise）と右のボールが対になる", 30, weight="bold")
     svg.text(MARGIN, 17, "全キーが 19.05mm の格子に一直線。左24キー＋エンコーダー／右22キー＋25mmボール（合計46キー）。左右のケースは同じ大きさ", 20, color=C["sub"])
     oy = title_h + WALL
     lx = MARGIN + WALL
@@ -217,14 +242,15 @@ def plan_final():
             svg.key(lx + c*U, oy + r*U, LEFT_ALPHA[r][c], C["alpha"])
     for c in range(5):
         svg.key(lx + c*U, oy + 3*U, LROW4[c], C["mod"])
+    # 左の「塊」: エンコーダーを英数・Raise の真上の中央に置き、3つを三角形の島でまとめる
+    ex, ey = lx + 6*U, oy + 2.5*U
+    island(lx + 5*U, oy + 3*U, ex, ey)
     svg.key(lx + 5*U, oy + 3*U, "英数", C["mod"])
     svg.key(lx + 6*U, oy + 3*U, "Raise", C["mod"])
-    svg.thumb(lx + 4*U, oy + 3*U)
-    ex, ey = lx + 5.5*U, oy + 2.5*U
     svg.add(f'<circle cx="{mm(ex):.1f}" cy="{mm(ey):.1f}" r="{mm(7.5):.1f}" fill="#5d6d7e" stroke="{C["stroke"]}" stroke-width="2"/>')
     svg.add(f'<circle cx="{mm(ex):.1f}" cy="{mm(ey):.1f}" r="{mm(5.5):.1f}" fill="#85929e"/>')
     svg.add(f'<line x1="{mm(ex):.1f}" y1="{mm(ey-5):.1f}" x2="{mm(ex):.1f}" y2="{mm(ey-1.5):.1f}" stroke="#fff" stroke-width="3"/>')
-    svg.text(lx + 6.5*U, ey + 1, "エンコーダー", 13, "middle", C["sub"])
+    svg.thumb(lx + 4*U, oy + 3*U)
     svg.key(lx + 5*U, oy, "-", C["extra"])
     svg.key(lx + 5*U, oy + U, "'", C["extra"])
     svg.add(f'<rect x="{mm(lx+6*U+1):.1f}" y="{mm(oy+1):.1f}" width="{mm(U-2):.1f}" height="{mm(2*U-2):.1f}" rx="8" '
