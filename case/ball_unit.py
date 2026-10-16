@@ -14,6 +14,7 @@
   - どちらのカップも「ボールの一番下の高さ」が同じなので、センサーとのすき間 (2.4mm) は変わらない
   - カップは土台に差し込むだけ (重さとすき間の小ささで止まる)。回らないよう、奥に「キー」がある
   - センサー基板は土台の底のくぼみに置き、カップの足で上から押さえる (ネジなし)
+  - ベアリングの軸は M1.4 ネジ。締め具合でボールの回り方 (軽さ・ガタ) を調整できる
   - カバーはボールの赤道より上をぐるりと押さえるので、ふだんはボールが抜けない。
     磁石 (直径3 × 2mm × 3個) で付いているだけなので、掃除の時はカバーをつまんで外せばボールだけ取り出せる
   - カバーの上面は、親指が来る方 (Enter の方・少し手前) に向かって 25° 下がる。
@@ -56,10 +57,19 @@ CLEAR = 0.8                       # ボールのまわりのすき間
 CUP_TOP = 16.0                    # カップの上面 (机から 18.5mm。上ケースの上面より 2mm 上)。ボールの中心より下
 LENS_HOLE_R = 5.0
 
-# ===== ベアリング: 681X (内径1.5 × 外径4 × 幅2mm) + ピン 直径1.5 × 6mm =====
+# ===== ベアリング: 681X (内径1.5 × 外径4 × 幅2mm) + 軸は M1.4 × 6mm のタッピングネジ =====
 # FrostOrtho と同じ大きさのベアリング。小さいのでボールを深く包めて、溝も小さくて済む
+# ネジはカップの外側の穴から入れ、ベアリングを通して反対側の下穴にねじ込む。
+# ベアリングの横のすき間は小さめ (BRG_SIDE) なので、ネジを締めると壁がベアリングを軽く挟み、
+#   ゆるめる → 軽く回るがガタが出る / 締める → ガタが減り、回り方が重くなる
+# の間で調整できる
 BRG_R, BRG_W = 2.0, 2.0
-PIN_R, PIN_L = 0.75, 6.0
+BRG_SIDE = 0.15                   # ベアリングの左右のすき間 (片側)
+SCREW_L = 6.0                     # M1.4 × 6mm
+SCREW_PASS_R = 0.8                # ネジが通る穴 (直径1.6)
+SCREW_PILOT_R = 0.55              # 反対側の下穴 (直径1.1。ここにねじ込む)
+SCREW_HEAD_R = 1.45               # ネジ頭の通る穴 (直径2.9。なべ頭 直径2.5 用)
+NEAR_WALL = 1.2                   # ネジ頭が当たる壁の厚さ
 BRG_ANGLES = (90, 210, 330)       # 上から見た向き (センサーのケーブルとは関係なし)
 
 # ===== カバー (親指用) =====
@@ -133,17 +143,26 @@ def cup(size):
     d = R + BRG_R                                                      # ボール中心〜ベアリング中心
     for a in BRG_ANGLES:
         # x = ベアリングの軸 (接線方向)、y = 外向き、z = 上 の向きで作ってから回す
-        pocket = (along_x_cyl(BRG_R + 0.4, BRG_W + 0.6) +
-                  k.cube(-(BRG_W + 0.6)/2, -(BRG_R + 0.4), 0, (BRG_W + 0.6)/2, BRG_R + 0.4, 20))
-        cradle = (along_x_cyl(PIN_R + 0.05, PIN_L + 0.4) +
-                  k.cube(-(PIN_L + 0.4)/2, -(PIN_R - 0.05), 0, (PIN_L + 0.4)/2, PIN_R - 0.05, 20))   # 上からパチンとはめる
+        w = BRG_W/2 + BRG_SIDE                                          # ポケットの半分の幅
+        pocket = (along_x_cyl(BRG_R + 0.4, 2*w) +
+                  k.cube(-w, -(BRG_R + 0.4), 0, w, BRG_R + 0.4, 20))   # ベアリングは上から入れる
+        reach = math.sqrt(CUP_R**2 - (d*math.cos(t))**2) + 1           # ベアリング中心からカップの外まで
+        head0 = w + NEAR_WALL                                           # ネジ頭が当たる面
+        screw = (x_cyl(SCREW_PASS_R, 0, head0 + 0.1) +                 # ネジが通る穴
+                 x_cyl(SCREW_HEAD_R, head0, reach) +                     # ネジ頭とドライバーの通り道
+                 x_cyl(SCREW_PILOT_R, -(head0 - NEAR_WALL + SCREW_L - NEAR_WALL + 0.8), 0))   # 反対側の下穴
         place = lambda m: rot_z(m, a - 90).translate(
             [d*math.cos(t)*math.cos(math.radians(a)), d*math.cos(t)*math.sin(math.radians(a)), cz - d*math.sin(t)])
-        cut += [place(pocket), place(cradle)]
+        cut += [place(pocket), place(screw)]
     m = body - k.union(cut)
     info = {"cz": cz, "top": top,
             "brg_z": cz - d*math.sin(t), "brg_r": d*math.cos(t)}
     return m, info
+
+
+def x_cyl(r, x0, x1):
+    """x 方向の円柱 (x0 〜 x1)"""
+    return mf.Manifold.cylinder(x1 - x0, r, r, 32).rotate([0, 90, 0]).translate([x0, 0, 0])
 
 
 def polar(r, deg):
@@ -211,13 +230,15 @@ def cover(size):
 
 
 def bearings(size):
-    """描画用: ベアリング3個とピン"""
+    """描画用: ベアリング3個と軸のネジ"""
     c = CUPS[size]
     R, t = c["R"], math.radians(c["contact"])
     d, cz = R + BRG_R, BALL_BOTTOM + R
     parts = []
     for a in BRG_ANGLES:
-        m = along_x_cyl(BRG_R, BRG_W) + along_x_cyl(PIN_R, PIN_L)
+        head0 = BRG_W/2 + BRG_SIDE + NEAR_WALL
+        m = (along_x_cyl(BRG_R, BRG_W) + x_cyl(0.7, head0 - SCREW_L, head0) +
+             x_cyl(1.25, head0, head0 + 1.0))
         parts.append(rot_z(m, a - 90).translate(
             [d*math.cos(t)*math.cos(math.radians(a)), d*math.cos(t)*math.sin(math.radians(a)), cz - d*math.sin(t)]))
     return k.union(parts)

@@ -15,8 +15,8 @@ import manifold3d as mf  # noqa: E402
 U = k.U
 C = {"bg": "#f7f7f5", "ink": "#333", "sub": "#666", "bottom": "#c9ccd1", "top": "#e8e2d4", "pcb": "#2f7d45",
      "plate": "#3a3a3a", "gasket": "#f19ca6", "switch": "#9aa0a6", "cap": "#ffffff", "xiao": "#1b5e20",
-     "usb": "#90a4ae", "bat": "#b0b6bb", "pwr": "#f0a500", "base": "#aeb4bc", "cup": "#f3ede2",
-     "brg": "#d4a017", "ball": "#c0392b", "lens": "#5d6d7e", "screw": "#1a5276", "cover": "#d9d4c7"}
+     "usb": "#90a4ae", "bat": "#b0b6bb", "pwr": "#f0a500", "base": "#aeb4bc", "cup": "#e6dcc6",
+     "brg": "#d4a017", "ball": "#c0392b", "lens": "#5d6d7e", "screw": "#1a5276", "cover": "#c9c1ae"}
 
 
 def parts(side):
@@ -70,8 +70,10 @@ def section(items, plane, at, window, title, labels, px=12.0, extra=(), overlay=
          f'<g clip-path="url(#w{plane}{int(at)})">']
     for name, m in list(items) + list(extra):
         cs = m.transform(mat).slice(z)
-        for poly in cs.to_polygons():
-            d = "M" + " L".join(f"{X(p[0]):.1f},{Y(p[1]):.1f}" for p in poly) + " Z"
+        # 穴も正しく抜けるよう、輪郭をすべて1つの path にまとめて「偶奇」で塗る
+        d = " ".join("M" + " L".join(f"{X(p[0]):.1f},{Y(p[1]):.1f}" for p in poly) + " Z"
+                     for poly in cs.to_polygons())
+        if d:
             o.append(f'<path d="{d}" fill="{C[name]}" stroke="{C["ink"]}" stroke-width="1" fill-rule="evenodd"/>')
     if overlay:
         o.append(overlay(X, Y))
@@ -139,7 +141,7 @@ def main(out):
         (by + 12.5*0.6, zc + 7, "ボール 25mm", (by + 26, 36)),
         (by + 15.5, z0 + 25, "カバー（磁石で付く。縁がボールを押さえる）", (by + 26, 32)),
         (by + 16, z0 + 14.5, "カップ（25mm 用・19mm 用を差し替え）", (by + 26, 30)),
-        (by + 11, z0 + info["brg_z"], "ベアリング 681X ＋ ピン（3か所）", (by + 26, 28)),
+        (by + 11, z0 + info["brg_z"], "ベアリング 681X ＋ 軸のネジ M1.4（3か所）", (by + 26, 28)),
         (by - 16.2, z0 + 11, "土台（ケースに固定したまま）", (by + 26, 24)),
         (by + 3, z0 + bu.SENSOR_TOP + 1.5, "PMW3610 センサー（すき間 2.4mm）", (by + 26, 20)),
         (by + 21, k.PCB_B + 0.8, "基板（穴 36mm・ユニットに触れない）", (by + 26, 16)),
@@ -149,6 +151,22 @@ def main(out):
     W3, H3, b3 = section(right, "x", bx, ((by - 22, by + 25), (-1, 40)),
                          "③ ボールユニットの断面（25mm。右が奥）", labels3, px=13, extra=unit)
     open(f"{out}/ballunit-section.svg", "w").write(svg(W3, H3, b3))
+
+    # ⑤ ベアリングの軸のネジ (25mm カップ。奥のベアリングを、軸に沿って切る)
+    rb, zb = info["brg_r"], info["brg_z"]
+    hd = bu.BRG_W/2 + bu.BRG_SIDE + bu.NEAR_WALL
+    reach = math.sqrt(bu.CUP_R**2 - rb**2)
+    labels5 = [
+        (0, zb + 1.2, "ベアリング 681X（外径4mm）", (reach + 4, zb + 9)),
+        (hd + 0.5, zb + 0.4, "ネジ M1.4 × 6mm（ベアリングの軸）", (reach + 4, zb + 5.5)),
+        (reach - 2, zb + 1.2, "ドライバーの通り道（カップの外から）", (reach + 4, zb + 2)),
+        (-hd - 1.5, zb - 0.3, "反対側の下穴にねじ込む", (reach + 4, zb - 1.5)),
+        (bu.BRG_W/2 + 0.07, zb - 2.6, "ベアリングの横のすき間 0.15mm → 締めると軽く挟まる", (reach + 4, zb - 5)),
+    ]
+    items5 = [("cup", cup), ("brg", bu.bearings(size)), ("ball", ball)]
+    W5, H5, b5 = section(items5, "y", rb, ((-reach - 1, reach + 2), (zb - 8, zb + 12)),
+                         "⑤ ベアリングの軸のネジ（軸に沿って切った断面。25mm）", labels5, px=22)
+    open(f"{out}/ballunit-screw.svg", "w").write(svg(W5, H5, b5))
 
     # ④ 親指の来る向きの断面 (右が親指側 = Enter の方)
     th = bu.THUMB_FROM
