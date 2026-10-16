@@ -4,7 +4,11 @@
 使い方: python3 tools/draw_pcb.py docs/images
 """
 import math
+import os
 import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "case"))
+import kataware_case  # noqa: E402  (Ergogen の DXF から基板の外形を読む)
 
 U = 19.05
 WALL = 5.0
@@ -62,8 +66,13 @@ class Board:
         self.o.append(f'<text x="{self.X(x):.1f}" y="{self.Y(y):.1f}" font-size="{size}" text-anchor="{anchor}" '
                       f'fill="{color or C["ink"]}" font-weight="{weight}">{t}</text>')
 
-    def outline(self, cx, cy):
-        self.rect(cx, cy, BOARD_W, BOARD_H, C["pcbfill"], C["pcb"], rx=CORNER, sw=3)
+    def outline(self, cx, cy, side, dx=0.0):
+        # ケースの外形 (グレーの点線) と、基板の外形 (緑。Ergogen の DXF そのもの)
+        self.rect(cx, cy, BOARD_W, BOARD_H, "#ffffff", "#9aa3ad", dash="8 5", rx=CORNER, sw=2)
+        for poly in kataware_case.polys(kataware_case.load(f"pcb_{side}")):
+            for ring in [poly.exterior] + list(poly.interiors):
+                d = "M" + " L".join(f"{self.X(x - dx):.1f},{self.Y(y):.1f}" for x, y in ring.coords) + " Z"
+                self.o.append(f'<path d="{d}" fill="{C["pcbfill"]}" stroke="{C["pcb"]}" stroke-width="3"/>')
 
     def key(self, x, y, label):
         # 表: スイッチ (Choc v2) とキーの名前
@@ -76,10 +85,11 @@ class Board:
         # 裏: ダイオード (キーの手前 5mm)
         self.rect(x, y - 5, 3.7, 1.6, C["back"], None, rx=0.2, op=0.55)
 
-    def xiao(self, x, y):
-        self.rect(x, y, 17.8, 21, C["xiao"], C["xiao"], dash="5 4", op=0.15, rx=1)
-        self.rect(x, y + 10.5 - 1.6, 9, 3.2, "#90a4ae", C["ink"], rx=0.8, sw=1)  # USB-C (奥側)
-        self.text(x, y - 7.5, "XIAO（裏）", 11, color=C["xiao"])
+    def xiao(self, x, y, toward):
+        # 横向き。USB-C は内側の側面 (toward の向き) に出る
+        self.rect(x, y, 21, 17.8, C["xiao"], C["xiao"], dash="5 4", op=0.15, rx=1)
+        self.rect(x + toward*(10.5 - 1.6), y, 3.2, 9, "#90a4ae", C["ink"], rx=0.8, sw=1)
+        self.text(x - toward*1.5, y - 6.5, "XIAO（裏）", 11, color=C["xiao"])
 
     def view(self, x, y):
         self.rect(x, y, 14, 36, C["view"], None, rx=0.8, op=0.88)
@@ -103,7 +113,7 @@ class Board:
 
 def left_board(ox, oy):
     b = Board(ox, oy, -0.5*U - WALL, 3.5*U + WALL)
-    b.outline(3*U, 1.5*U)
+    b.outline(3*U, 1.5*U, "left")
     for c in range(7):
         for r in range(4):         # r: 0=親指の段 … 3=一番上
             row = LEFT[3 - r]
@@ -117,16 +127,16 @@ def left_board(ox, oy):
     b.circle(ex, ey, 3, C["enc"])
     b.rect(ex, ey - 9.2, 3.7, 1.6, C["back"], None, rx=0.2, op=0.55)
     b.text(ex, ey + 9, "エンコーダー", 11, color=C["enc"])
-    b.xiao(6*U, 3.5*U - 8)
+    b.xiao(6.5*U - 8, 37, +1)
     b.view(6*U, 2.5*U)
-    b.power(6.5*U + 1.5, 3.5*U - 10, +1)
-    b.battery(1.2*U, 0.5*U, 0.5*U, 0.5*U)
+    b.power(6.5*U + 1.5, 51.5, +1)
+    b.battery(29.0, 0.5*U, 0.5*U, 0.5*U)
     return b.svg()
 
 
 def right_board(ox, oy):
     b = Board(ox, oy, -1.5*U - WALL, 3.5*U + WALL)
-    b.outline(2*U, 1.5*U)
+    b.outline(2*U, 1.5*U, "right", dx=kataware_case.RIGHT_X)
     for r in range(4):
         for i in range(5):
             b.key((i + 1)*U, r*U, RIGHT[3 - r][i])
@@ -134,7 +144,6 @@ def right_board(ox, oy):
     b.key(0, 2*U, "]")
     # ボールユニット
     bx, by = -0.5*U, 0.25*U
-    b.circle(bx, by, BALL_HOLE_R, C["bg"], C["pcb"], sw=3)            # 基板の穴 (36mm)
     b.circle(bx, by, UNIT_R, C["unit"], C["ink"], sw=1.5)            # ユニット (34mm)
     b.circle(bx, by, 12.5, C["ball"], None, op=0.85)                  # ボール 25mm
     b.text(bx, by + 2.5, "25mm", 15, color="#fff", weight="bold")
@@ -148,10 +157,10 @@ def right_board(ox, oy):
     b.rect(hx, hy, 15.6, 2.8, "none", C["back"], dash="4 3", rx=0.3, sw=1.2)
     for k in range(6):
         b.circle(hx + (k - 2.5)*2.54, hy, 0.6, C["back"])
-    b.xiao(-U, 3.5*U - 8)
+    b.xiao(-1.5*U + 8, 37, -1)
     b.view(-U, 2.5*U)
-    b.power(-1.5*U - 1.5, 3.5*U - 10, -1)
-    b.battery(3.35*U, 0.5*U, 4.5*U, 0.5*U)
+    b.power(-1.5*U - 1.5, 51.5, -1)
+    b.battery(67.7, 0.5*U, 4.5*U, 0.5*U)
     return b.svg()
 
 
@@ -161,14 +170,14 @@ def top_view():
     H = int(BOARD_H*S + 230)
     oy = 95
     lx, rx = gap, 2*gap + BOARD_W*S
-    o = [f'<text x="{gap}" y="38" font-size="28" font-weight="bold" fill="{C["ink"]}">kataware 基板のイメージ（上から見た図・左右とも 143 × 86mm）</text>',
+    o = [f'<text x="{gap}" y="38" font-size="28" font-weight="bold" fill="{C["ink"]}">kataware 基板のイメージ（上から見た図・ガスケットマウント用）</text>',
          f'<text x="{gap}" y="70" font-size="17" fill="{C["sub"]}">実線 = 基板の表（上）にある物　／　オレンジや点線 = 基板の裏（下）にある物。部品の大きさは目安</text>',
          left_board(lx, oy), right_board(rx, oy),
          f'<text x="{lx + BOARD_W*S/2:.0f}" y="{oy + BOARD_H*S + 30:.0f}" font-size="20" text-anchor="middle" font-weight="bold" fill="{C["ink"]}">左手（24キー＋エンコーダー）</text>',
          f'<text x="{rx + BOARD_W*S/2:.0f}" y="{oy + BOARD_H*S + 30:.0f}" font-size="20" text-anchor="middle" font-weight="bold" fill="{C["ink"]}">右手（22キー＋トラックボール）</text>']
     legend = [
         (C["back"], "点線の横長の枠 = ホットスワップソケット（裏）、小さい四角 = ダイオード（裏）"),
-        (C["pcb"], "緑の太線 = 基板の外形。右手の丸い穴は直径36mm（ボールユニット34mm＋まわりのすき間1mm）"),
+        (C["pcb"], "緑の太線 = 基板の外形（ケースの内側より 0.75mm 小さい。内側の「舌」に USB-C と電源）、グレーの点線 = ケースの外形"),
         (C["screw"], "青い ＋ = ボールユニットを裏からとめるネジ3本（基板には穴なし。ケースの底からユニットへ）"),
     ]
     for i, (col, t) in enumerate(legend):
@@ -209,8 +218,8 @@ def mount_section():
         add(f'<line x1="{X(x0):.1f}" y1="{Z(z0):.1f}" x2="{X(x1):.1f}" y2="{Z(z1):.1f}" stroke="{color}" '
             f'stroke-width="{w}"{d}/>')
 
-    FLOOR = 2.0                    # ケース底の厚さ
-    PCB0 = FLOOR + 5.5             # 基板の下面
+    FLOOR = kataware_case.FLOOR    # ケース底の厚さ
+    PCB0 = kataware_case.PCB_B     # 基板の下面
     PCB1 = PCB0 + 1.6
     PL0, PL1 = PCB1 + 1.0, PCB1 + 2.2   # Choc のプレート (FR4 1.2mm)
     UB = 1.5                       # ユニットの底の厚さ

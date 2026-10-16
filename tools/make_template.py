@@ -52,11 +52,14 @@ def case_outline(w, h):
             f'fill="none" stroke="{INK}" stroke-width="0.5"/>')
 
 
-def mcu(col_x):
-    """col_x: マイコン列の左端。nice!view (表) と XIAO (裏・点線) を重ねて描く"""
+def mcu(col_x, toward):
+    """col_x: マイコン列の左端。nice!view (表) と XIAO (裏・点線・横向き) を重ねて描く。
+    toward: USB-C を出す内側の側面の向き (+1 = 右、-1 = 左)"""
     vx, vy = col_x + (U - VIEW_W)/2, (2*U - VIEW_H)/2
-    xx, xy = col_x + (U - MCU_W)/2, -2.5
-    return (f'<rect x="{xx:.2f}" y="{xy:.2f}" width="{MCU_W}" height="{MCU_H}" rx="1" fill="none" '
+    edge = col_x + U if toward > 0 else col_x          # 内側の壁の内面
+    xx = edge + toward*2.5 - (MCU_H if toward > 0 else 0)
+    xy = 3.5*U - 37 - MCU_W/2                           # 中心が親指の段の中心から 37mm 上
+    return (f'<rect x="{xx:.2f}" y="{xy:.2f}" width="{MCU_H}" height="{MCU_W}" rx="1" fill="none" '
             f'stroke="{FAINT}" stroke-width="0.3" stroke-dasharray="1.5 1"/>'
             f'<rect x="{vx:.2f}" y="{vy:.2f}" width="{VIEW_W}" height="{VIEW_H}" rx="0.8" fill="none" '
             f'stroke="{INK}" stroke-width="0.35"/>'
@@ -108,7 +111,7 @@ def left_half():
     o.append(f'<circle cx="{ex:.2f}" cy="{ey:.2f}" r="{KNOB/2}" fill="none" stroke="{INK}" stroke-width="0.4"/>'
              f'<line x1="{ex:.2f}" y1="{ey-KNOB/2+1.5:.2f}" x2="{ex:.2f}" y2="{ey-2:.2f}" stroke="{INK}" stroke-width="0.4"/>'
              f'<text x="{ex:.2f}" y="{ey+3.5:.2f}" font-size="2.2" text-anchor="middle" fill="{SUB}">エンコーダー</text>')
-    o.append(mcu(6*U))
+    o.append(mcu(6*U, +1))
     return "".join(o), 7*U, 4*U
 
 
@@ -125,7 +128,7 @@ def right_half():
              f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{BALL/2}" fill="none" stroke="{INK}" stroke-width="0.5"/>'
              f'<text x="{cx:.2f}" y="{cy+1.5:.2f}" font-size="4" text-anchor="middle" fill="{INK}">25mm</text>'
              f'<text x="{cx:.2f}" y="{cy+6:.2f}" font-size="2.2" text-anchor="middle" fill="{SUB}">ボール</text>')
-    o.append(mcu(0))
+    o.append(mcu(0, -1))
     return "".join(o), 7*U, 4*U
 
 
@@ -138,7 +141,7 @@ def page(title, body, w, h):
 <text x="12" y="16" font-size="6" font-weight="bold" fill="{INK}">kataware 実寸テンプレート — {title}</text>
 <text x="12" y="23" font-size="3.4" fill="{SUB}">印刷は「実際のサイズ（100%）」で。下の線が 50mm ちょうどか定規で確認してから使ってください。</text>
 <text x="12" y="28" font-size="3.4" fill="{SUB}">外形 約{ow:.0f} × {oh:.0f}mm／角の丸み R{RADIUS:.0f}mm／キー間隔 19.05mm／キーキャップは 18mm 角の目安</text>
-<text x="12" y="33" font-size="3.4" fill="{SUB}">実線の縦長の枠 = nice!view（36×14mm・表側）、点線の枠 = XIAO nRF52840 Plus（21×17.8mm・基板の裏側）</text>
+<text x="12" y="33" font-size="3.4" fill="{SUB}">実線の縦長の枠 = nice!view（36×14mm・表側）、点線の枠 = XIAO nRF52840 Plus（横向き 21×17.8mm・基板の裏側。USB-C は内側の側面）</text>
 <g transform="translate({ox:.2f},{oy:.2f})">{body}</g>
 <line x1="12" y1="196" x2="62" y2="196" stroke="{INK}" stroke-width="0.6"/>
 <line x1="12" y1="193.5" x2="12" y2="198.5" stroke="{INK}" stroke-width="0.6"/>

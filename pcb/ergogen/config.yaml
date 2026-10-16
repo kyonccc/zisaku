@@ -28,6 +28,10 @@ units:
   wall: 5        # ケースの縁
   corner: 14     # 外周の角の丸み
   rx: 200        # 右手の原点 (マイコン列の中心)
+  # --- ガスケットマウント用 ---
+  xiao_y: 37     # XIAO の中心の高さ (親指の段から)。USB-C は内側の側面に出す
+  pwr_y: 51.5    # 電源スイッチの中心の高さ (親指の段から)
+  tab_w: 8       # プレートの耳 (ガスケットで挟む所) の幅
 
 points:
   zones:
@@ -85,6 +89,15 @@ points:
         top.row_net: ROW0
 
 outlines:
+  # ===== 考え方 (ガスケットマウント) =====
+  #   board   … ケースの外形 (143.35 x 86.2mm, 角 R14)
+  #   cavity  … ケースの内側 (キーの範囲ちょうど 133.35 x 76.2mm, 角 R5)。右手はボールの所が丸くふくらむ
+  #   pcb     … 基板。内側より 0.75mm 小さい。ソケットのパッドが端まで来る所だけ壁の溝に入る
+  #             内側の側面に XIAO・電源スイッチ用の「舌」が出る
+  #   plate   … プレート。内側より 0.5mm 小さく、6か所の「耳 (タブ)」が壁の溝に入る
+  #             耳を上下からガスケット (ポロン) で挟んで浮かせる
+  #   top_opening … トップケースの開口。キーキャップが当たらないよう内側より 0.75mm 大きい
+
   # --- 外形 (左右同じ大きさ) ---
   board_left:
     - what: rectangle
@@ -99,12 +112,56 @@ outlines:
       size: [7kx + 2wall, 4ky + 2wall]
       corner: corner
 
-  # --- 穴・窓 ---
-  ball_hole:            # ボールユニット (外径34mm) が通る穴。まわりにすき間1mm (ガスケットで基板が動いても当たらない)
+  # --- ボールまわり ---
+  ball_hole:            # 基板・プレートの穴。ボールユニット (外径34mm) + すき間1mm
     - what: circle
       where: right_e_top
       adjust.shift: [-0.5kx, -2.75ky]
       radius: 18
+  ball_cut:             # 穴 + 穴より左下の角 (ここには部品がないので切り落とす)
+    - name: ball_hole
+    - what: rectangle
+      where: right_e_top
+      adjust.shift: [-kx - 5, -3.125ky + 1]   # 穴の左側に細い尖りが残らないよう、中心より 12mm 上まで
+      size: [kx + 10, 0.75ky + 22]
+  ball_bulge:           # ケース内側のふくらみ (ユニット 34mm + 0.5mm)
+    - what: circle
+      where: right_e_top
+      adjust.shift: [-0.5kx, -2.75ky]
+      radius: 17.5
+
+  # --- ケースの内側・トップケースの開口 ---
+  cavity_left:
+    - what: rectangle
+      where: left_c0_thumb
+      adjust.shift: [3kx, 1.5ky]
+      size: [7kx, 4ky]
+      corner: 5
+  cavity_right:
+    - what: rectangle
+      where: right_e_top
+      adjust.shift: [2kx, -1.5ky]
+      size: [7kx, 4ky]
+      corner: 5
+    - name: ball_bulge
+  top_opening_left:
+    - what: rectangle
+      where: left_c0_thumb
+      adjust.shift: [3kx, 1.5ky]
+      size: [7kx + 1.5, 4ky + 1.5]
+      corner: 3.5
+  top_opening_right:
+    - what: rectangle
+      where: right_e_top
+      adjust.shift: [2kx, -1.5ky]
+      size: [7kx + 1.5, 4ky + 1.5]
+      corner: 3.5
+    - what: circle
+      where: right_e_top
+      adjust.shift: [-0.5kx, -2.75ky]
+      radius: 18.25
+
+  # --- 穴・窓 ---
   encoder_cut:          # エンコーダー本体の逃げ (プレート用)
     - what: rectangle
       where: left_c5_top
@@ -128,23 +185,74 @@ outlines:
       size: [13.8, 13.8]
 
   # --- 基板の外形 ---
+  # 基本は内側より 0.75mm 小さい (ガスケットで動いても壁に当たらない)。
+  # ソケットのパッドが端まで来る列 (右手の一番外側・左手の Raise) だけ、細い帯を壁の溝へ 0.5mm 出す。
+  # 内側の側面には XIAO の USB-C と電源スイッチ用の「舌」を出す。
   pcb_left:
-    - name: board_left
+    - what: rectangle
+      where: left_c0_thumb
+      adjust.shift: [3kx, 1.5ky]
+      size: [7kx - 1.5, 4ky - 1.5]
+      corner: 4.25
+    - what: rectangle         # Raise のソケット用の帯
+      where: left_c6_thumb
+      adjust.shift: [0.5kx - 0.25, 4.5]
+      size: [1.5, 7]
+    - what: rectangle         # 内側の舌 (XIAO の USB-C と電源スイッチを側面に出す)
+      where: left_c6_thumb
+      adjust.shift: [0.5kx, 42.3]
+      size: [6, 29.4]
   pcb_right:
-    - name: board_right
+    - what: rectangle
+      where: right_e_top
+      adjust.shift: [2kx, -1.5ky]
+      size: [7kx - 1.5, 4ky - 1.5]
+      corner: 4.25
+    - what: rectangle         # 一番外側の列のソケット用の帯
+      where: right_e_top
+      adjust.shift: [5.5kx - 0.25, 32 - 3ky]
+      size: [1.5, 62]
+    - what: rectangle
+      where: right_e_top
+      adjust.shift: [-1.5kx, 42.3 - 3ky]
+      size: [6, 29.4]
     - operation: subtract
-      name: ball_hole
+      name: ball_cut
 
   # --- プレート (キースイッチを固定する板) ---
+  tabs_left:            # 耳: 上2・下2・外側1・内側1
+    - {what: rectangle, where: left_c0_thumb, adjust.shift: [24.15, 3.5ky + 0.75], size: [tab_w, 4.5]}
+    - {what: rectangle, where: left_c0_thumb, adjust.shift: [82.15, 3.5ky + 0.75], size: [tab_w, 4.5]}
+    - {what: rectangle, where: left_c0_thumb, adjust.shift: [22.15, -0.5ky - 0.75], size: [tab_w, 4.5]}
+    - {what: rectangle, where: left_c0_thumb, adjust.shift: [72.15, -0.5ky - 0.75], size: [tab_w, 4.5]}
+    - {what: rectangle, where: left_c0_thumb, adjust.shift: [-0.5kx - 0.75, 1.5ky], size: [4.5, tab_w]}
+    - {what: rectangle, where: left_c0_thumb, adjust.shift: [6.5kx + 0.75, 21.5], size: [4.5, tab_w]}
+  tabs_right:
+    - {what: rectangle, where: right_e_top, adjust.shift: [71.1, 3.5ky + 0.75 - 3ky], size: [tab_w, 4.5]}
+    - {what: rectangle, where: right_e_top, adjust.shift: [13.1, 3.5ky + 0.75 - 3ky], size: [tab_w, 4.5]}
+    - {what: rectangle, where: right_e_top, adjust.shift: [73.1, -0.5ky - 0.75 - 3ky], size: [tab_w, 4.5]}
+    - {what: rectangle, where: right_e_top, adjust.shift: [23.1, -0.5ky - 0.75 - 3ky], size: [tab_w, 4.5]}
+    - {what: rectangle, where: right_e_top, adjust.shift: [5.5kx + 0.75, 1.5ky - 3ky], size: [4.5, tab_w]}
+    - {what: rectangle, where: right_e_top, adjust.shift: [-1.5kx - 0.75, 21.5 - 3ky], size: [4.5, tab_w]}
   plate_left:
-    - name: board_left
+    - what: rectangle
+      where: left_c0_thumb
+      adjust.shift: [3kx, 1.5ky]
+      size: [7kx - 1, 4ky - 1]
+      corner: 4.5
+    - name: tabs_left
     - {operation: subtract, name: keys_choc}
     - {operation: subtract, name: encoder_cut}
     - {operation: subtract, name: view_window_left}
   plate_right:
-    - name: board_right
+    - what: rectangle
+      where: right_e_top
+      adjust.shift: [2kx, -1.5ky]
+      size: [7kx - 1, 4ky - 1]
+      corner: 4.5
+    - name: tabs_right
     - {operation: subtract, name: keys_choc}
-    - {operation: subtract, name: ball_hole}
+    - {operation: subtract, name: ball_cut}
     - {operation: subtract, name: view_window_right}
 
 pcbs:
@@ -189,7 +297,9 @@ pcbs:
       xiao:               # 基板の裏側。KiCad で Seeed 公式フットプリントに置き換える (仮)
         what: kataware/xiao_plus_placeholder
         where: left_c6_thumb
-        adjust.shift: [0, 3.5ky - 8]
+        adjust:                 # 横向き。USB-C を内側の側面 (右) に出す
+          shift: [0.5kx - 8, xiao_y]
+          rotate: -90
         params:
           D0: ROW0
           D1: ROW1
@@ -222,12 +332,12 @@ pcbs:
           VCC: 3V3
           GND: GND
           CS: VIEW_CS
-      power_switch:       # 水平スライドスイッチ (内側の側面)
+      power_switch:       # 水平スライドスイッチ (内側の側面)。パッドが内向き・レバーが外向き
         what: kataware/power_switch_placeholder
         where: left_c6_thumb
         adjust:
-          shift: [0.5kx + 1.5, 3.5ky - 10]
-          rotate: 90
+          shift: [0.5kx + 1.5, pwr_y]
+          rotate: -90
         params:
           from: BAT_P
           to: BAT_SW
@@ -272,7 +382,9 @@ pcbs:
       xiao:
         what: kataware/xiao_plus_placeholder
         where: right_e_top
-        adjust.shift: [-kx, 0.5ky - 8]
+        adjust:                 # 横向き。USB-C を内側の側面 (左) に出す
+          shift: [-1.5kx + 8, xiao_y - 3ky]
+          rotate: 90
         params:
           D0: ROW0
           D1: ROW1
@@ -305,8 +417,8 @@ pcbs:
         what: kataware/power_switch_placeholder
         where: right_e_top
         adjust:
-          shift: [-1.5kx - 1.5, 0.5ky - 10]
-          rotate: -90
+          shift: [-1.5kx - 1.5, pwr_y - 3ky]
+          rotate: 90
         params:
           from: BAT_P
           to: BAT_SW
