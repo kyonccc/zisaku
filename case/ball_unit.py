@@ -7,7 +7,7 @@
     ball_base.stl    … 土台。ケースの底に裏から皿ネジ M2 × 3本でとめる。PMW3610 センサーを中に置く
     ball_cup_25.stl  … 25mm ボール用カップ (ベアリング3個)
     ball_cup_19.stl  … 19mm ボール用カップ (ベアリング3個)
-    ball_cover_25.stl / ball_cover_19.stl … ボールを押さえるカバー (親指用に斜め。磁石でカップに付く)
+    ball_cover_25.stl / ball_cover_19.stl … ボールを押さえるカバー (親指用に斜め。ひねってカップにロック)
 
 考え方:
   - 土台はケースに付けたまま。ボールの大きさを変える時は、カップを上から抜いて差し替えるだけ
@@ -16,7 +16,8 @@
   - センサー基板は土台の底のくぼみに置き、カップの足で上から押さえる (ネジなし)
   - ベアリングの軸は M1.4 ネジ。締め具合でボールの回り方 (軽さ・ガタ) を調整できる
   - カバーはボールの赤道より上をぐるりと押さえるので、ふだんはボールが抜けない。
-    磁石 (直径3 × 2mm × 3個) で付いているだけなので、掃除の時はカバーをつまんで外せばボールだけ取り出せる
+    カバーはバヨネット式 (ひねってロック)。カバーの3つのツメをカップの溝に入れ、時計回りに 30° 回すと
+    カチッと止まる。指が当たっても外れない。掃除の時は反時計回りに 30° 回して持ち上げれば、ボールだけ取り出せる
   - カバーの上面は、親指が来る方 (Enter の方・少し手前) に向かって 25° 下がる。
     親指側の縁はキーキャップの上とほぼ同じ高さ、奥側はボールのてっぺん近くまで上がる (背もたれ・飛び出し防止)
 
@@ -79,10 +80,19 @@ LIP_OVERLAP = 0.8                 # カバーの縁がボールにかぶる幅 (
 LIP_GAP = 0.3                     # カバーの内側とボールのすき間
 LIP_LAND = 0.8                    # 縁の、まっすぐな部分の厚さ
 COVER_MIN = 2.5                   # カバーの一番薄い所 (カップの上面から)
-MAGNET_R, MAGNET_H = 1.55, 2.1    # 磁石 直径3 × 2mm 用の穴
-MAGNET_AT = 14.8                  # 磁石の位置 (中心から)
-MAGNET_ANGLES = (30, 150, 270)    # ベアリング (90, 210, 330°) の間
-PIN_AT, PIN_ANGLE = 14.5, 0       # 向きを決めるピン (カバー側) と穴 (カップ側)
+# ===== カバーのロック (バヨネット式: 差し込んで時計回りにひねる) =====
+LOCK_TURN = 30.0                  # ロックするまでに回す角度 (時計回り)
+LUG_ANGLES = (0, 110, 235)        # ツメの位置 (ロックした時)。わざと不等間隔 → 差し込める向きが1つだけ
+LUG_W = 12.0                      # ツメの幅 (角度)
+RECESS_R = 15.0                   # カップ上面の段 (カバーの差し込み部が入る)
+RECESS_Z = 13.0                   # 段の底の高さ
+SPIGOT_R = 14.8                   # カバーの差し込み部の外径 (半径)
+LUG_R = 15.9                      # ツメの先 (半径)
+GROOVE_R = 16.1                   # カップの溝の奥 (半径)。外側に 0.9mm の壁が残る
+GROOVE_Z0, GROOVE_Z1 = 13.3, 14.7 # 溝の下面・上面
+LUG_Z0, LUG_H = 13.4, 1.1         # ツメの下面・厚さ (上下のすき間 0.1 / 0.2mm)
+DETENT_H = 0.3                    # ロック位置の手前の小さな山 (ここを越える時にカチッとする)
+GRIP_N, GRIP_R = 36, 0.5          # カバー外側のすべり止めの溝 (本数・半径)
 
 CUPS = {
     25: {"R": 12.5, "contact": 45},   # 接点の角度 (水平から下向き)
@@ -136,9 +146,12 @@ def cup(size):
     cut = [
         mf.Manifold.sphere(R + CLEAR, 96).translate([0, 0, cz]),       # ボールの受け
         k.cyl(0, 0, CUP_BOTTOM - 1, cz, LENS_HOLE_R),                  # センサーの窓
-        k.cyl(*polar(PIN_AT, PIN_ANGLE), top - 2.4, top + 1, 1.3),     # カバーの向きを決めるピンの穴
+        k.cyl(0, 0, RECESS_Z, top + 1, RECESS_R),                      # カバーの差し込み部が入る段
     ]
-    cut += [k.cyl(*polar(MAGNET_AT, a), top - MAGNET_H, top + 1, MAGNET_R) for a in MAGNET_ANGLES]
+    for L in LUG_ANGLES:
+        e = L + LOCK_TURN                                              # 差し込む時のツメの位置
+        cut += [sector(RECESS_R - 0.1, GROOVE_R, e - LUG_W/2 - 1.5, e + LUG_W/2 + 1.5, GROOVE_Z0, top + 1),   # 入口
+                sector(RECESS_R - 0.1, GROOVE_R, L - LUG_W/2 - 1.0, e + LUG_W/2 + 1.5, GROOVE_Z0, GROOVE_Z1)]  # 回す溝
     t = math.radians(c["contact"])
     d = R + BRG_R                                                      # ボール中心〜ベアリング中心
     for a in BRG_ANGLES:
@@ -155,6 +168,9 @@ def cup(size):
             [d*math.cos(t)*math.cos(math.radians(a)), d*math.cos(t)*math.sin(math.radians(a)), cz - d*math.sin(t)])
         cut += [place(pocket), place(screw)]
     m = body - k.union(cut)
+    # ロック位置の手前の小さな山 (溝の下面に残す)
+    m = m + k.union([sector(RECESS_R + 0.1, GROOVE_R - 0.05, L + LUG_W/2 + 1.5, L + LUG_W/2 + 4.0,
+                            GROOVE_Z0 - 0.01, GROOVE_Z0 + DETENT_H) for L in LUG_ANGLES])
     info = {"cz": cz, "top": top,
             "brg_z": cz - d*math.sin(t), "brg_r": d*math.cos(t)}
     return m, info
@@ -163,6 +179,14 @@ def cup(size):
 def x_cyl(r, x0, x1):
     """x 方向の円柱 (x0 〜 x1)"""
     return mf.Manifold.cylinder(x1 - x0, r, r, 32).rotate([0, 90, 0]).translate([x0, 0, 0])
+
+
+def sector(r0, r1, a0, a1, z0, z1):
+    """扇形のリング (半径 r0〜r1・角度 a0〜a1 度・高さ z0〜z1)"""
+    n = max(4, int(abs(a1 - a0)/2))
+    angs = [math.radians(a0 + (a1 - a0)*i/n) for i in range(n + 1)]
+    pts = [[r1*math.cos(t), r1*math.sin(t)] for t in angs] + [[r0*math.cos(t), r0*math.sin(t)] for t in reversed(angs)]
+    return mf.CrossSection([pts]).extrude(z1 - z0).translate([0, 0, z0])
 
 
 def polar(r, deg):
@@ -223,9 +247,13 @@ def cover(size):
         along_n(mf.Manifold.cylinder(20, g["r_open"], g["r_open"] + 20, 96)
                 .translate([0, 0, g["hs"] + LIP_LAND])).translate(C),               # 縁の上の面取り (45°)
     ]
-    cut += [k.cyl(*polar(MAGNET_AT, a), CUP_TOP - 1, CUP_TOP + MAGNET_H, MAGNET_R) for a in MAGNET_ANGLES]
+    # すべり止めの溝 (ひねる時に指がかかる)
+    cut += [k.cyl(*polar(UNIT_R + 0.15, 360*i/GRIP_N), CUP_TOP + 0.6, g["cap"] + 1, GRIP_R) for i in range(GRIP_N)]
     m = solid - k.union(cut)
-    m = m + k.cyl(*polar(PIN_AT, PIN_ANGLE), CUP_TOP - 2.0, CUP_TOP + 0.01, 1.1)  # 向きを決めるピン
+    # 差し込み部 (カップの段に入るリング) と3つのツメ
+    spigot = k.cyl(0, 0, RECESS_Z + 0.2, CUP_TOP + 0.01, SPIGOT_R) - k.cyl(0, 0, RECESS_Z, CUP_TOP + 1, g["R"] + 0.5)
+    lugs = k.union([sector(SPIGOT_R - 0.3, LUG_R, L - LUG_W/2, L + LUG_W/2, LUG_Z0, LUG_Z0 + LUG_H) for L in LUG_ANGLES])
+    m = m + spigot + lugs
     return m, g
 
 
@@ -263,10 +291,14 @@ def main():
         k.save_stl(cv, os.path.join(out, f"ball_cover_{size}.stl"))
         lo = cover_z(size, UNIT_R, THUMB_FROM)
         hi = cover_z(size, UNIT_R, THUMB_FROM + 180)
-        thin = min(cover_z(size, MAGNET_AT, a) for a in MAGNET_ANGLES) - CUP_TOP - MAGNET_H
         print(f"   カバー: 親指側の縁 {lo:.1f}mm (机から {k.FLOOR + lo:.1f}) / 奥側 {hi:.1f}mm (机から {k.FLOOR + hi:.1f}) / "
-              f"縁の穴 直径 {2*g['r_open']:.1f}mm / 磁石の上の厚さ {thin:.1f}mm  ({cv.volume()/1000:.1f} cm³)")
-        assert thin >= 0.8, "磁石の穴の上が薄すぎる"
+              f"縁の穴 直径 {2*g['r_open']:.1f}mm  ({cv.volume()/1000:.1f} cm³)")
+        # ロックした状態で、カバーとカップがぶつからないか (ツメが溝に収まっているか)
+        overlap = (cv ^ m).volume()
+        assert overlap < 0.05, f"カバーとカップが重なっている ({overlap:.2f} mm³)"
+        # 差し込む向き (反時計回りに LOCK_TURN 回した位置) では、ツメが入口を通れるか
+        ins = cv.rotate([0, 0, LOCK_TURN]).translate([0, 0, 0])
+        assert (ins ^ m).volume() < 0.05, "差し込む向きでツメが入口を通れない"
     print(f"ケースの中では +{k.FLOOR}mm（机から）: 25mm ボールのてっぺん "
           f"{k.FLOOR + BALL_BOTTOM + 25:.1f}mm、19mm は {k.FLOOR + BALL_BOTTOM + 19:.1f}mm")
 

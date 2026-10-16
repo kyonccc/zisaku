@@ -139,7 +139,7 @@ def main(out):
     zc = z0 + info["cz"]
     labels3 = [
         (by + 12.5*0.6, zc + 7, "ボール 25mm", (by + 26, 36)),
-        (by + 15.5, z0 + 25, "カバー（磁石で付く。縁がボールを押さえる）", (by + 26, 32)),
+        (by + 15.5, z0 + 25, "カバー（ひねってロック。縁がボールを押さえる）", (by + 26, 32)),
         (by + 16, z0 + 14.5, "カップ（25mm 用・19mm 用を差し替え）", (by + 26, 30)),
         (by + 11, z0 + info["brg_z"], "ベアリング 681X ＋ 軸のネジ M1.4（3か所）", (by + 26, 28)),
         (by - 16.2, z0 + 11, "土台（ケースに固定したまま）", (by + 26, 24)),
@@ -167,6 +167,48 @@ def main(out):
     W5, H5, b5 = section(items5, "y", rb, ((-reach - 1, reach + 2), (zb - 8, zb + 12)),
                          "⑤ ベアリングの軸のネジ（軸に沿って切った断面。25mm）", labels5, px=22)
     open(f"{out}/ballunit-screw.svg", "w").write(svg(W5, H5, b5))
+
+    # ⑥ カバーのロック (上から見た、ツメの高さでの断面)
+    open(f"{out}/ballunit-lock.svg", "w").write(lock_view(size))
+
+
+def lock_view(size):
+    px = 14.0
+    W, H = 1180, 660
+    cup, _ = bu.cup(size)
+    cover, _ = bu.cover(size)
+    zc = bu.LUG_Z0 + bu.LUG_H/2
+
+    def panel(ox, title, cov, arrow):
+        cxp, cyp = ox + 20*px, 330
+
+        def X(x):
+            return cxp + x*px
+
+        def Y(y):
+            return cyp - y*px
+        o = [f'<text x="{X(0):.0f}" y="70" font-size="19" font-weight="bold" text-anchor="middle" fill="{C["ink"]}">{title}</text>']
+        for name, m in (("cup", cup), ("cover", cov)):
+            d = " ".join("M" + " L".join(f"{X(p[0]):.1f},{Y(p[1]):.1f}" for p in poly) + " Z"
+                         for poly in m.slice(zc).to_polygons())
+            o.append(f'<path d="{d}" fill="{C[name]}" stroke="{C["ink"]}" stroke-width="1" fill-rule="evenodd"/>')
+        if arrow:
+            r = 19.5
+            a0, a1 = math.radians(60), math.radians(30)
+            o.append(f'<path d="M{X(r*math.cos(a0)):.1f},{Y(r*math.sin(a0)):.1f} A{r*px:.0f},{r*px:.0f} 0 0 1 '
+                     f'{X(r*math.cos(a1)):.1f},{Y(r*math.sin(a1)):.1f}" fill="none" stroke="#b03a2e" stroke-width="3" '
+                     f'marker-end="url(#arr)"/>')
+            o.append(f'<text x="{X(20.8):.1f}" y="{Y(5.5):.1f}" font-size="17" text-anchor="end" fill="#b03a2e">時計回りに {bu.LOCK_TURN:.0f}°</text>')
+        return "".join(o)
+    inserted = cover.rotate([0, 0, bu.LOCK_TURN])
+    body = ('<defs><marker id="arr" markerWidth="10" markerHeight="10" refX="6" refY="5" orient="auto">'
+            '<path d="M0,0 L10,5 L0,10 Z" fill="#b03a2e"/></marker></defs>'
+            f'<text x="30" y="34" font-size="22" font-weight="bold" fill="{C["ink"]}">⑥ カバーのロック（上から見た図・ツメの高さで切った断面）</text>'
+            + panel(30, "① 差し込む（ツメを入口に合わせる）", inserted, False)
+            + panel(600, "② ひねってロック（カチッと止まる）", cover, True)
+            + f'<text x="30" y="{H - 40}" font-size="16" fill="{C["sub"]}">濃い色 = カバー（差し込み部と3つのツメ）、薄い色 = カップ。'
+              f'ツメは不等間隔なので、差し込める向きは1つだけ。外すときは反時計回りに {bu.LOCK_TURN:.0f}° 回して持ち上げる。</text>')
+    return svg(W, H, body)
 
     # ④ 親指の来る向きの断面 (右が親指側 = Enter の方)
     th = bu.THUMB_FROM
