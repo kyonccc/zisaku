@@ -3,6 +3,7 @@
 使い方 (リポジトリの一番上で): python3 tools/draw_case_section.py docs/images
 case/kataware_case.py と同じ寸法を使う。
 """
+import math
 import os
 import sys
 
@@ -15,7 +16,7 @@ U = k.U
 C = {"bg": "#f7f7f5", "ink": "#333", "sub": "#666", "bottom": "#c9ccd1", "top": "#e8e2d4", "pcb": "#2f7d45",
      "plate": "#3a3a3a", "gasket": "#f19ca6", "switch": "#9aa0a6", "cap": "#ffffff", "xiao": "#1b5e20",
      "usb": "#90a4ae", "bat": "#b0b6bb", "pwr": "#f0a500", "base": "#aeb4bc", "cup": "#f3ede2",
-     "brg": "#d4a017", "ball": "#c0392b", "lens": "#5d6d7e", "screw": "#1a5276"}
+     "brg": "#d4a017", "ball": "#c0392b", "lens": "#5d6d7e", "screw": "#1a5276", "cover": "#d9d4c7"}
 
 
 def parts(side):
@@ -40,9 +41,16 @@ def keys(side):
     return [("switch", sw), ("cap", cap)]
 
 
-def section(items, plane, at, window, title, labels, px=12.0, extra=()):
-    """plane='x' なら x=at の面 (横軸 y)、'y' なら y=at の面 (横軸 x) で切る"""
-    if plane == "x":
+def section(items, plane, at, window, title, labels, px=12.0, extra=(), overlay=None):
+    """plane='x' なら x=at の面 (横軸 y)、'y' なら y=at の面 (横軸 x) で切る。
+    plane='az' なら at=(x, y, 向き) を通る縦の面 (横軸 = その向き、点 (x, y) が 0)"""
+    if plane == "az":
+        cx, cy, deg = at
+        c, s_ = math.cos(math.radians(deg)), math.sin(math.radians(deg))
+        mat = [[c, s_, 0, -(c*cx + s_*cy)], [0, 0, 1, 0], [s_, -c, 0, -(s_*cx - c*cy)]]
+        z = 0
+        at = deg
+    elif plane == "x":
         mat = [[0, 1, 0, 0], [0, 0, 1, 0], [1, 0, 0, 0]]
         z = at
     else:
@@ -65,6 +73,8 @@ def section(items, plane, at, window, title, labels, px=12.0, extra=()):
         for poly in cs.to_polygons():
             d = "M" + " L".join(f"{X(p[0]):.1f},{Y(p[1]):.1f}" for p in poly) + " Z"
             o.append(f'<path d="{d}" fill="{C[name]}" stroke="{C["ink"]}" stroke-width="1" fill-rule="evenodd"/>')
+    if overlay:
+        o.append(overlay(X, Y))
     o.append("</g>")
     o.append(f'<line x1="30" y1="{Y(0):.1f}" x2="{X(u1):.1f}" y2="{Y(0):.1f}" stroke="{C["ink"]}" stroke-width="2"/>')
     for u, v, t, (lu, lv) in labels:
@@ -122,11 +132,13 @@ def main(out):
     screws = k.union([k.cyl(0, -k.BALL_SCREW_R, -z0, bu.INSERT_DEPTH - 0.5, 1.0),
                       k.cyl(0, -k.BALL_SCREW_R, -z0, -z0 + 1.2, 2.0, 1.0)])
     unit = [("base", at(bu.base())), ("cup", at(cup)), ("pcb", at(sensor)), ("lens", at(lens)),
-            ("brg", at(bu.bearings(size))), ("ball", at(ball)), ("screw", at(screws))]
+            ("brg", at(bu.bearings(size))), ("ball", at(ball)), ("screw", at(screws)),
+            ("cover", at(bu.cover(size)[0]))]
     zc = z0 + info["cz"]
     labels3 = [
-        (by + 12.5*0.6, zc + 7, "ボール 25mm（上から取り出せる）", (by + 26, 36)),
-        (by + 15.5, z0 + 22.5, "カップ（25mm 用・19mm 用を差し替え）", (by + 26, 32)),
+        (by + 12.5*0.6, zc + 7, "ボール 25mm", (by + 26, 36)),
+        (by + 15.5, z0 + 25, "カバー（磁石で付く。縁がボールを押さえる）", (by + 26, 32)),
+        (by + 16, z0 + 14.5, "カップ（25mm 用・19mm 用を差し替え）", (by + 26, 30)),
         (by + 11, z0 + info["brg_z"], "ベアリング MR63ZZ ＋ ピン（3か所）", (by + 26, 28)),
         (by - 16.2, z0 + 11, "土台（ケースに固定したまま）", (by + 26, 24)),
         (by + 3, z0 + bu.SENSOR_TOP + 1.5, "PMW3610 センサー（すき間 2.4mm）", (by + 26, 20)),
@@ -137,6 +149,49 @@ def main(out):
     W3, H3, b3 = section(right, "x", bx, ((by - 22, by + 25), (-1, 40)),
                          "③ ボールユニットの断面（25mm。右が奥）", labels3, px=13, extra=unit)
     open(f"{out}/ballunit-section.svg", "w").write(svg(W3, H3, b3))
+
+    # ④ 親指の来る向きの断面 (右が親指側 = Enter の方)
+    th = bu.THUMB_FROM
+    lo = k.FLOOR + bu.cover_z(size, bu.UNIT_R, th)
+    hi = k.FLOOR + bu.cover_z(size, bu.UNIT_R, th + 180)
+    key_top = k.PLATE_T + 7.5
+
+    g = bu.cover_geometry(size)
+    ta = math.radians(bu.COVER_TILT)
+
+    def plane_z(u):                                         # カバー上面 (斜めの部分) の高さ
+        return z0 + g["cz"] + (g["h_top"] - math.sin(ta)*u)/math.cos(ta)
+    hl = g["hs"] + bu.LIP_LAND
+    lip_u, lip_z = hl*math.sin(ta) + g["r_open"]*math.cos(ta), zc + hl*math.cos(ta) - g["r_open"]*math.sin(ta)
+
+    def thumb(X, Y):
+        R_ = bu.CUPS[size]["R"]
+        a, b = math.radians(55), math.radians(12)           # 親指の腹が当たる所 (ボールの右上 55°)・親指の向き
+        cx_ = R_*math.cos(a) - 7.5*math.sin(b) + 14*math.cos(b)    # 親指の楕円の下側がボールに触れる位置
+        cy_ = zc + R_*math.sin(a) + 7.5*math.cos(b) + 14*math.sin(b)
+        t = (f'<ellipse cx="{X(cx_):.1f}" cy="{Y(cy_):.1f}" rx="{30*12:.0f}" ry="{8.5*12:.0f}" '
+             f'transform="rotate({-math.degrees(b):.1f} {X(cx_):.1f} {Y(cy_):.1f})" fill="#e8b89a" fill-opacity="0.4" '
+             f'stroke="#b5785a" stroke-width="2" stroke-dasharray="8 5"/>')
+        u0_, u1_ = -14, 16
+        t += (f'<line x1="{X(u0_):.1f}" y1="{Y(plane_z(u0_) + 1.2):.1f}" x2="{X(u1_):.1f}" y2="{Y(plane_z(u1_) + 1.2):.1f}" '
+              f'stroke="#b03a2e" stroke-width="2" stroke-dasharray="6 4"/>'
+              f'<line x1="{X(u1_):.1f}" y1="{Y(plane_z(u1_) + 1.2):.1f}" x2="{X(u1_ - 12):.1f}" y2="{Y(plane_z(u1_) + 1.2):.1f}" '
+              f'stroke="#b03a2e" stroke-width="1.2"/>'
+              f'<text x="{X(u1_ - 10):.1f}" y="{Y(plane_z(u1_) + 2.0):.1f}" font-size="18" fill="#b03a2e">{bu.COVER_TILT:.0f}°</text>')
+        t += (f'<line x1="{X(-22):.1f}" y1="{Y(key_top):.1f}" x2="{X(48):.1f}" y2="{Y(key_top):.1f}" '
+              f'stroke="#888" stroke-width="1" stroke-dasharray="3 4"/>')
+        return t
+    labels4 = [
+        (28, zc + 17, "親指（Enter から左へ滑らせ、ボールの右上を転がす）", (50, 42)),
+        (16.5, lo - 0.5, f"親指側の縁：机から約{lo:.0f}mm（キーキャップとほぼ同じ）", (50, 34)),
+        (-16.5, hi - 0.5, f"奥側：約{hi:.0f}mm（背もたれ・飛び出し防止）", (50, 30)),
+        (lip_u, lip_z, "縁はボールより 0.8mm 内側 → 抜けない", (50, 26)),
+        (29, key_top - 0.5, f"キーキャップの上（約{key_top:.0f}mm）", (50, 20)),
+    ]
+    W4, H4, b4 = section(right, "az", (bx, by, th), ((-22, 48), (-1, 46)),
+                         f"④ 親指の来る向きの断面（右が親指側・Enter の方。カバーの傾き {bu.COVER_TILT:.0f}°）",
+                         labels4, px=12, extra=unit, overlay=thumb)
+    open(f"{out}/ballunit-thumb.svg", "w").write(svg(W4, H4, b4))
     open(f"{out}/case-section-tab.svg", "w").write(svg(W1, H1, b1))
     open(f"{out}/case-section-usb.svg", "w").write(svg(W2, H2, b2))
 
