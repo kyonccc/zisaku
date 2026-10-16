@@ -1,4 +1,4 @@
-"""kataware の基板イメージ (上から見た図) と、ボールユニットの底ネジ止めの断面図を SVG で生成する。
+"""kataware の基板イメージ (上から見た図) を SVG で生成する。
 位置は pcb/ergogen/config.yaml と同じ。寸法は mm、部品の大きさは目安。
 
 使い方: python3 tools/draw_pcb.py docs/images
@@ -147,7 +147,7 @@ def right_board(ox, oy):
     b.circle(bx, by, UNIT_R, C["unit"], C["ink"], sw=1.5)            # ユニット (34mm)
     b.circle(bx, by, 12.5, C["ball"], None, op=0.85)                  # ボール 25mm
     b.text(bx, by + 2.5, "25mm", 15, color="#fff", weight="bold")
-    for a in (90, 210, 330):                                          # 底ネジ (裏から)
+    for a in kataware_case.BALL_SCREW_ANGLES:                         # 底ネジ (裏から)
         sx, sy = bx + SCREW_R*math.cos(math.radians(a)), by + SCREW_R*math.sin(math.radians(a))
         b.circle(sx, sy, 1.9, "#fff", C["screw"], sw=2)
         b.o.append(f'<path d="M{b.X(sx)-6:.1f},{b.Y(sy):.1f} h12 M{b.X(sx):.1f},{b.Y(sy)-6:.1f} v12" '
@@ -189,134 +189,6 @@ def top_view():
             + "".join(o) + "</svg>")
 
 
-def mount_section():
-    """ボールユニットの中心を通る断面 (手前から見た図)。z は机からの高さ"""
-    P = 10.0                       # px / mm
-    W, H = 1480, 800
-    cx, base = 360, 640            # ユニット中心 x / 机の y (px)
-
-    def X(x):
-        return cx + x*P
-
-    def Z(z):
-        return base - z*P
-
-    o = []
-    add = o.append
-
-    def box(x0, z0, x1, z1, fill, stroke=C["ink"], sw=1.5, op=1.0, dash=None):
-        d = f' stroke-dasharray="{dash}"' if dash else ""
-        add(f'<rect x="{X(min(x0, x1)):.1f}" y="{Z(max(z0, z1)):.1f}" width="{abs(x1-x0)*P:.1f}" '
-            f'height="{abs(z1-z0)*P:.1f}" fill="{fill}" fill-opacity="{op}" stroke="{stroke}" stroke-width="{sw}"{d}/>')
-
-    def text(x, z, t, size=17, anchor="start", color=C["ink"], weight="normal"):
-        add(f'<text x="{X(x):.1f}" y="{Z(z):.1f}" font-size="{size}" text-anchor="{anchor}" fill="{color}" '
-            f'font-weight="{weight}">{t}</text>')
-
-    def line(x0, z0, x1, z1, color=C["sub"], w=1.5, dash=None):
-        d = f' stroke-dasharray="{dash}"' if dash else ""
-        add(f'<line x1="{X(x0):.1f}" y1="{Z(z0):.1f}" x2="{X(x1):.1f}" y2="{Z(z1):.1f}" stroke="{color}" '
-            f'stroke-width="{w}"{d}/>')
-
-    FLOOR = kataware_case.FLOOR    # ケース底の厚さ
-    PCB0 = kataware_case.PCB_B     # 基板の下面
-    PCB1 = PCB0 + 1.6
-    PL0, PL1 = PCB1 + 1.0, PCB1 + 2.2   # Choc のプレート (FR4 1.2mm)
-    UB = 1.5                       # ユニットの底の厚さ
-    SEN0 = FLOOR + UB
-    LENS1 = SEN0 + 1.6 + 3.0
-    BALL_C = LENS1 + 2.4 + 12.5
-    xl, xr = -28, 60               # 描く範囲 (ユニットの左の壁 … 右のキー)
-
-    add(f'<text x="30" y="40" font-size="28" font-weight="bold" fill="{C["ink"]}">ボールユニットを「底からネジ止め」する断面イメージ</text>')
-    add(f'<text x="30" y="72" font-size="17" fill="{C["sub"]}">ボールの中心を通る断面を手前から見た図。寸法は目安（部品の実測で決める）</text>')
-    # ケース (底と左の壁)
-    box(xl - 5, 0, xr, FLOOR, "#d9dde3")
-    box(xl - 5, FLOOR, xl, PL1 + 3, "#d9dde3")
-    # ガスケット (プレートの縁を上下から挟む)
-    box(xl, PL1, xl + 6, PL1 + 1.5, "#f5b7b1", op=0.9)
-    box(xl, PL0 - 1.5, xl + 6, PL0, "#f5b7b1", op=0.9)
-    box(xl, PL1 + 1.5, xl + 6, PL1 + 3, "#d9dde3")           # 上側の押さえ (トップケース)
-    box(xl, FLOOR, xl + 2, PL0 - 1.5, "#d9dde3")              # 下側の受け
-    # プレートと基板 (ユニットの穴のところで切れている)
-    hole = BALL_HOLE_R
-    for x0, x1 in ((xl, -hole), (hole, xr)):
-        box(x0, PL0, x1, PL1, "#c8b88a")
-        box(x0 + (2 if x0 == xl else 0), PCB0, x1, PCB1, C["xiao"])
-    # 右側のキー (Choc v2 + キーキャップ)
-    kx = 31
-    box(kx - 7.5, PCB1, kx + 7.5, PL1 + 5, "#ecf0f1")
-    box(kx - 9, PL1 + 5, kx + 9, PL1 + 8.5, "#ffffff")
-    box(kx - 5, PCB0 - 1.8, kx + 4, PCB0, C["back"], op=0.8)  # ソケット
-    text(kx, PL1 + 10, "キー", 15, "middle", C["sub"])
-    # ユニット本体 (カップ)
-    box(-UNIT_R, FLOOR, UNIT_R, FLOOR + UB, C["unit"])
-    box(-UNIT_R, FLOOR, -UNIT_R + 2.5, BALL_C + 2, C["unit"])
-    box(UNIT_R - 2.5, FLOOR, UNIT_R, BALL_C + 2, C["unit"])
-    # 上カバー
-    for sg in (-1, 1):
-        add(f'<path d="M{X(sg*UNIT_R):.1f},{Z(BALL_C+2):.1f} L{X(sg*UNIT_R):.1f},{Z(BALL_C+5):.1f} '
-            f'L{X(sg*10.3):.1f},{Z(BALL_C+8):.1f} L{X(sg*10.3):.1f},{Z(BALL_C+5.5):.1f} Z" fill="#b0bec5" stroke="{C["ink"]}" stroke-width="1.5"/>')
-    # センサー・レンズ・ボール
-    box(-10, SEN0, 10, SEN0 + 1.6, C["xiao"])
-    box(-4.5, SEN0 + 1.6, 4.5, LENS1, "#90a4ae")
-    add(f'<circle cx="{X(0):.1f}" cy="{Z(BALL_C):.1f}" r="{12.5*P:.1f}" fill="{C["ball"]}" fill-opacity="0.88"/>')
-    text(0, BALL_C - 0.8, "25mm", 26, "middle", "#fff", "bold")
-    for a in (-50, 50):
-        t = math.radians(-90 + a)
-        add(f'<circle cx="{X(14.1*math.cos(t)):.1f}" cy="{Z(BALL_C + 14.1*math.sin(t)):.1f}" r="{1.6*P:.1f}" '
-            f'fill="{C["sw"]}" stroke="{C["ink"]}" stroke-width="1.5"/>')
-    # 底ネジ (皿ネジ M2、ケースの底からユニットのインサートへ)
-    for sx in (-SCREW_R, SCREW_R):
-        add(f'<path d="M{X(sx-2):.1f},{Z(0):.1f} L{X(sx+2):.1f},{Z(0):.1f} L{X(sx+1):.1f},{Z(1):.1f} '
-            f'L{X(sx+1):.1f},{Z(FLOOR+UB+2.5):.1f} L{X(sx-1):.1f},{Z(FLOOR+UB+2.5):.1f} L{X(sx-1):.1f},{Z(1):.1f} Z" '
-            f'fill="{C["screw"]}"/>')
-        box(sx - 1.8, FLOOR, sx + 1.8, FLOOR + UB + 3, "#b7950b", op=0.5, sw=1)
-    # ケーブル (たるませる)
-    add(f'<path d="M{X(8):.1f},{Z(SEN0+0.8):.1f} C{X(22):.1f},{Z(SEN0-0.5):.1f} {X(20):.1f},{Z(PCB0-4):.1f} '
-        f'{X(23.5):.1f},{Z(PCB0-2.6):.1f}" fill="none" stroke="{C["back"]}" stroke-width="3"/>')
-    box(21.5, PCB0 - 2.6, 26.5, PCB0, C["back"])
-    # すき間の矢印
-    line(-UNIT_R, PL1 + 5.5, -hole, PL1 + 5.5, C["ball"], 3)
-    text(-UNIT_R - 0.5, PL1 + 6.5, "1mm", 14, "middle", C["ball"])
-    # 説明
-    notes = [
-        (PL1 + 13, "① 基板とプレートは ガスケットで浮いている → 押すと上下に少し動く", C["ink"]),
-        (PL1 + 10.3, "② ボールユニットは ケースの底にネジ止め → 動かない", C["ink"]),
-        (PL1 + 7.6, "③ ユニットと穴のあいだに すき間 約1mm → 基板が動いてもユニットに当たらない", C["ball"]),
-    ]
-    for i, (_, t, col) in enumerate(notes):
-        add(f'<text x="30" y="{125 + i*30}" font-size="19" fill="{col}">{t}</text>')
-    labels = [
-        (BALL_C + 7, "上カバー（ボールが外れないように押さえる）"),
-        (PL1 + 1.5, "ガスケット（ピンク）とプレート"),
-        (PCB0 + 0.6, "基板（緑・厚さ1.6mm）"),
-        (PCB0 - 2.4, "ケーブルは たるませて つなぐ（基板が動いても引っぱらない）"),
-        (SEN0 + 1.2, "PMW3610 センサー（ユニットの底・上向き）"),
-        (0.6, "裏から 皿ネジ M2 × 3本（ゴム足の間）→ ユニット底のインサートへ"),
-    ]
-    zs = [z for z, _ in labels]
-    for i in range(1, len(zs)):          # 上から順に、重ならないよう 2.6mm 以上あける
-        zs[i] = min(zs[i], zs[i - 1] - 2.6)
-    for z, (zt, t) in zip(zs, labels):
-        line(xr + 0.5, zt, xr + 3.5, z + 0.5, C["sub"], 1)
-        text(xr + 4, z, t, 16, color=C["sub"])
-    # 机
-    line(xl - 10, 0, xr + 2, 0, C["ink"], 2)
-    text(xl - 8, -2.2, "机", 15, color=C["sub"])
-    # 付け替えの手順
-    steps = ["25mm ⇔ 19mm の付け替え（ユニットごと交換・外径34mmとネジ位置は共通）",
-             "1. ボールを上から取り出す　2. 裏のネジ3本を外す",
-             "3. ユニットを上に少し持ち上げ、センサー側のケーブルを抜く　4. もう一方のユニットを入れて逆の順番でとめる"]
-    for i, t in enumerate(steps):
-        add(f'<text x="30" y="{H - 100 + i*26}" font-size="{18 if i == 0 else 16}" '
-            f'font-weight="{"bold" if i == 0 else "normal"}" fill="{C["ink"]}">{t}</text>')
-    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" '
-            f'font-family="IPAPGothic, IPAGothic, sans-serif"><rect width="100%" height="100%" fill="{C["bg"]}"/>'
-            + "".join(o) + "</svg>")
-
-
 if __name__ == "__main__":
     out = sys.argv[1] if len(sys.argv) > 1 else "docs/images"
     open(f"{out}/pcb-top.svg", "w").write(top_view())
-    open(f"{out}/ballmount-section.svg", "w").write(mount_section())

@@ -8,11 +8,14 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "case"))
 import kataware_case as k  # noqa: E402
+import ball_unit as bu  # noqa: E402
+import manifold3d as mf  # noqa: E402
 
 U = k.U
 C = {"bg": "#f7f7f5", "ink": "#333", "sub": "#666", "bottom": "#c9ccd1", "top": "#e8e2d4", "pcb": "#2f7d45",
      "plate": "#3a3a3a", "gasket": "#f19ca6", "switch": "#9aa0a6", "cap": "#ffffff", "xiao": "#1b5e20",
-     "usb": "#90a4ae", "bat": "#b0b6bb", "pwr": "#f0a500"}
+     "usb": "#90a4ae", "bat": "#b0b6bb", "pwr": "#f0a500", "base": "#aeb4bc", "cup": "#f3ede2",
+     "brg": "#d4a017", "ball": "#c0392b", "lens": "#5d6d7e", "screw": "#1a5276"}
 
 
 def parts(side):
@@ -104,6 +107,36 @@ def main(out):
     W2, H2, b2 = section(left, "y", 37, ((ix - 22, ix + 6), (-1, 22)),
                          "② 内側の側面の断面（XIAO の USB-C）", labels2, px=22,
                          extra=[("xiao", xiao), ("usb", usb)])
+    # ③ ボールユニット (右手。ボールの中心を通る前後の断面。右が奥)
+    right = parts("right") + keys("right")
+    bx, by = k.HALVES["right"]["ball"]
+    z0 = k.FLOOR
+
+    def at(m):
+        return m.translate([bx, by, z0])
+    size = 25
+    cup, info = bu.cup(size)
+    sensor = k.cube(-bu.SENSOR_W/2, -bu.SENSOR_L/2, bu.BASE_FLOOR - bu.SENSOR_POCKET, bu.SENSOR_W/2, bu.SENSOR_L/2, bu.SENSOR_TOP)
+    lens = k.cube(-3.5, -4.5, bu.SENSOR_TOP, 3.5, 4.5, bu.SENSOR_TOP + bu.LENS_H)
+    ball = mf.Manifold.sphere(bu.CUPS[size]["R"], 96).translate([0, 0, info["cz"]])
+    screws = k.union([k.cyl(0, -k.BALL_SCREW_R, -z0, bu.INSERT_DEPTH - 0.5, 1.0),
+                      k.cyl(0, -k.BALL_SCREW_R, -z0, -z0 + 1.2, 2.0, 1.0)])
+    unit = [("base", at(bu.base())), ("cup", at(cup)), ("pcb", at(sensor)), ("lens", at(lens)),
+            ("brg", at(bu.bearings(size))), ("ball", at(ball)), ("screw", at(screws))]
+    zc = z0 + info["cz"]
+    labels3 = [
+        (by + 12.5*0.6, zc + 7, "ボール 25mm（上から取り出せる）", (by + 26, 36)),
+        (by + 15.5, z0 + 22.5, "カップ（25mm 用・19mm 用を差し替え）", (by + 26, 32)),
+        (by + 11, z0 + info["brg_z"], "ベアリング MR63ZZ ＋ ピン（3か所）", (by + 26, 28)),
+        (by - 16.2, z0 + 11, "土台（ケースに固定したまま）", (by + 26, 24)),
+        (by + 3, z0 + bu.SENSOR_TOP + 1.5, "PMW3610 センサー（すき間 2.4mm）", (by + 26, 20)),
+        (by + 21, k.PCB_B + 0.8, "基板（穴 36mm・ユニットに触れない）", (by + 26, 16)),
+        (by + 16.2, z0 + 3, "センサーのケーブルの出口（奥）", (by + 26, 12)),
+        (by - k.BALL_SCREW_R, 0.6, "底から皿ネジ M2 → 土台のインサート", (by + 26, 8)),
+    ]
+    W3, H3, b3 = section(right, "x", bx, ((by - 22, by + 25), (-1, 40)),
+                         "③ ボールユニットの断面（25mm。右が奥）", labels3, px=13, extra=unit)
+    open(f"{out}/ballunit-section.svg", "w").write(svg(W3, H3, b3))
     open(f"{out}/case-section-tab.svg", "w").write(svg(W1, H1, b1))
     open(f"{out}/case-section-usb.svg", "w").write(svg(W2, H2, b2))
 

@@ -71,6 +71,7 @@ HALVES = {
 WALL_TOP_Y = 3.5*U + 2.5       # 上の壁の真ん中
 WALL_BOTTOM_Y = -0.5*U - 2.5   # 下の壁の真ん中
 BALL_SCREW_R = 13.5            # ボールユニットの底ネジ (ユニット中心から)
+BALL_SCREW_ANGLES = (30, 150, 270)   # 奥 (90°) はセンサーのケーブルの出口なのであける
 
 
 # ---------- DXF → shapely ----------
@@ -149,7 +150,7 @@ def build(side):
         cut.append(cyl(fx, fy, -1, 0.6, 5.25))
     if h["ball"]:                                # ボールユニットの底ネジ (皿ネジ M2)
         bx, by = h["ball"]
-        for a in (90, 210, 330):
+        for a in BALL_SCREW_ANGLES:
             sx = bx + BALL_SCREW_R*math.cos(math.radians(a))
             sy = by + BALL_SCREW_R*math.sin(math.radians(a))
             cut += [cyl(sx, sy, -1, FLOOR + 1, 1.15), cyl(sx, sy, -0.01, 1.2, 2.2, 1.0)]
