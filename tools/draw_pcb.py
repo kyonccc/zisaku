@@ -127,7 +127,7 @@ def left_board(ox, oy):
     b.circle(ex, ey, 3, C["enc"])
     b.rect(ex, ey - 9.2, 3.7, 1.6, C["back"], None, rx=0.2, op=0.55)
     b.text(ex, ey + 9, "エンコーダー", 11, color=C["enc"])
-    b.xiao(6.5*U - 8, 37, +1)
+    b.xiao(6.5*U - 8, kataware_case.HALVES["left"]["xiao"][1], +1)
     b.view(6*U, 2.5*U)
     b.power(6.5*U + 1.5, 51.5, +1)
     b.battery(29.0, 0.5*U, 0.5*U, 0.5*U)
@@ -143,7 +143,8 @@ def right_board(ox, oy):
     b.key(0, 3*U, "[")
     b.key(0, 2*U, "]")
     # ボールユニット
-    bx, by = -0.5*U, 0.25*U
+    bx, by = kataware_case.HALVES["right"]["ball"]
+    bx -= kataware_case.RIGHT_X
     b.circle(bx, by, UNIT_R, C["unit"], C["ink"], sw=1.5)            # ユニット (34mm)
     b.circle(bx, by, 12.5, C["ball"], None, op=0.85)                  # ボール 25mm
     b.text(bx, by + 2.5, "25mm", 15, color="#fff", weight="bold")
@@ -153,11 +154,13 @@ def right_board(ox, oy):
         b.o.append(f'<path d="M{b.X(sx)-6:.1f},{b.Y(sy):.1f} h12 M{b.X(sx):.1f},{b.Y(sy)-6:.1f} v12" '
                    f'stroke="{C["screw"]}" stroke-width="1.5"/>')
     # センサーへのケーブルの端子 (裏・ボールの穴のすぐ上)
-    hx, hy = bx, by + 20.5
-    b.rect(hx, hy, 15.6, 2.8, "none", C["back"], dash="4 3", rx=0.3, sw=1.2)
+    # センサーのケーブルをつなぐコネクタ J (裏・Enter と N のあいだ。JST SH 6ピン)
+    hx, hy = U, 10.4
+    b.rect(hx, hy, 8, 4.4, "none", C["back"], dash="4 3", rx=0.3, sw=1.2)
     for k in range(6):
-        b.circle(hx + (k - 2.5)*2.54, hy, 0.6, C["back"])
-    b.xiao(-1.5*U + 8, 37, -1)
+        b.rect(hx + (k - 2.5)*1.0, hy + 1.3, 0.6, 1.5, C["back"], None, rx=0.1)
+    b.text(hx, hy - 4.2, "J", 11, color=C["back"])
+    b.xiao(-1.5*U + 8, kataware_case.HALVES["right"]["xiao"][1], -1)
     b.view(-U, 2.5*U)
     b.power(-1.5*U - 1.5, 51.5, -1)
     b.battery(67.7, 0.5*U, 4.5*U, 0.5*U)

@@ -11,7 +11,7 @@
   (paper "A3")
   (title_block
     (title "left")
-    (date "2026-10-16")
+    (date "2026-10-17")
     (rev "0.1")
     (company "kyonccc")
   )
@@ -1792,7 +1792,7 @@
     
 
       (module kataware_xiao_plus_placeholder (layer B.Cu) (tedit 0)
-      (at 115.825 -37 -90)
+      (at 115.825 -38.5 -90)
       (fp_text reference "MCU1" (at 0 -12) (layer B.SilkS) hide (effects (font (size 1 1) (thickness 0.15)) (justify mirror)))
       (fp_text value "" (at 0 0) (layer B.SilkS) hide (effects (font (size 1 1) (thickness 0.15)) (justify mirror)))
       (fp_text user "XIAO nRF52840 Plus (裏・仮)" (at 0 9 -90) (layer B.Fab) (effects (font (size 0.8 0.8) (thickness 0.12)) (justify mirror)))

@@ -21,7 +21,7 @@
   - カバーの上面は、親指が来る方 (Enter の方・少し手前) に向かって 25° 下がる。
     親指側の縁はキーキャップの上とほぼ同じ高さ、奥側はボールのてっぺん近くまで上がる (背もたれ・飛び出し防止)
 
-座標: ユニットの中心が (0, 0)、土台の底面が z = 0。y が奥 (6ピン端子の方向)。
+座標: ユニットの中心が (0, 0)、土台の底面が z = 0。x が右 (Enter の方)、y が奥。
 ケースの中では z = 0 がケースの底板の上面 (机から 2.5mm) になる。
 """
 import math
@@ -41,6 +41,7 @@ BASE_FLOOR = 1.5         # 底の厚さ
 BASE_H = 13.5            # 土台の高さ (ケースの中では机から 16.0mm。上ケースの上面 16.5mm より少し下)
 BOSS_R = 2.4             # 底ネジのインサート (M2・外径3.2mm) を入れる柱
 INSERT_R, INSERT_DEPTH = 1.6, 4.0
+CABLE_ANGLE = 0.0        # センサーのケーブルの出口の向き (0° = 右 = 基板のコネクタ J のある Enter の方)
 
 # ===== センサー (PMW3610 の基板。寸法は実物合わせ) =====
 SENSOR_W, SENSOR_L = 16.0, 20.0   # 幅 (左右) × 長さ (前後)。コネクタは奥側
@@ -122,8 +123,8 @@ def base():
         # センサー基板のくぼみ (+0.2mm の余裕)
         k.cube(-SENSOR_W/2 - 0.2, -SENSOR_L/2 - 0.2, BASE_FLOOR - SENSOR_POCKET,
                SENSOR_W/2 + 0.2, SENSOR_L/2 + 0.2, BASE_FLOOR + 1),
-        # ケーブルの出口 (奥)
-        k.cube(-4.5, BASE_IN_R - 1, BASE_FLOOR - SENSOR_POCKET, 4.5, UNIT_R + 1, 5.5),
+        # ケーブルの出口 (基板のコネクタのある Enter の方)
+        rot_z(k.cube(-4.5, BASE_IN_R - 1, BASE_FLOOR - SENSOR_POCKET, 4.5, UNIT_R + 1, 5.5), CABLE_ANGLE - 90),
         # カップの向きを決める切り欠き (奥)
         k.cube(-1.6, BASE_IN_R - 1, BASE_H - 1.5, 1.6, UNIT_R + 1, BASE_H + 1),
     ]

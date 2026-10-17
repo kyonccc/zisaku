@@ -47,7 +47,7 @@ HALVES = {
     "left": {
         "inner_x": 6.5*U,          # 内側 (相手側) の壁の内面
         "dir": +1,                 # 内側の壁がどちら向きか
-        "xiao": (6.5*U - 8, 37.0),
+        "xiao": (6.5*U - 8, 38.5),
         "pwr_y": 51.5,
         "battery": (29.0, 0.5*U),
         "screws": [(2.15, "top"), (53.15, "top"), (102.15, "top"),
@@ -58,14 +58,14 @@ HALVES = {
     "right": {
         "inner_x": RIGHT_X - 1.5*U,
         "dir": -1,
-        "xiao": (RIGHT_X - 1.5*U + 8, 37.0),
+        "xiao": (RIGHT_X - 1.5*U + 8, 38.5),
         "pwr_y": 51.5,
         "battery": (RIGHT_X + 67.7, 0.5*U),
         "screws": [(RIGHT_X + 93.1, "top"), (RIGHT_X + 42.1, "top"), (RIGHT_X - 6.9, "top"),
                    (RIGHT_X + 93.1, "bottom"), (RIGHT_X + 48.1, "bottom"), (RIGHT_X + 13.0, "bottom")],
         "feet": [(RIGHT_X + 93.1, 1.575), (RIGHT_X + 18.1, 1.575),
                  (RIGHT_X + 93.1, 55.575), (RIGHT_X - 16.9, 55.575)],
-        "ball": (RIGHT_X - 0.5*U, 0.25*U),
+        "ball": (RIGHT_X - 8.0, 11.0),          # config.yaml の ball_x / ball_y と同じ
     },
 }
 WALL_TOP_Y = 3.5*U + 2.5       # 上の壁の真ん中

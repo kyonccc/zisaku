@@ -14,7 +14,7 @@
 # 部品データ:
 #   footprints/kataware/  … kataware 用に作ったもの (販売可能。Ergogen 内蔵 (MIT) をもとにしたものを含む)
 #   footprints/ceoloide/  … ceoloide/ergogen-footprints から取り込んだ MIT ライセンスのもの
-#   footprints/box.js, header6.js … kataware 用の補助部品
+#   footprints/box.js, header6.js … kataware 用の補助部品 (header6 は今は未使用)
 
 meta:
   engine: 4.1.0
@@ -29,7 +29,9 @@ units:
   corner: 14     # 外周の角の丸み
   rx: 200        # 右手の原点 (マイコン列の中心)
   # --- ガスケットマウント用 ---
-  xiao_y: 37     # XIAO の中心の高さ (親指の段から)。USB-C は内側の側面に出す
+  xiao_y: 38.5   # XIAO の中心の高さ (親指の段から)。USB-C は内側の側面に出す。ボールの穴に当たらない高さ
+  ball_x: -8     # 右手のボールの中心 (Y の列の左隣 [ ] の列が 0)。これより右は N・Enter のキーキャップに当たる
+  ball_y: 11     # 同じく親指の段から。これより上は ] のキーキャップに当たる
   pwr_y: 51.5    # 電源スイッチの中心の高さ (親指の段から)
   tab_w: 8       # プレートの耳 (ガスケットで挟む所) の幅
 
@@ -91,7 +93,7 @@ points:
 outlines:
   # ===== 考え方 (ガスケットマウント) =====
   #   board   … ケースの外形 (143.35 x 86.2mm, 角 R14)
-  #   cavity  … ケースの内側 (キーの範囲ちょうど 133.35 x 76.2mm, 角 R5)。右手はボールの所が丸くふくらむ
+  #   cavity  … ケースの内側 (キーの範囲ちょうど 133.35 x 76.2mm, 角 R5)。左右とも同じ形 (ボールは内側に収まる)
   #   pcb     … 基板。内側より 0.75mm 小さい。ソケットのパッドが端まで来る所だけ壁の溝に入る
   #             内側の側面に XIAO・電源スイッチ用の「舌」が出る
   #   plate   … プレート。内側より 0.5mm 小さく、6か所の「耳 (タブ)」が壁の溝に入る
@@ -116,19 +118,14 @@ outlines:
   ball_hole:            # 基板・プレートの穴。ボールユニット (外径34mm) + すき間1mm
     - what: circle
       where: right_e_top
-      adjust.shift: [-0.5kx, -2.75ky]
+      adjust.shift: [ball_x, ball_y - 3ky]
       radius: 18
   ball_cut:             # 穴 + 穴より左下の角 (ここには部品がないので切り落とす)
     - name: ball_hole
     - what: rectangle
       where: right_e_top
-      adjust.shift: [-kx - 5, -3.125ky + 1]   # 穴の左側に細い尖りが残らないよう、中心より 12mm 上まで
-      size: [kx + 10, 0.75ky + 22]
-  ball_bulge:           # ケース内側のふくらみ (ユニット 34mm + 0.5mm)
-    - what: circle
-      where: right_e_top
-      adjust.shift: [-0.5kx, -2.75ky]
-      radius: 17.5
+      adjust.shift: [ball_x - 20, ball_y - 3ky - 15]
+      size: [40, 30]
 
   # --- ケースの内側・トップケースの開口 ---
   cavity_left:
@@ -143,7 +140,6 @@ outlines:
       adjust.shift: [2kx, -1.5ky]
       size: [7kx, 4ky]
       corner: 5
-    - name: ball_bulge
   top_opening_left:
     - what: rectangle
       where: left_c0_thumb
@@ -156,10 +152,6 @@ outlines:
       adjust.shift: [2kx, -1.5ky]
       size: [7kx + 1.5, 4ky + 1.5]
       corner: 3.5
-    - what: circle
-      where: right_e_top
-      adjust.shift: [-0.5kx, -2.75ky]
-      radius: 18.25
 
   # --- 穴・窓 ---
   encoder_cut:          # エンコーダー本体の逃げ (プレート用)
@@ -368,10 +360,10 @@ pcbs:
         params:
           from: "{{name}}"
           to: "{{row_net}}"
-      trackball_header:   # PMW3610 センサーへのケーブルをつなぐ所 (ボールの穴のすぐ上)
-        what: header6
+      trackball_header:   # PMW3610 センサーへのケーブルをつなぐ所 (基板の裏・Enter と N のあいだ)
+        what: kataware/jst_sh6_placeholder
         where: right_e_top
-        adjust.shift: [-0.5kx, -2.75ky + 20.5]
+        adjust.shift: [kx, 10.4 - 3ky]
         params:
           P1: 3V3
           P2: GND

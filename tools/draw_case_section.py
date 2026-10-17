@@ -106,17 +106,18 @@ def main(out):
     ]
     W1, H1, b1 = section(left, "x", 24.15, ((L - 16, L + 6), (-1, 22)),
                          "① 耳のところの断面（プレートの耳をガスケットで上下から挟む）", labels, px=22)
-    # ② 内側の側面 (y = 37 で切る): XIAO と USB-C
+    # ② 内側の側面 (XIAO の中心の高さで切る): XIAO と USB-C
     ix = 6.5*U
-    xiao = k.cube(ix - 18.5, 37 - 8.9, k.PCB_B - 4.5, ix + 2.5, 37 + 8.9, k.PCB_B - 1.2)
-    usb = k.cube(ix - 5, 37 - 4.5, k.PCB_B - 4.5, ix + 2.5, 37 + 4.5, k.PCB_B - 1.2)
+    xy = k.HALVES["left"]["xiao"][1]
+    xiao = k.cube(ix - 18.5, xy - 8.9, k.PCB_B - 4.5, ix + 2.5, xy + 8.9, k.PCB_B - 1.2)
+    usb = k.cube(ix - 5, xy - 4.5, k.PCB_B - 4.5, ix + 2.5, xy + 4.5, k.PCB_B - 1.2)
     labels2 = [
         (ix + 1.5, k.PCB_B + 0.8, "基板の舌（壁の溝に入る）", (ix + 9.5, 12.5)),
         (ix - 6, k.PCB_B - 2.5, "XIAO（基板の裏）", (ix + 9.5, 9.5)),
         (ix + 2.0, k.PCB_B - 3.2, "USB-C → 側面の穴から挿す", (ix + 9.5, 6.5)),
         (ix - 10, 1.2, "底板 2.5mm", (ix + 9.5, 3.0)),
     ]
-    W2, H2, b2 = section(left, "y", 37, ((ix - 22, ix + 6), (-1, 22)),
+    W2, H2, b2 = section(left, "y", xy, ((ix - 22, ix + 6), (-1, 22)),
                          "② 内側の側面の断面（XIAO の USB-C）", labels2, px=22,
                          extra=[("xiao", xiao), ("usb", usb)])
     # ③ ボールユニット (右手。ボールの中心を通る前後の断面。右が奥)
@@ -168,48 +169,6 @@ def main(out):
                          "⑤ ベアリングの軸のネジ（軸に沿って切った断面。25mm）", labels5, px=22)
     open(f"{out}/ballunit-screw.svg", "w").write(svg(W5, H5, b5))
 
-    # ⑥ カバーのロック (上から見た、ツメの高さでの断面)
-    open(f"{out}/ballunit-lock.svg", "w").write(lock_view(size))
-
-
-def lock_view(size):
-    px = 14.0
-    W, H = 1180, 660
-    cup, _ = bu.cup(size)
-    cover, _ = bu.cover(size)
-    zc = bu.LUG_Z0 + bu.LUG_H/2
-
-    def panel(ox, title, cov, arrow):
-        cxp, cyp = ox + 20*px, 330
-
-        def X(x):
-            return cxp + x*px
-
-        def Y(y):
-            return cyp - y*px
-        o = [f'<text x="{X(0):.0f}" y="70" font-size="19" font-weight="bold" text-anchor="middle" fill="{C["ink"]}">{title}</text>']
-        for name, m in (("cup", cup), ("cover", cov)):
-            d = " ".join("M" + " L".join(f"{X(p[0]):.1f},{Y(p[1]):.1f}" for p in poly) + " Z"
-                         for poly in m.slice(zc).to_polygons())
-            o.append(f'<path d="{d}" fill="{C[name]}" stroke="{C["ink"]}" stroke-width="1" fill-rule="evenodd"/>')
-        if arrow:
-            r = 19.5
-            a0, a1 = math.radians(60), math.radians(30)
-            o.append(f'<path d="M{X(r*math.cos(a0)):.1f},{Y(r*math.sin(a0)):.1f} A{r*px:.0f},{r*px:.0f} 0 0 1 '
-                     f'{X(r*math.cos(a1)):.1f},{Y(r*math.sin(a1)):.1f}" fill="none" stroke="#b03a2e" stroke-width="3" '
-                     f'marker-end="url(#arr)"/>')
-            o.append(f'<text x="{X(20.8):.1f}" y="{Y(5.5):.1f}" font-size="17" text-anchor="end" fill="#b03a2e">時計回りに {bu.LOCK_TURN:.0f}°</text>')
-        return "".join(o)
-    inserted = cover.rotate([0, 0, bu.LOCK_TURN])
-    body = ('<defs><marker id="arr" markerWidth="10" markerHeight="10" refX="6" refY="5" orient="auto">'
-            '<path d="M0,0 L10,5 L0,10 Z" fill="#b03a2e"/></marker></defs>'
-            f'<text x="30" y="34" font-size="22" font-weight="bold" fill="{C["ink"]}">⑥ カバーのロック（上から見た図・ツメの高さで切った断面）</text>'
-            + panel(30, "① 差し込む（ツメを入口に合わせる）", inserted, False)
-            + panel(600, "② ひねってロック（カチッと止まる）", cover, True)
-            + f'<text x="30" y="{H - 40}" font-size="16" fill="{C["sub"]}">濃い色 = カバー（差し込み部と3つのツメ）、薄い色 = カップ。'
-              f'ツメは不等間隔なので、差し込める向きは1つだけ。外すときは反時計回りに {bu.LOCK_TURN:.0f}° 回して持ち上げる。</text>')
-    return svg(W, H, body)
-
     # ④ 親指の来る向きの断面 (右が親指側 = Enter の方)
     th = bu.THUMB_FROM
     lo = k.FLOOR + bu.cover_z(size, bu.UNIT_R, th)
@@ -254,6 +213,49 @@ def lock_view(size):
     open(f"{out}/ballunit-thumb.svg", "w").write(svg(W4, H4, b4))
     open(f"{out}/case-section-tab.svg", "w").write(svg(W1, H1, b1))
     open(f"{out}/case-section-usb.svg", "w").write(svg(W2, H2, b2))
+
+    # ⑥ カバーのロック (上から見た、ツメの高さでの断面)
+    open(f"{out}/ballunit-lock.svg", "w").write(lock_view(size))
+
+
+def lock_view(size):
+    px = 14.0
+    W, H = 1180, 660
+    cup, _ = bu.cup(size)
+    cover, _ = bu.cover(size)
+    zc = bu.LUG_Z0 + bu.LUG_H/2
+
+    def panel(ox, title, cov, arrow):
+        cxp, cyp = ox + 20*px, 330
+
+        def X(x):
+            return cxp + x*px
+
+        def Y(y):
+            return cyp - y*px
+        o = [f'<text x="{X(0):.0f}" y="70" font-size="19" font-weight="bold" text-anchor="middle" fill="{C["ink"]}">{title}</text>']
+        for name, m in (("cup", cup), ("cover", cov)):
+            d = " ".join("M" + " L".join(f"{X(p[0]):.1f},{Y(p[1]):.1f}" for p in poly) + " Z"
+                         for poly in m.slice(zc).to_polygons())
+            o.append(f'<path d="{d}" fill="{C[name]}" stroke="{C["ink"]}" stroke-width="1" fill-rule="evenodd"/>')
+        if arrow:
+            r = 19.5
+            a0, a1 = math.radians(60), math.radians(30)
+            o.append(f'<path d="M{X(r*math.cos(a0)):.1f},{Y(r*math.sin(a0)):.1f} A{r*px:.0f},{r*px:.0f} 0 0 1 '
+                     f'{X(r*math.cos(a1)):.1f},{Y(r*math.sin(a1)):.1f}" fill="none" stroke="#b03a2e" stroke-width="3" '
+                     f'marker-end="url(#arr)"/>')
+            o.append(f'<text x="{X(20.8):.1f}" y="{Y(5.5):.1f}" font-size="17" text-anchor="end" fill="#b03a2e">時計回りに {bu.LOCK_TURN:.0f}°</text>')
+        return "".join(o)
+    inserted = cover.rotate([0, 0, bu.LOCK_TURN])
+    body = ('<defs><marker id="arr" markerWidth="10" markerHeight="10" refX="6" refY="5" orient="auto">'
+            '<path d="M0,0 L10,5 L0,10 Z" fill="#b03a2e"/></marker></defs>'
+            f'<text x="30" y="34" font-size="22" font-weight="bold" fill="{C["ink"]}">⑥ カバーのロック（上から見た図・ツメの高さで切った断面）</text>'
+            + panel(30, "① 差し込む（ツメを入口に合わせる）", inserted, False)
+            + panel(600, "② ひねってロック（カチッと止まる）", cover, True)
+            + f'<text x="30" y="{H - 40}" font-size="16" fill="{C["sub"]}">濃い色 = カバー（差し込み部と3つのツメ）、薄い色 = カップ。'
+              f'ツメは不等間隔なので、差し込める向きは1つだけ。外すときは反時計回りに {bu.LOCK_TURN:.0f}° 回して持ち上げる。</text>')
+    return svg(W, H, body)
+
 
 
 if __name__ == "__main__":

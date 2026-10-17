@@ -58,7 +58,7 @@ def mcu(col_x, toward):
     vx, vy = col_x + (U - VIEW_W)/2, (2*U - VIEW_H)/2
     edge = col_x + U if toward > 0 else col_x          # 内側の壁の内面
     xx = edge + toward*2.5 - (MCU_H if toward > 0 else 0)
-    xy = 3.5*U - 37 - MCU_W/2                           # 中心が親指の段の中心から 37mm 上
+    xy = 3.5*U - 38.5 - MCU_W/2                         # 中心が親指の段の中心から 38.5mm 上
     return (f'<rect x="{xx:.2f}" y="{xy:.2f}" width="{MCU_H}" height="{MCU_W}" rx="1" fill="none" '
             f'stroke="{FAINT}" stroke-width="0.3" stroke-dasharray="1.5 1"/>'
             f'<rect x="{vx:.2f}" y="{vy:.2f}" width="{VIEW_W}" height="{VIEW_H}" rx="0.8" fill="none" '
@@ -123,7 +123,7 @@ def right_half():
             o.append(key(gx + c*U, r*U, label))
     o.append(key(U, 0, "["))
     o.append(key(U, U, "]"))
-    cx, cy = U, 3.25*U
+    cx, cy = 1.5*U - 8, 3.5*U - 11                 # [ ] の列の下・N の段 (config.yaml の ball_x / ball_y)
     o.append(f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{HOUSING/2}" fill="none" stroke="{SUB}" stroke-width="0.3" stroke-dasharray="2 1"/>'
              f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{BALL/2}" fill="none" stroke="{INK}" stroke-width="0.5"/>'
              f'<text x="{cx:.2f}" y="{cy+1.5:.2f}" font-size="4" text-anchor="middle" fill="{INK}">25mm</text>'
