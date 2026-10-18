@@ -14,7 +14,8 @@
 # 部品データ:
 #   footprints/kataware/  … kataware 用に作ったもの (販売可能。Ergogen 内蔵 (MIT) をもとにしたものを含む)
 #   footprints/ceoloide/  … ceoloide/ergogen-footprints から取り込んだ MIT ライセンスのもの
-#   footprints/box.js, header6.js … kataware 用の補助部品 (header6 は今は未使用)
+#   footprints/lib/      … KiCad 標準ライブラリ・Seeed 公式のフットプリントを変換したもの (tools/import_footprints.py)
+#   footprints/box.js    … kataware 用の補助部品
 
 meta:
   engine: 4.1.0
@@ -265,7 +266,7 @@ pcbs:
       diode:
         what: diode
         where: /^left_/
-        adjust.shift: [0, -5]
+        adjust.shift: [2, -5]       # 右へ 2mm: スイッチの位置決め穴 (左下) をよける
         params:
           from: "{{name}}"
           to: "{{row_net}}"
@@ -287,12 +288,13 @@ pcbs:
           from: ENC_SW
           to: ROW2
       xiao:               # 基板の裏側。KiCad で Seeed 公式フットプリントに置き換える (仮)
-        what: kataware/xiao_plus_placeholder
+        what: lib/xiao_nrf52840_plus   # Seeed 公式の XIAO nRF52840 Plus (SMD・基板の裏)
         where: left_c6_thumb
         adjust:                 # 横向き。USB-C を内側の側面 (右) に出す
           shift: [0.5kx - 8, xiao_y]
-          rotate: -90
+          rotate: 0
         params:
+          side: B
           D0: ROW0
           D1: ROW1
           D2: ROW2
@@ -325,18 +327,20 @@ pcbs:
           GND: GND
           CS: VIEW_CS
       power_switch:       # 水平スライドスイッチ (内側の側面)。パッドが内向き・レバーが外向き
-        what: kataware/power_switch_placeholder
+        what: lib/sw_spdt_pcm12   # KiCad 標準 SW_SPDT_PCM12 (Alps SSSS811101 と同じ形)
         where: left_c6_thumb
         adjust:
-          shift: [0.5kx + 1.5, pwr_y]
+          shift: [0.5kx + 0.85, pwr_y]   # 固定用の足が基板の端から 0.3mm 以上内側に入る位置
           rotate: 90              # レバー (部品の +y 側) を基板の外 (右の側面) へ
         params:
           from: BAT_P
           to: BAT_SW
       battery:
-        what: kataware/battery_125_placeholder   # Gexa GA-011 (1.25mm ピッチ)。KiCad で PicoBlade に置き換え
+        what: lib/molex_picoblade_2p   # Gexa GA-011 (1.25mm ピッチ)。差し込み口は電池のある右向き
         where: left_c0_thumb
-        adjust.shift: [0.5kx, 0.5ky]
+        adjust:
+          shift: [0.5kx + 1, 12]
+          rotate: -90
         params:
           side: B
           pos: BAT_P
@@ -356,15 +360,16 @@ pcbs:
       diode:
         what: diode
         where: /^right_/
-        adjust.shift: [0, -5]
+        adjust.shift: [2, -5]       # 右へ 2mm: スイッチの位置決め穴 (左下) をよける
         params:
           from: "{{name}}"
           to: "{{row_net}}"
       trackball_header:   # PMW3610 センサーへのケーブルをつなぐ所 (基板の裏・Enter と N のあいだ)
-        what: kataware/jst_sh6_placeholder
+        what: lib/jst_sh_bm06b   # KiCad 標準 JST SH 6ピン (上から挿す)
         where: right_e_top
         adjust.shift: [kx, 10.4 - 3ky]
         params:
+          side: B
           P1: 3V3
           P2: GND
           P3: TB_SCLK
@@ -372,12 +377,13 @@ pcbs:
           P5: TB_NCS
           P6: TB_MOTION
       xiao:
-        what: kataware/xiao_plus_placeholder
+        what: lib/xiao_nrf52840_plus
         where: right_e_top
         adjust:                 # 横向き。USB-C を内側の側面 (左) に出す
           shift: [-1.5kx + 8, xiao_y - 3ky]
-          rotate: 90
+          rotate: 180
         params:
+          side: B
           D0: ROW0
           D1: ROW1
           D2: ROW2
@@ -406,18 +412,20 @@ pcbs:
           rotate: 180
         params: *view_params
       power_switch:
-        what: kataware/power_switch_placeholder
+        what: lib/sw_spdt_pcm12   # KiCad 標準 SW_SPDT_PCM12 (Alps SSSS811101 と同じ形)
         where: right_e_top
         adjust:
-          shift: [-1.5kx - 1.5, pwr_y - 3ky]
+          shift: [-1.5kx - 0.85, pwr_y - 3ky]
           rotate: -90             # レバーを基板の外 (左の側面) へ
         params:
           from: BAT_P
           to: BAT_SW
       battery:
-        what: kataware/battery_125_placeholder
+        what: lib/molex_picoblade_2p   # 差し込み口は電池のある左向き
         where: right_c12_thumb
-        adjust.shift: [-0.5kx, 0.5ky]
+        adjust:
+          shift: [-0.5kx, 12]
+          rotate: 90
         params:
           side: B
           pos: BAT_P

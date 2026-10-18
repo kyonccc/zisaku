@@ -423,9 +423,9 @@ kataware では次の2つを用意します。
 - 持ち時間の目安：右手（PC とつながる側＋トラックボール）は moNa2 の約1.5倍、左手はそれより長持ち（実物で要測定）
 - もっと長持ちさせたい時の予備案：GA-012（500mAh・約 30 × 48 × 4mm・約 12g）。同じコネクタなので基板はそのまま使える
 - キーの下の空いたスペースに置く（XIAO の真下とボールの穴は避ける）
-- 基板側は **1.25mm ピッチ 2ピンの仮の部品**（パッド1＝−、パッド2＝＋）にしてある。KiCad で Molex PicoBlade の
-  2ピン（KiCad 標準ライブラリ）に置き換える
-- ⚠️ 置き換えた後、**実物の電池を挿してテスターで＋/−を確認**してから XIAO につなぐ（逆だと XIAO が壊れる）
+- 基板側は **Molex PicoBlade 2ピン（横から挿すタイプ・`53261-0271`）**（パッド1＝−、パッド2＝＋）。差し込み口は電池のある方を向く
+- ⚠️ 実物の電池を挿して**テスターで＋/−を確認**してから XIAO につなぐ（逆だと XIAO が壊れる）。
+  逆だった時は `pcb/ergogen/config.yaml` の電池の `pos` / `neg` を入れ替えて作り直す
 
 - PSE の対象は「体積エネルギー密度 400Wh/L 以上」のリチウムイオン電池。とても小さい電池は対象外で、
   PSE マークが付いていないこともある。kataware では**安全を優先して PSE マーク付きの物だけ**を使う
@@ -468,19 +468,29 @@ MX と Choc のソケットを同じキーに置くと、**穴どうし・穴と
 スイッチは **Choc v2** に決定。Choc v2 は中心の足が太いので、基板の中心の穴は **5.0mm** です
 （Choc v1 は挿せません）。
 
-### まだ下書きの部分（KiCad で仕上げる）
+### 部品は本物のデータに置き換え済み
 
-- **XIAO nRF52840 Plus** は**仮の部品**（ピン番号 1〜14 と、Plus の裏面パッドを仮の位置に置いたもの）。
-  各ピンのつながり（ネット）はファームウェアのピン割り当てどおりに入っているので、KiCad で Seeed 公式の
-  フットプリントに置き換えて、つながりを移す
-- **電源スイッチ**も仮の部品。KiCad で標準ライブラリの `Button_Switch_SMD:SW_SPDT_PCM12`
-  （Alps SSSS811101 と同じ形）に置き換える。パッド番号 1・2・3 のつながりは引き継がれる
+| 部品 | フットプリント（KiCad のライブラリ名） | 元データ |
+| --- | --- | --- |
+| XIAO nRF52840 Plus（基板の裏・横向き） | `Seeed_Studio_XIAO_Series:XIAO-nRF52840-Plus-SMD` | Seeed Studio 公式（[OPL_Kicad_Library](https://github.com/Seeed-Studio/OPL_Kicad_Library)） |
+| 電源スイッチ（Alps SSSS811101 / C&K PCM12） | `Button_Switch_SMD:SW_SPDT_PCM12` | KiCad 標準ライブラリ |
+| センサー用コネクタ J（右手の裏） | `Connector_JST:JST_SH_BM06B-SRSS-TB_1x06-1MP_P1.00mm_Vertical` | KiCad 標準ライブラリ |
+| 電池コネクタ（基板の裏） | `Connector_Molex:Molex_PicoBlade_53261-0271_1x02-1MP_P1.25mm_Horizontal` | KiCad 標準ライブラリ |
+
+- 元の `.kicad_mod` は `pcb/ergogen/lib_src/`、Ergogen 用に変換したものは `pcb/ergogen/footprints/lib/`
+  （変換は `python3 tools/import_footprints.py`）
+- 各ピンのつながり（ネット）は、ファームウェアのピン割り当てどおりに入っている
+- **XIAO の電池パッド（BAT+）は XIAO の真下に隠れる**ので、基板のその位置に小さな穴（直径0.7mm）をあけてある。
+  XIAO をはんだ付けした後、**基板の表側からこの穴にはんだを流し込む**（nice!view を付ける前に）
+- 簡単な検査：`python3 tools/check_pcb.py`（パッドどうしの近さ・基板の端からの距離）。KiCad の DRC も必ず行う
 
 ### 部品データとライセンス（販売するため）
 
 | フォルダ | 中身 | ライセンス |
 | --- | --- | --- |
-| `pcb/ergogen/footprints/kataware/` | Choc v2 スイッチ・nice!view・XIAO（仮）・電源スイッチ（仮）・電池コネクタ（仮） | kataware 用に作成。Choc v2 は Ergogen 内蔵（MIT）をもとにしたもの |
+| `pcb/ergogen/footprints/kataware/` | Choc v2 スイッチ・nice!view | kataware 用に作成。Choc v2 は Ergogen 内蔵（MIT）をもとにしたもの |
+| `pcb/ergogen/footprints/lib/`（元は `lib_src/`） | 電源スイッチ・JST SH コネクタ・PicoBlade コネクタ | KiCad 標準ライブラリ（CC-BY-SA 4.0。**作った基板には適用されない例外つき**なので販売できる） |
+| 同上 | XIAO nRF52840 Plus | Seeed Studio OPL_Kicad_Library（CC-BY-SA 4.0。商用利用可・**出典の表示が必要**）。データを配る時はこの表の表示を残す |
 | `pcb/ergogen/footprints/ceoloide/` | エンコーダー | MIT（[ceoloide/ergogen-footprints](https://github.com/ceoloide/ergogen-footprints)） |
 | Ergogen 内蔵 | ダイオード | MIT |
 
@@ -488,8 +498,8 @@ MX と Choc のソケットを同じキーに置くと、**穴どうし・穴と
 KiCad で追加する部品も、KiCad 標準ライブラリ（設計に使った基板は自由に販売できる）か、
 販売可能なライセンスのものを選ぶこと
 - **配線（パターン）はまだ**。部品どうしのつながり（ネット）は入っているので、KiCad で線を引く
-- 電源スイッチ・電池コネクタの位置と向きは仮。KiCad で実物の大きさに合わせて調整する
-- トラックボールセンサーへの接続は、基板の裏の **6ピンコネクタ J**（JST SH・1.0mm ピッチ・上から挿すタイプ。Enter と N のあいだ）。並びは 3V3 / GND / SCLK / SDIO / NCS / MOTION。仮の部品なので、KiCad で `Connector_JST:JST_SH_BM06B-SRSS-TB_1x06-1MP_P1.00mm_Vertical` に置き換える
+- トラックボールセンサーへの接続は、基板の裏の **6ピンコネクタ J**（JST SH・1.0mm ピッチ・上から挿すタイプ。Enter と N のあいだ）。並びは 3V3 / GND / SCLK / SDIO / NCS / MOTION
+- 各キーのダイオードは、スイッチの位置決め穴をよけるため、キーの中心から右へ 2mm ずらしてある
 
 **KiCad での仕上げ方は [docs/kicad-guide.md](docs/kicad-guide.md) に手順をまとめています。**
 

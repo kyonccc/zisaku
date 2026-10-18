@@ -82,8 +82,8 @@ class Board:
         self.text(x, y + 3.6, label, size)
         # 裏: ホットスワップソケット (KiCad の座標は y 下向き → ここでは y を反転)
         self.rect(x + 2.5, y + 4.85, 11.6, 4.6, "none", C["back"], dash="4 3", rx=0.6, sw=1.2)
-        # 裏: ダイオード (キーの手前 5mm)
-        self.rect(x, y - 5, 3.7, 1.6, C["back"], None, rx=0.2, op=0.55)
+        # 裏: ダイオード (キーの手前 5mm・右へ 2mm)
+        self.rect(x + 2, y - 5, 3.7, 1.6, C["back"], None, rx=0.2, op=0.55)
 
     def xiao(self, x, y, toward):
         # 横向き。USB-C は内側の側面 (toward の向き) に出る
@@ -105,7 +105,7 @@ class Board:
     def battery(self, x, y, conn_x, conn_y):
         self.rect(x, y, 30, 20, C["bat"], C["bat"], dash="6 4", op=0.12, rx=1.5)
         self.text(x, y - 1.5, "電池（裏）", 12, color=C["sub"])
-        self.rect(conn_x, conn_y, 6, 3.5, C["back"], C["ink"], rx=0.3, sw=1)
+        self.rect(conn_x, conn_y, 4.5, 9, C["back"], C["ink"], rx=0.3, sw=1)   # 電池コネクタ (縦向き)
 
     def svg(self):
         return "".join(self.o)
@@ -129,8 +129,8 @@ def left_board(ox, oy):
     b.text(ex, ey + 9, "エンコーダー", 11, color=C["enc"])
     b.xiao(6.5*U - 8, kataware_case.HALVES["left"]["xiao"][1], +1)
     b.view(6*U, 2.5*U)
-    b.power(6.5*U + 1.5, 51.5, +1)
-    b.battery(29.0, 0.5*U, 0.5*U, 0.5*U)
+    b.power(6.5*U + 0.85, 51.5, +1)
+    b.battery(29.0, 0.5*U, 0.5*U + 1, 12)
     return b.svg()
 
 
@@ -162,8 +162,8 @@ def right_board(ox, oy):
     b.text(hx, hy - 4.2, "J", 11, color=C["back"])
     b.xiao(-1.5*U + 8, kataware_case.HALVES["right"]["xiao"][1], -1)
     b.view(-U, 2.5*U)
-    b.power(-1.5*U - 1.5, 51.5, -1)
-    b.battery(67.7, 0.5*U, 4.5*U, 0.5*U)
+    b.power(-1.5*U - 0.85, 51.5, -1)
+    b.battery(67.7, 0.5*U, 4.5*U, 12)
     return b.svg()
 
 
