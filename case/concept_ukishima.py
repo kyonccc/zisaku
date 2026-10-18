@@ -14,6 +14,7 @@
   - 全体を低くする: 床 1.5mm、電池は床のくぼみ (底 0.5mm) に入れ、基板の下のすき間を 7 → 5.85mm に
 """
 import json
+import math
 import os
 import sys
 
@@ -44,9 +45,12 @@ KEY_TOP = PLATE_T + 7.5
 # --- 爪留めカバー ---
 RING_TOP = KEY_TOP + 0.3          # リングの上面 (キーキャップとほぼ同じ高さ)
 CLAWS = (160, 50, 270)            # 爪の向き (親指の来る -20° のまわりは空ける)
-CLAW_W = 3.2                      # 爪の幅 (根元)
-CLAW_TIP_W = 2.2                  # 爪の幅 (先)
-CLAW_OVER = 0.7                   # 爪の先がボールにかぶる幅 (半径で)
+CLAW_OVER = 0.7                   # 爪の先がボールにかぶる幅 (半径で)。これを基準にする
+# 3D プリント (A1 mini などの 0.4mm ノズル・PLA) で折れにくい形
+CLAW_T = 2.4                      # 爪の厚さ (ボールの外側へ)。0.4mm ノズルで壁 6 周 = 中まで詰まる
+CLAW_ROOT_W = 8.0                 # 爪の幅 (根元・mm)
+CLAW_TIP_W = 4.0                  # 爪の幅 (先・mm)
+BUTTRESS = 2.0                    # 根元の外側の「控え壁」の張り出し (45° の斜面 → サポートなしで印刷できる)
 
 KEYS = {
     "left": [(c*U, r*U) for c in range(5) for r in range(4)] + [(5*U, 0), (5*U, 2*U), (5*U, 3*U), (6*U, 0)],
@@ -78,12 +82,24 @@ def claw_cover(size):
     tip_r = R_ - CLAW_OVER                                   # 爪の先の半径
     tip_z = cz + ((R_ + 0.3)**2 - tip_r**2) ** 0.5            # 爪の先の高さ (ボールの赤道より上)
     claws = []
-    shell = (mf.Manifold.sphere(R_ + 1.9, 128) - mf.Manifold.sphere(R_ + 0.3, 128)).translate([0, 0, cz])
+    r_mid = R_ + 0.3 + CLAW_T/2
+    shell = (mf.Manifold.sphere(R_ + 0.3 + CLAW_T, 128) - mf.Manifold.sphere(R_ + 0.3, 128)).translate([0, 0, cz])
+
+    def half_deg(width, r):
+        return math.degrees(width/2/r)
     for a in CLAWS:
-        # ボールの曲面に沿った細い爪 (球の殻を細い扇形で切り出す)。根元は広く、先は細く
-        lower = bu.sector(0, R_ + 4, a - 9, a + 9, RING_TOP - 0.6, cz + 1.0)
-        upper = bu.sector(0, R_ + 4, a - 6, a + 6, cz + 1.0, tip_z)
-        claws.append(shell ^ (lower + upper))
+        # 爪: 根元が広く先が細い台形を、ボールの曲面に沿った殻で切り出す
+        root = bu.sector(0, R_ + 6, a - half_deg(CLAW_ROOT_W, r_mid), a + half_deg(CLAW_ROOT_W, r_mid),
+                         RING_TOP - 1.0, RING_TOP)
+        tip = bu.sector(0, R_ + 6, a - half_deg(CLAW_TIP_W, r_mid), a + half_deg(CLAW_TIP_W, r_mid),
+                        tip_z - 0.01, tip_z)
+        claw = shell ^ mf.Manifold.batch_hull([root, tip])
+        # 根元の外側の控え壁 (三角の断面。根元を厚くして、層の境目で折れにくくする)
+        r_out = R_ + 0.3 + CLAW_T
+        wb = half_deg(CLAW_ROOT_W, r_mid)
+        foot = bu.sector(R_ + 0.3, min(r_out + BUTTRESS, bu.UNIT_R - 0.6), a - wb, a + wb, RING_TOP - 0.01, RING_TOP)
+        top = bu.sector(R_ + 0.3, r_out, a - wb*0.8, a + wb*0.8, RING_TOP + BUTTRESS - 0.01, RING_TOP + BUTTRESS)
+        claws.append(claw + mf.Manifold.batch_hull([foot, top]))
     m = ring + k.union(claws)
     m = m - mf.Manifold.sphere(R_ + 0.3, 128).translate([0, 0, cz])          # 爪の内側をボールに沿わせる
     spigot = (k.cyl(0, 0, bu.RECESS_Z + 0.2, bu.CUP_TOP + 0.01, bu.SPIGOT_R) -
