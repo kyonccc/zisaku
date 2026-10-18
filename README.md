@@ -27,6 +27,8 @@
 
 ---
 
+> 💡 **構想中**：デザインと打鍵感を考え直した案「**浮島**」を [docs/concept/](docs/concept/README.md) にまとめています（イメージのみ）。
+
 ## 2. 仕様
 
 ![kataware の配置（実寸比）](docs/images/layout-final.png)
