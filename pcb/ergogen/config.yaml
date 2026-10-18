@@ -329,7 +329,7 @@ pcbs:
         where: left_c6_thumb
         adjust:
           shift: [0.5kx + 1.5, pwr_y]
-          rotate: -90
+          rotate: 90              # レバー (部品の +y 側) を基板の外 (右の側面) へ
         params:
           from: BAT_P
           to: BAT_SW
@@ -410,7 +410,7 @@ pcbs:
         where: right_e_top
         adjust:
           shift: [-1.5kx - 1.5, pwr_y - 3ky]
-          rotate: 90
+          rotate: -90             # レバーを基板の外 (左の側面) へ
         params:
           from: BAT_P
           to: BAT_SW
