@@ -48,8 +48,8 @@ def main(out):
     rin = R_ + 0.3
     labels2 = [
         (rin + 1.2, claw_top - 0.6, f"爪の先：かぶり {cu.CLAW_OVER}mm（高さ 約{claw_top:.0f}mm）", (22, 31)),
-        (rin + 1.5, cz + 1.5, f"爪の厚さ {cu.CLAW_T}mm（壁 6 周で中まで詰まる）", (22, 27.5)),
-        (rin + cu.CLAW_T + 0.6, cu.RING_TOP + 0.6, f"控え壁（45°・サポート不要）根元 約{cu.CLAW_T + cu.BUTTRESS:.1f}mm", (22, 24)),
+        (rin + 2.2, cz + 2.2, "外側：リングの外周から曲線でつながる（最大約38°）", (22, 27.5)),
+        (rin + 3.0, cu.RING_TOP + 0.4, f"根元の厚さ 約{bu.UNIT_R - rin:.1f}mm・先 {cu.CLAW_TIP_T}mm", (22, 24)),
         (15.5, cu.RING_TOP - 1.5, f"リング：上面 約{cu.RING_TOP:.1f}mm", (22, 20.5)),
         (14.0, bu.CUP_TOP - 1.5, "ひねってロックする差し込み部", (22, 17)),
         (5, cz, "ボール 25mm", (22, 13.5)),
