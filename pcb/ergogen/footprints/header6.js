@@ -16,7 +16,7 @@ module.exports = {
     const pads = nets.map((n, i) => {
       const x = (i - 2.5) * 2.54
       const shape = i == 0 ? 'rect' : 'circle'
-      return `(pad ${i + 1} thru_hole ${shape} (at ${x} 0) (size 1.7 1.7) (drill 1.0) (layers *.Cu *.Mask) ${n})`
+      return `(pad ${i + 1} thru_hole ${shape} (at ${x} 0) (size 1.7 1.7) (drill 1.0) (layers *.Cu *.Mask) ${n || ''})`
     }).join('\n')
     return `
       (module header6 (layer F.Cu) (tedit 0)

@@ -18,7 +18,7 @@ module.exports = {
     const pads = nets.map((n, i) => {
       const x = (i - 2) * 2.54
       const shape = i == 0 ? 'rect' : 'circle'
-      return `(pad ${i + 1} thru_hole ${shape} (at ${x} 16.7 ${p.r}) (size 1.7 1.7) (drill 1.0) (layers *.Cu *.Mask) ${n})
+      return `(pad ${i + 1} thru_hole ${shape} (at ${x} 16.7 ${p.r}) (size 1.7 1.7) (drill 1.0) (layers *.Cu *.Mask) ${n || ''})
       (fp_text user "${names[i]}" (at ${x} 13.9 ${p.r + 90}) (layer F.SilkS) (effects (font (size 0.7 0.7) (thickness 0.12))))`
     }).join('\n')
     return `

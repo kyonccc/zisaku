@@ -44,10 +44,10 @@ module.exports = {
     const pads = []
     const left = [p.D0, p.D1, p.D2, p.D3, p.D4, p.D5, p.D6]
     left.forEach((n, i) => pads.push(
-      `(pad ${i + 1} thru_hole ${i == 0 ? 'rect' : 'circle'} (at ${xr} ${-7.62 + i * pitch} ${p.r}) (size 1.6 1.6) (drill 1.0) (layers *.Cu *.Mask) ${n})`))
+      `(pad ${i + 1} thru_hole ${i == 0 ? 'rect' : 'circle'} (at ${xr} ${-7.62 + i * pitch} ${p.r}) (size 1.6 1.6) (drill 1.0) (layers *.Cu *.Mask) ${n || ''})`))
     const right = [p.D7, p.D8, p.D9, p.D10, p.V3V3, p.GND, undefined]   // 8〜14 (下から上)
     right.forEach((n, i) => pads.push(
-      `(pad ${i + 8} thru_hole circle (at ${-xr} ${7.62 - i * pitch} ${p.r}) (size 1.6 1.6) (drill 1.0) (layers *.Cu *.Mask) ${n})`))
+      `(pad ${i + 8} thru_hole circle (at ${-xr} ${7.62 - i * pitch} ${p.r}) (size 1.6 1.6) (drill 1.0) (layers *.Cu *.Mask) ${n || ''})`))
     // Plus の裏面パッド (仮の位置): 中央に2列で並べる
     const extra = [['D11', p.D11], ['D12', p.D12], ['D13', p.D13], ['D17', p.D17],
                    ['D18', p.D18], ['D19', p.D19], ['BAT+', p.BATP]]

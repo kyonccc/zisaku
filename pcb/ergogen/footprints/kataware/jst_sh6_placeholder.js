@@ -19,7 +19,7 @@ module.exports = {
   body: p => {
     const nets = [p.P1, p.P2, p.P3, p.P4, p.P5, p.P6]
     const pads = nets.map((n, i) =>
-      `(pad ${i + 1} smd rect (at ${(i - 2.5).toFixed(2)} -1.3 ${p.r}) (size 0.6 1.55) (layers B.Cu B.Paste B.Mask) ${n})`).join('\n')
+      `(pad ${i + 1} smd rect (at ${(i - 2.5).toFixed(2)} -1.3 ${p.r}) (size 0.6 1.55) (layers B.Cu B.Paste B.Mask) ${n || ''})`).join('\n')
     return `
       (module kataware_jst_sh6_placeholder (layer B.Cu) (tedit 0)
       ${p.at}
