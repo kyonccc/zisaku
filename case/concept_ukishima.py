@@ -9,7 +9,9 @@
   - 基板＋薄いプレートを、トレイから立てた柱のポロン (ガスケット) で上下から挟んで支える
     (外周 6 か所＋内側 2 か所。キーの角どうしのすき間に置く)
   - ボールユニットは机から立つ柱。トレイの床に落とし込んで低くする (25mm ボール)
-  - カバーは縁のかぶり 0.5mm・傾き 20° にして低くする
+  - カバーは「爪留め」: キーキャップとほぼ同じ高さの低いリング＋細い爪 3 本でボールを押さえる
+    (宝石の爪留めの形。爪のあいだからボールの横まで見え、親指で上からも横からも触れる)
+  - 全体を低くする: 床 1.5mm、電池は床のくぼみ (底 0.5mm) に入れ、基板の下のすき間を 7 → 5.85mm に
 """
 import json
 import os
@@ -23,17 +25,28 @@ import ball_unit as bu  # noqa: E402
 import kataware_case as k  # noqa: E402
 
 U = k.U
-# --- カバーを低くする (構想の値) ---
-bu.LIP_OVERLAP = 0.5
-bu.COVER_TILT = 20.0
+# --- ボールユニットを低くする (構想の値): 土台の底を 1.0mm に (センサー基板の下は 0.5mm) ---
+bu.BASE_FLOOR = 1.0
+bu.SENSOR_TOP = bu.BASE_FLOOR - bu.SENSOR_POCKET + bu.SENSOR_T
+bu.BALL_BOTTOM = bu.SENSOR_TOP + bu.LENS_H + bu.LENS_GAP
 
 # --- 高さ (机から) ---
-FLOOR = 2.0          # トレイの床
-RIM = 7.5            # トレイの縁の高さ (基板の下面より 1.5mm 低い → 浮いて見える)
-PCB_B, PCB_T = 9.0, 10.6
-PLATE_B, PLATE_T = 11.6, 12.8
+FLOOR = 1.5          # トレイの床
+BATTERY_SKIN = 0.5   # 電池のくぼみの底 (電池の上面 = 0.5 + 5.0 = 5.5mm)
+PCB_B = BATTERY_SKIN + 5.0 + 0.5 + 1.85   # 電池 → 0.5mm → ソケット (1.85mm) → 基板の下面
+PCB_T = PCB_B + 1.6
+PLATE_B, PLATE_T = PCB_T + 1.0, PCB_T + 2.2
+RIM = PCB_B - 1.5    # トレイの縁 (基板の下面より 1.5mm 低い → 浮いて見える)
 PORON = 1.5
 BALL_Z0 = 0.0        # ボールユニットの底 (トレイの床に落とし込む)
+KEY_TOP = PLATE_T + 7.5
+
+# --- 爪留めカバー ---
+RING_TOP = KEY_TOP + 0.3          # リングの上面 (キーキャップとほぼ同じ高さ)
+CLAWS = (160, 50, 270)            # 爪の向き (親指の来る -20° のまわりは空ける)
+CLAW_W = 3.2                      # 爪の幅 (根元)
+CLAW_TIP_W = 2.2                  # 爪の幅 (先)
+CLAW_OVER = 0.7                   # 爪の先がボールにかぶる幅 (半径で)
 
 KEYS = {
     "left": [(c*U, r*U) for c in range(5) for r in range(4)] + [(5*U, 0), (5*U, 2*U), (5*U, 3*U), (6*U, 0)],
@@ -52,6 +65,32 @@ def keycap(x, y, z0, z1):
     lo = mf.Manifold.cube([17.8, 17.8, 0.01]).translate([x - 8.9, y - 8.9, z0])
     hi = mf.Manifold.cube([15.8, 15.2, 0.01]).translate([x - 7.9, y - 7.3, z1 - 0.01])
     return mf.Manifold.batch_hull([lo, hi])
+
+
+def claw_cover(size):
+    """低いリング＋爪 3 本の「爪留め」カバー。ひねってロックする部分は ball_unit と同じ"""
+    R_ = bu.CUPS[size]["R"]
+    cz = bu.BALL_BOTTOM + R_
+    ring = k.cyl(0, 0, bu.CUP_TOP, RING_TOP, bu.UNIT_R) - k.cyl(0, 0, bu.CUP_TOP - 1, RING_TOP + 1, R_ + 0.8)
+    # 上の外側の角を丸く見せる面取り
+    ring = ring - (k.cyl(0, 0, RING_TOP - 0.8, RING_TOP + 0.01, bu.UNIT_R + 1) -
+                   k.cyl(0, 0, RING_TOP - 0.8, RING_TOP + 0.01, bu.UNIT_R, bu.UNIT_R - 0.8))
+    tip_r = R_ - CLAW_OVER                                   # 爪の先の半径
+    tip_z = cz + ((R_ + 0.3)**2 - tip_r**2) ** 0.5            # 爪の先の高さ (ボールの赤道より上)
+    claws = []
+    shell = (mf.Manifold.sphere(R_ + 1.9, 128) - mf.Manifold.sphere(R_ + 0.3, 128)).translate([0, 0, cz])
+    for a in CLAWS:
+        # ボールの曲面に沿った細い爪 (球の殻を細い扇形で切り出す)。根元は広く、先は細く
+        lower = bu.sector(0, R_ + 4, a - 9, a + 9, RING_TOP - 0.6, cz + 1.0)
+        upper = bu.sector(0, R_ + 4, a - 6, a + 6, cz + 1.0, tip_z)
+        claws.append(shell ^ (lower + upper))
+    m = ring + k.union(claws)
+    m = m - mf.Manifold.sphere(R_ + 0.3, 128).translate([0, 0, cz])          # 爪の内側をボールに沿わせる
+    spigot = (k.cyl(0, 0, bu.RECESS_Z + 0.2, bu.CUP_TOP + 0.01, bu.SPIGOT_R) -
+              k.cyl(0, 0, bu.RECESS_Z, bu.CUP_TOP + 1, R_ + 0.5))
+    lugs = k.union([bu.sector(bu.SPIGOT_R - 0.3, bu.LUG_R, L - bu.LUG_W/2, L + bu.LUG_W/2,
+                              bu.LUG_Z0, bu.LUG_Z0 + bu.LUG_H) for L in bu.LUG_ANGLES])
+    return m + spigot + lugs, tip_z
 
 
 def half(side):
@@ -79,21 +118,21 @@ def half(side):
     parts["plate"] = k.prism(plate, PLATE_B, PLATE_T)
     # スイッチとキーキャップ
     parts["switch"] = k.union([k.cube(x - 6.9, y - 6.9, PLATE_T, x + 6.9, y + 6.9, PLATE_T + 3) for x, y in KEYS[side]])
-    parts["caps"] = k.union([keycap(x, y, PLATE_T + 4, PLATE_T + 7.5) for x, y in KEYS[side]])
+    parts["caps"] = k.union([keycap(x, y, PLATE_T + 4, KEY_TOP) for x, y in KEYS[side]])
     # nice!view
     vx = 6*U if side == "left" else k.RIGHT_X - U
     parts["view"] = k.cube(vx - 7, 2.5*U - 18, PCB_T, vx + 7, 2.5*U + 18, PCB_T + 4.2)
     if side == "left":
         ex, ey = 5.5*U, U
-        parts["knob"] = (k.cyl(ex, ey, PCB_T + 1, PLATE_T + 9.0, 7.5) -
-                         k.cyl(ex, ey, PLATE_T + 8.2, PLATE_T + 10, 6.2))
+        parts["knob"] = (k.cyl(ex, ey, PCB_T + 1, KEY_TOP + 1.0, 7.5) -
+                         k.cyl(ex, ey, KEY_TOP + 0.4, KEY_TOP + 2, 6.2))
     else:
         bx, by = k.HALVES["right"]["ball"]
 
         def at(m):
             return m.translate([bx, by, BALL_Z0])
         cup, info = bu.cup(25)
-        cover, _ = bu.cover(25)
+        cover, _ = claw_cover(25)
         parts["ball_base"] = at(bu.base())
         parts["ball_cup"] = at(cup)
         parts["ball_cover"] = at(cover)
@@ -105,7 +144,7 @@ COLORS = {  # 色・分解図での持ち上げ量
     "tray": ("#e8e4dc", 0), "posts": ("#d2cdc3", 0), "gasket": ("#e98f9c", 8),
     "pcb": ("#202124", 16), "plate": ("#3a3b3f", 26), "switch": ("#8e949b", 34), "caps": ("#f3f0e9", 46),
     "view": ("#11181f", 26), "knob": ("#2b2d31", 46),
-    "ball_base": ("#d9d5cc", 0), "ball_cup": ("#ece7dd", 22), "ball_cover": ("#e8e4dc", 44), "ball": ("#b8432f", 62),
+    "ball_base": ("#d9d5cc", 0), "ball_cup": ("#ece7dd", 22), "ball_cover": ("#2b2d31", 44), "ball": ("#b8432f", 62),
 }
 
 
@@ -119,10 +158,10 @@ def main(out):
             color, ex = COLORS[name]
             manifest.append(dict(name=fn, color=color, explode=ex, opacity=1))
     json.dump(manifest, open(os.path.join(out, "manifest.json"), "w"))
-    g = bu.cover_geometry(25)
-    print("カバー 親指側", round(BALL_Z0 + bu.cover_z(25, bu.UNIT_R, bu.THUMB_FROM), 1),
-          "奥側", round(BALL_Z0 + bu.cover_z(25, bu.UNIT_R, bu.THUMB_FROM + 180), 1),
-          "ボールのてっぺん", round(BALL_Z0 + g["cz"] + 12.5, 1), "キーキャップ上", PLATE_T + 7.5)
+    cz = bu.BALL_BOTTOM + 12.5
+    _, claw_top = claw_cover(25)
+    print(f"キーキャップ上 {KEY_TOP:.1f} / リング上面 {RING_TOP:.1f} / 爪の先 {claw_top:.1f} / "
+          f"ボールのてっぺん {cz + 12.5:.1f} (19mm: {bu.BALL_BOTTOM + 19:.1f}) / トレイの縁 {RIM:.1f}")
 
 
 if __name__ == "__main__":

@@ -24,23 +24,20 @@ def main(out):
     bx, by = k.HALVES["right"]["ball"]
     th = bu.THUMB_FROM
     z0 = cu.BALL_Z0
-    lo = z0 + bu.cover_z(25, bu.UNIT_R, th)
-    hi = z0 + bu.cover_z(25, bu.UNIT_R, th + 180)
-    g = bu.cover_geometry(25)
-    top = z0 + g["cz"] + 12.5
-    key_top = cu.PLATE_T + 7.5
+    top = z0 + bu.BALL_BOTTOM + 25
+    _, claw_top = cu.claw_cover(25)
     labels = [
-        (-6, top - 2, f"ボール 25mm（てっぺん 約{top:.0f}mm）", (52, 40)),
-        (-16.5, hi - 0.8, f"カバー奥側 約{hi:.0f}mm（縁のかぶり 0.5mm・傾き {bu.COVER_TILT:.0f}°）", (52, 36.5)),
-        (16, lo - 0.6, f"カバー親指側 約{lo:.0f}mm", (52, 33)),
-        (28, key_top - 0.5, f"キーキャップの上 約{key_top:.0f}mm", (52, 29.5)),
+        (-6, top - 2, f"ボール 25mm（てっぺん 約{top:.1f}mm）", (52, 40)),
+        (-12.5, claw_top - 1.5, f"爪（3本）：先は約{claw_top:.0f}mm。0.7mm かぶって抜けない", (52, 36.5)),
+        (15, cu.RING_TOP - 0.8, f"リング：上面 約{cu.RING_TOP:.1f}mm（キーキャップとほぼ同じ）", (52, 33)),
+        (28, cu.KEY_TOP - 0.5, f"キーキャップの上 約{cu.KEY_TOP:.1f}mm", (52, 29.5)),
         (31, cu.PLATE_B + 0.6, "薄いプレート＋基板（いっしょに浮く）", (52, 26)),
-        (40, cu.PCB_B - 3, "基板の下は空き（電池・XIAO が入る）。柱とポロンは別の断面", (52, 22.5)),
-        (40, 1, "トレイの床", (52, 19)),
-        (-12, 3, "ボールユニット：床に落とし込んで低く", (52, 15.5)),
+        (40, cu.PCB_B - 2, f"基板の下 {cu.PCB_B - cu.FLOOR:.1f}mm（電池は床のくぼみへ）", (52, 22.5)),
+        (40, 0.7, f"トレイの床 {cu.FLOOR}mm", (52, 19)),
+        (-12, 2, "ボールユニット：床に落とし込んで低く", (52, 15.5)),
     ]
     W, H, body = ds.section(items, "az", (bx, by, th), ((-24, 50), (-1, 44)),
-                            "浮島：親指の来る向きの断面（右手・25mm ボール）", labels, px=12)
+                            "浮島（低く・爪留め）：親指の来る向きの断面（右手・25mm ボール）", labels, px=12)
     open(os.path.join(out, "ukishima-section.svg"), "w").write(ds.svg(W, H, body))
 
 
