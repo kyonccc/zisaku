@@ -34,12 +34,13 @@ bu.BALL_BOTTOM = bu.SENSOR_TOP + bu.LENS_H + bu.LENS_GAP
 # --- 34mm ボール: 専用ユニット (人差し指と中指で転がす向き) ---
 # 34mm はボールが重く、指で押す力も大きいので、25 / 19mm と土台を共用しない。
 #  - 土台とカップを一体に (受けの壁が 2 重にならない分、壁が厚い)。外径 35.4mm (基板の穴 36mm に収まる)
+#  - ベアリングは 25 / 19mm と同じ向き (0°/120°/240°)・同じ 45° で支える → 傾けても約 45° までボールが浮かない
 #  - ボールの一番太い所 (赤道) がキーキャップより上にあるので、ボールの下半分を囲むリングは作れない
 #    (リングがボールに引っかかって、カバーが外せなくなる)。カバーは「赤道より下ではボールの外側だけ」を通る形にする
 #  - 爪 3 本: 45° (キーの角のあいだ) は土台と一体の「固定の爪」。170° と 250° はカバーの爪
 #  - カバーは、キーも基板もない左手前の空き (140〜290°) を囲む「フード」。外側でひねってロックする
 #  - 指は右手前から来る (ボールの手前に手のひら) ので、そこ (爪のすき間 155° の真ん中) を広くあける
-bu.CUPS[34] = {"R": 17.0, "contact": 55}
+bu.CUPS[34] = {"R": 17.0, "contact": 45}       # テンティングでも浮かないよう 45° (55° だと約 22° で浮く)
 U34_R = 17.7                      # 34mm ユニットの外径 (半径)。基板・プレートの穴 (半径 18) とのすき間 0.3mm
 U34_TOP = 16.0                    # 一体型の受けの上面
 CLAWS_34 = (45, 170, 250)         # 爪の向き (すき間 125° / 80° / 155°)
@@ -105,14 +106,25 @@ KEYS = {
     "left": [(c*U, r*U) for c in range(5) for r in range(4)] + [(5*U, 0), (5*U, 2*U), (5*U, 3*U), (6*U, 0)],
     "right": [(k.RIGHT_X + i*U, r*U) for i in range(1, 6) for r in range(4)] + [(k.RIGHT_X, 2*U), (k.RIGHT_X, 3*U)],
 }
-# 柱 (キーの角どうしのすき間)。外周 6 か所 + 内側 2 か所
+# 柱 (キーの角どうしのすき間)。トレイ裏の MagSafe リングの溝・電池をよけて、
+# どのキーからも柱が近くなるように計算で選んだ (キーと一番近い柱の距離は前の並びと同じくらい)
 POSTS = {
-    "left": [(a*U, b*U) for a, b in ((0.5, 0.5), (2.5, 0.5), (4.5, 0.5), (0.5, 2.5), (2.5, 2.5), (4.5, 2.5),
-                                     (1.5, 1.5), (3.5, 1.5))],
-    "right": [(k.RIGHT_X + a*U, b*U) for a, b in ((1.5, 0.5), (3.5, 0.5), (4.5, 1.5), (0.5, 2.5), (2.5, 2.5),
-                                                 (4.5, 2.5), (2.5, 1.5), (3.5, 1.5))],
+    "left": [(a*U, b*U) for a, b in ((0.5, 0.5), (1.5, 0.5), (4.5, 0.5), (5.5, 0.5), (0.5, 2.5), (1.5, 2.5),
+                                     (4.5, 2.5), (3.5, 1.5))],
+    "right": [(k.RIGHT_X + a*U, b*U) for a, b in ((1.5, 0.5), (3.5, 0.5), (0.5, 1.5), (0.5, 2.5), (2.5, 2.5),
+                                                 (4.5, 2.5), (2.5, 1.5), (4.5, 1.5))],
 }
 
+# --- テンティング: トレイの裏に MagSafe のリングを埋める溝 ---
+# 市販の「MagSafe 対応マグネットリング (シール式)」を想定。買ったリングの寸法に合わせて数字を変える
+MAG_OD, MAG_ID, MAG_T = 56.0, 46.0, 0.8     # リングの外径・内径・厚さ
+MAG_GAP = 0.3                     # 溝のすき間 (半径で)
+MAG_DEPTH = MAG_T + 0.2           # 溝の深さ (リングが裏面から出ない)
+MAG_BOSS = 1.0                    # 溝の真上の床を内側から厚くする量 (溝の上に残る床 0.5 → 1.5mm)
+MAG_CENTER = {"left": (3.0*U, 1.5*U), "right": (k.RIGHT_X + 2.5*U, 2.0*U)}
+# 電池 (31 × 21 × 5mm・PSE 品) の位置。リングの溝・柱・XIAO をよけた所 (中心・床のくぼみ)
+BATTERY = {"left": (8.0, 26.0), "right": (307.0, 8.0)}
+BAT_W, BAT_H = 31.0, 21.0
 
 def keycap(x, y, z0, z1):
     lo = mf.Manifold.cube([17.8, 17.8, 0.01]).translate([x - 8.9, y - 8.9, z0])
@@ -242,7 +254,17 @@ def half(side, size=25):
     if side == "right":
         bx, by = k.HALVES["right"]["ball"]
         tray = tray - k.cyl(bx, by, -1, FLOOR + 1, (U34_R if size == 34 else bu.UNIT_R) + 0.3)
+    # 電池のくぼみ (底 0.5mm)
+    ex, ey = BATTERY[side]
+    tray = tray - k.cube(ex - BAT_W/2, ey - BAT_H/2, BATTERY_SKIN, ex + BAT_W/2, ey + BAT_H/2, FLOOR + 1)
+    # MagSafe リングの溝 (裏) と、その真上の床の内側の厚み
+    mx, my = MAG_CENTER[side]
+    r0, r1 = MAG_ID/2 - MAG_GAP, MAG_OD/2 + MAG_GAP
+    tray = tray + (k.cyl(mx, my, FLOOR - 0.01, FLOOR + MAG_BOSS, r1 + 1.0) - k.cyl(mx, my, FLOOR - 1, FLOOR + 2, r0 - 1.0))
+    tray = tray - (k.cyl(mx, my, -1, MAG_DEPTH, r1) - k.cyl(mx, my, -2, MAG_DEPTH + 1, r0))
     parts["tray"] = tray
+    parts["magsafe"] = k.cyl(mx, my, MAG_DEPTH - MAG_T, MAG_DEPTH, MAG_OD/2) - k.cyl(mx, my, -1, 5, MAG_ID/2)
+    parts["battery"] = k.cube(ex - 15, ey - 10, BATTERY_SKIN, ex + 15, ey + 10, BATTERY_SKIN + 5.0)
     # 柱とガスケット・ネジ (下から留める)
     posts, pads, metal = [], [], []
     for x, y in POSTS[side]:
@@ -293,7 +315,7 @@ def half(side, size=25):
 COLORS = {  # 色・分解図での持ち上げ量
     "tray": ("#e8e4dc", 0), "posts": ("#d2cdc3", 0), "gasket": ("#e98f9c", 8),
     "pcb": ("#202124", 16), "plate": ("#3a3b3f", 26), "switch": ("#8e949b", 34), "caps": ("#f3f0e9", 46),
-    "view": ("#11181f", 26), "knob": ("#2b2d31", 46), "screws": ("#a9adb3", 0),
+    "view": ("#11181f", 26), "knob": ("#2b2d31", 46), "screws": ("#a9adb3", 0), "magsafe": ("#8a8f98", -14), "battery": ("#5b7fa6", 4),
     "ball_base": ("#d9d5cc", 0), "ball_cup": ("#ece7dd", 22), "ball_cover": ("#2b2d31", 44), "ball": ("#b8432f", 62),
 }
 

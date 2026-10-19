@@ -115,6 +115,15 @@ def top_view(parts, out):
     for x, y in cu.POSTS["right"]:
         o.append(f'<circle cx="{X(x):.1f}" cy="{Y(y):.1f}" r="{cu.POST_R * px:.1f}" fill="none" stroke="#2e86c1" '
                  f'stroke-width="2" stroke-dasharray="5,4"/>')
+    mx, my = cu.MAG_CENTER["right"]
+    for r in (cu.MAG_OD / 2, cu.MAG_ID / 2):
+        o.append(f'<circle cx="{X(mx):.1f}" cy="{Y(my):.1f}" r="{r * px:.1f}" fill="none" stroke="#8e44ad" '
+                 f'stroke-width="2" stroke-dasharray="7,5"/>')
+    ex, ey = cu.BATTERY["right"]
+    o.append(f'<rect x="{X(ex - cu.BAT_W / 2):.1f}" y="{Y(ey + cu.BAT_H / 2):.1f}" width="{cu.BAT_W * px:.1f}" '
+             f'height="{cu.BAT_H * px:.1f}" fill="none" stroke="#5b7fa6" stroke-width="2" stroke-dasharray="7,5"/>')
+    o.append(f'<text x="{X(mx - 20):.1f}" y="{Y(my - 31.5):.1f}" font-size="15" fill="#8e44ad">紫の点線＝裏の MagSafe リング</text>')
+    o.append(f'<text x="{X(ex - 15):.1f}" y="{Y(ey - 13.5):.1f}" font-size="15" fill="#5b7fa6">青の四角＝電池</text>')
     o.append(poly(parts["ball_cup"], "#ece7dd"))
     o.append(poly(parts["ball"], "#b8432f"))
     o.append(poly(parts["ball_cover"], "#2b2d31"))

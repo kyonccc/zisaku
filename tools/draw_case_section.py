@@ -142,7 +142,6 @@ def main(out):
         (by + 12.5*0.6, zc + 7, "ボール 25mm", (by + 26, 36)),
         (by + 15.5, z0 + 25, "カバー（ひねってロック。縁がボールを押さえる）", (by + 26, 32)),
         (by + 16, z0 + 14.5, "カップ（25mm 用・19mm 用を差し替え）", (by + 26, 30)),
-        (by + 11, z0 + info["brg_z"], "ベアリング 681X ＋ 軸のネジ M1.4（3か所）", (by + 26, 28)),
         (by - 16.2, z0 + 11, "土台（ケースに固定したまま）", (by + 26, 24)),
         (by + 3, z0 + bu.SENSOR_TOP + 1.5, "PMW3610 センサー（すき間 2.4mm）", (by + 26, 20)),
         (by + 21, k.PCB_B + 0.8, "基板（穴 36mm・ユニットに触れない）", (by + 26, 16)),
@@ -153,7 +152,7 @@ def main(out):
                          "③ ボールユニットの断面（25mm。右が奥）", labels3, px=13, extra=unit)
     open(f"{out}/ballunit-section.svg", "w").write(svg(W3, H3, b3))
 
-    # ⑤ ベアリングの軸のネジ (25mm カップ。奥のベアリングを、軸に沿って切る)
+    # ⑤ ベアリングの軸のネジ (25mm カップ。ベアリング 1 個を、軸に沿って切る)
     rb, zb = info["brg_r"], info["brg_z"]
     hd = bu.BRG_W/2 + bu.BRG_SIDE + bu.NEAR_WALL
     reach = math.sqrt(bu.CUP_R**2 - rb**2)
@@ -164,7 +163,8 @@ def main(out):
         (-hd - 1.5, zb - 0.3, "反対側の下穴にねじ込む", (reach + 4, zb - 1.5)),
         (bu.BRG_W/2 + 0.07, zb - 2.6, "ベアリングの横のすき間 0.15mm → 締めると軽く挟まる", (reach + 4, zb - 5)),
     ]
-    items5 = [("cup", cup), ("brg", bu.bearings(size)), ("ball", ball)]
+    turn = 90 - bu.BRG_ANGLES[1]                    # 2 個目のベアリングを奥 (90°) に回して切る
+    items5 = [("cup", cup.rotate([0, 0, turn])), ("brg", bu.bearings(size).rotate([0, 0, turn])), ("ball", ball)]
     W5, H5, b5 = section(items5, "y", rb, ((-reach - 1, reach + 2), (zb - 8, zb + 12)),
                          "⑤ ベアリングの軸のネジ（軸に沿って切った断面。25mm）", labels5, px=22)
     open(f"{out}/ballunit-screw.svg", "w").write(svg(W5, H5, b5))
