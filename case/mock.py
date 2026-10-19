@@ -28,6 +28,7 @@ import manifold3d as mf  # noqa: E402
 sys.path.insert(0, HERE)
 import concept_ukishima as cu  # noqa: E402
 
+BED = 180.0                       # A1 mini の造形台 (180 × 180 × 180mm)
 k, bu = cu.k, cu.bu
 U = k.U
 
@@ -89,10 +90,13 @@ def main():
         n = len(m.decompose())
         if n != 1:
             sys.exit(f"{name}: 1 つにつながっていない ({n} 個)")
-        if name.startswith("mock_ball"):
-            m = m.translate([0, 0, 0])
-        k.save_stl(m, os.path.join(out, f"{name}.stl"))
-        print(f"  {name}.stl  ({m.volume() / 1000:.0f} cm³)")
+        b = m.bounding_box()
+        size = (b[3] - b[0], b[4] - b[1], b[5] - b[2])
+        if max(size) > BED:
+            sys.exit(f"{name}: {BED}mm の造形台に入らない ({size[0]:.0f} × {size[1]:.0f} × {size[2]:.0f})")
+        bed = m.translate([-(b[0] + b[3]) / 2, -(b[1] + b[4]) / 2, -b[2]])     # 造形台の上・真ん中に置く (置く面が下)
+        k.save_stl(bed, os.path.join(out, f"{name}.stl"))
+        print(f"  {name}.stl  ({size[0]:.0f} × {size[1]:.0f} × {size[2]:.0f}mm・{m.volume() / 1000:.0f} cm³)")
     # 組み合わせた時にぶつからないか (ボールの模型はトレイの穴の位置で確かめる)
     for side in ("left", "right"):
         t, top = items[f"mock_tray_{side}"], items[f"mock_top_{side}"]
