@@ -130,6 +130,34 @@ MAG_CENTER = {"left": (3.0*U, 1.5*U), "right": (k.RIGHT_X + 2.5*U, 2.0*U)}
 BATTERY = {"left": (8.0, 26.0), "right": (307.0, 8.0)}
 BAT_W, BAT_H = 31.0, 21.0
 
+# --- 四隅の磁石＋ゴム足 ---
+# 持ち運ぶ時は、左手を左右にひっくり返して右手の裏に重ねると、四隅の磁石でくっつく。
+# 机では磁石の上に貼ったゴム足が滑り止めになる (テンティングなしでも使える)。
+# 位置は左右のトレイの中心から見て左右対称 → 左右どちらを裏返しても四隅が重なる。
+# 極: 上から見て左側の 2 個は N 極を下、右側の 2 個は S 極を下 (左右とも同じ)。裏返すと N と S が向き合う
+MAG_DX, MAG_YS = 63.35, (-6.8, 64.0)  # トレイの中心からの横の距離・高さ (y)
+MAGNET_D, MAGNET_T = 6.0, 2.0     # ネオジム磁石 φ6 × 2mm
+RUBBER_D, RUBBER_T = 8.0, 1.0     # ゴム足 φ8 × 1mm (くぼみ 0.6mm に貼る → 0.4mm 出る)
+RUBBER_RECESS = 0.6
+MAG_BOSS_R, MAG_BOSS_TOP = 4.0, 3.2   # 磁石の上の床を厚くする台 (磁石の上に 0.5mm 残る)
+
+
+def magnet_spots(side):
+    cx = (k.load(f"board_{side}").bounds[0] + k.load(f"board_{side}").bounds[2]) / 2
+    return [(cx + sx * MAG_DX, y) for sx in (-1, 1) for y in MAG_YS]
+
+
+def magnet_feet(side):
+    """(床の内側に足す台, 裏から掘る所, 磁石 (絵用))"""
+    boss, cut, mags = [], [], []
+    for x, y in magnet_spots(side):
+        boss.append(k.cyl(x, y, FLOOR - 0.01, MAG_BOSS_TOP, MAG_BOSS_R))
+        cut += [k.cyl(x, y, -1, RUBBER_RECESS, RUBBER_D / 2 + 0.15),
+                k.cyl(x, y, RUBBER_RECESS - 0.01, RUBBER_RECESS + MAGNET_T + 0.1, MAGNET_D / 2 + 0.1)]
+        mags.append(k.cyl(x, y, RUBBER_RECESS, RUBBER_RECESS + MAGNET_T, MAGNET_D / 2))
+    return k.union(boss), k.union(cut), k.union(mags)
+
+
 # --- 電池のガイド: くぼみ (深さ 1mm) の 4 つの角に L 形の低い壁。電池がずれない ---
 BAT_GUIDE_H, BAT_GUIDE_T, BAT_GUIDE_L = 3.0, 1.2, 6.0
 
@@ -382,6 +410,11 @@ def half(side, size=25):
     ex, ey = BATTERY[side]
     tray = tray - k.cube(ex - BAT_W/2, ey - BAT_H/2, BATTERY_SKIN, ex + BAT_W/2, ey + BAT_H/2, FLOOR + 1)
     tray = tray + battery_guides(side)
+    # 四隅の磁石とゴム足
+    mboss, mcut, mags = magnet_feet(side)
+    tray = (tray + mboss) - mcut
+    # 電池のくぼみ (磁石の台がはみ出していても、電池の所は空ける)
+    tray = tray - k.cube(ex - BAT_W/2, ey - BAT_H/2, BATTERY_SKIN, ex + BAT_W/2, ey + BAT_H/2, FLOOR + 5)
     # 電源スイッチのカバーが入る所
     tray = tray - switch_pocket(side)
     # MagSafe リングの溝 (裏) と、その真上の床の内側の厚み
@@ -391,6 +424,7 @@ def half(side, size=25):
     tray = tray - (k.cyl(mx, my, -1, MAG_DEPTH, r1) - k.cyl(mx, my, -2, MAG_DEPTH + 1, r0))
     parts["tray"] = tray
     parts["magsafe"] = k.cyl(mx, my, MAG_DEPTH - MAG_T, MAG_DEPTH, MAG_OD/2) - k.cyl(mx, my, -1, 5, MAG_ID/2)
+    parts["magnets"] = mags
     parts["battery"] = k.cube(ex - 15, ey - 10, BATTERY_SKIN, ex + 15, ey + 10, BATTERY_SKIN + 5.0)
     # 柱とガスケット・ネジ (下から留める)
     posts, pads, metal = [], [], []
@@ -445,7 +479,7 @@ def half(side, size=25):
 COLORS = {  # 色・分解図での持ち上げ量
     "tray": ("#e8e4dc", 0), "posts": ("#d2cdc3", 0), "gasket": ("#e98f9c", 8),
     "pcb": ("#202124", 16), "plate": ("#3a3b3f", 26), "switch": ("#8e949b", 34), "caps": ("#f3f0e9", 46),
-    "view": ("#11181f", 26), "knob": ("#2b2d31", 46), "screws": ("#a9adb3", 0), "magsafe": ("#8a8f98", -14), "battery": ("#5b7fa6", 4),
+    "view": ("#11181f", 26), "knob": ("#2b2d31", 46), "screws": ("#a9adb3", 0), "magsafe": ("#8a8f98", -14), "battery": ("#5b7fa6", 4), "magnets": ("#8a8f98", -14),
     "view_cover": ("#2b2d31", 40), "switch_cover": ("#2b2d31", 20), "slider": ("#b8432f", 30),
     "ball_base": ("#d9d5cc", 0), "ball_cup": ("#ece7dd", 22), "ball_cover": ("#2b2d31", 44), "ball": ("#b8432f", 62),
 }

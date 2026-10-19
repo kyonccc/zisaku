@@ -37,7 +37,7 @@ BATTERY, BAT_W, BAT_H = cu.BATTERY, cu.BAT_W, cu.BAT_H
 
 # ===== ボールユニットをトレイに留める耳 (3 か所) =====
 # 土台は床の穴 (半径 18) に落とし込み、外の「耳」を床の上に乗せて、床の裏から皿ネジ M2 で留める (耳にインサート)
-TAB_ANGLES = (150, 225, 300)      # 基板の裏の部品 (XIAO・コネクタ・ソケット) をよけた向き
+TAB_ANGLES = (70, 150, 300)       # 基板の裏の部品 (XIAO・コネクタ・ソケット)・トレイの壁・左下の角の磁石をよけた向き
 TAB_R0, TAB_R1 = 16.5, 22.5       # 耳の内側・外側 (半径)
 TAB_SCREW_R = 20.0                # ネジの位置 (ユニット中心から)
 TAB_W = 7.0                       # 耳の幅
@@ -46,9 +46,7 @@ BALL_HOLE_R = max(bu.UNIT_R, cu.U34_R) + 0.3     # 床の穴 (34mm の受けも�
 
 # ===== トレイの穴・ゴム足 =====
 USB_W = 14.0                      # USB-C のプラグが入る切り欠きの幅
-FOOT_R, FOOT_D = 5.25, 0.6        # ゴム足 (直径 10mm) のくぼみ
-FEET = {"left": [(-4.0, -4.0), (118.5, -4.0), (-4.0, 61.0), (118.5, 61.0)],
-        "right": [(196.0, 61.0), (318.5, 61.0), (318.5, 26.0), (250.0, -6.0), (285.0, -7.0)]}
+# ゴム足は四隅の磁石の上に貼る (concept_ukishima.py の MAG_*)
 
 
 def tab_ring(z0):
@@ -85,8 +83,6 @@ def tray(side):
         # XIAO のリセットボタンを押す穴 (床)
         k.cube(ix + d * 2.5 - d * 5 - 2, xy - 6, -1, ix + d * 2.5 - d * 5 + 2, xy + 6, cu.FLOOR + 1),
     ]
-    for fx, fy in FEET[side]:
-        cut.append(k.cyl(fx, fy, -1, FOOT_D, FOOT_R))
     if h["ball"]:
         bx, by = h["ball"]
         cut.append(k.cyl(bx, by, -1, cu.FLOOR + 1, BALL_HOLE_R))
@@ -113,14 +109,25 @@ def check():
         ring = Point(mx, my).buffer(cu.MAG_OD / 2 + 1).difference(Point(mx, my).buffer(cu.MAG_ID / 2 - 1))
         ex, ey = BATTERY[side]
         bat = box(ex - BAT_W / 2, ey - BAT_H / 2, ex + BAT_W / 2, ey + BAT_H / 2)
-        avoid = [ring, bat.buffer(1)] + [Point(p).buffer(2.8 + 1) for p in cu.POSTS[side]]
+        avoid = [ring, bat.buffer(0.2)] + [Point(p).buffer(2.8 + 0.8) for p in cu.POSTS[side]]
         if h["ball"]:
             bx, by = h["ball"]
-            avoid.append(Point(bx, by).buffer(TAB_R1 + 1))
-        for f in FEET[side]:
-            c = Point(f).buffer(FOOT_R)
-            if not o.buffer(-0.8).contains(c) or any(c.intersects(a) for a in avoid):
-                problems.append(f"{side}: ゴム足 {f} がほかの穴や溝に近すぎる")
+            avoid.append(Point(bx, by).buffer(BALL_HOLE_R + 0.8))
+            for a in TAB_ANGLES:                                     # ユニットの耳 (上) とネジ (裏)
+                half = math.degrees(TAB_W / 2 / TAB_SCREW_R)
+                pts = [bu.polar(r, a + s_) for r in (TAB_R0, TAB_R1) for s_ in (-half, half)]
+                avoid.append(__import__("shapely.geometry", fromlist=["MultiPoint"]).MultiPoint(
+                    [(bx + x, by + y) for x, y in pts]).convex_hull.buffer(0.5))
+        xx, xy = h["xiao"]
+        avoid.append(box(xx - 9.4, xy - 11, xx + 9.4, xy + 11))      # XIAO (基板の裏で一番低い部品)
+        sxp, syp, dp = cu.PWR[side]
+        avoid.append(box(min(sxp - dp * 0.5, sxp + dp * 6), syp + cu.SWC_V0 - 0.1,
+                         max(sxp - dp * 0.5, sxp + dp * 6), syp + cu.SWC_V1 + 0.1))   # 電源スイッチのカバー
+        for x, y in cu.magnet_spots(side):
+            boss = Point(x, y).buffer(cu.MAG_BOSS_R)
+            rub = Point(x, y).buffer(cu.RUBBER_D / 2 + 0.15)
+            if not o.buffer(-0.8).contains(rub) or any(boss.intersects(a) for a in avoid):
+                problems.append(f"{side}: 磁石 ({x:.1f}, {y:.1f}) がほかの部品・穴・溝に近すぎる")
         if not o.buffer(-4.5).contains(Point(mx, my).buffer(cu.MAG_OD / 2 + cu.MAG_GAP)):
             problems.append(f"{side}: MagSafe の溝が壁に近すぎる")
         if h["ball"]:
