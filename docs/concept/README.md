@@ -4,6 +4,7 @@
 フレームごとしなる軽さと、ガスケットのそろった押し心地を合わせた案。
 このページは考え方と経緯。**製作用のデータ・作り方は [docs/ukishima-build.md](../ukishima-build.md)**（`case/ukishima.py`）。イメージ用の 3D モデルは `case/concept_ukishima.py`。
 
+![イメージ一覧](../images/ukishima-overview.png)
 ![全体](ukishima-hero.png)
 ![横から](ukishima-side.png)
 ![ボールまわり（爪留め）](ukishima-ball.png)
