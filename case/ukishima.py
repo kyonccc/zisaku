@@ -13,7 +13,8 @@
     ball_base_34.stl                 … 34mm 専用の受け (土台とカップが一体・固定の爪つき)
     ball_hood_34.stl                 … 34mm のフード (爪 2 本・外側でひねってロック)
     switch_cover_left.stl / _right   … 電源スイッチのカバー (トレイの縁に裏からネジ 2 本)
-    switch_slider.stl                … カバーの上のつまみ (2 個印刷する・左右共通)
+    switch_slider.stl                … カバーの中のフォーク＋軸 (2 個印刷する・左右共通)
+    switch_knob.stl                  … 横に出るつまみ (2 個印刷する・左右共通。軸にはめる)
     view_cover_left.stl / _right     … nice!view のカバー (窓あき・nice!view にはめる)
 STL は印刷する向き (置く面が下) で書き出す。
 
@@ -166,8 +167,20 @@ def check():
             lever = cu._pwr_place(side, cu._uv_cube(1.6, cu.SW_LEVER_TIP, pos - 0.65, pos + 0.65,
                                                      cu.SW_LEVER_Z0, cu.SW_LEVER_Z1))
             sl = p["slider"].translate([0, pos, 0])
-            if (sl ^ lever).volume() > 0.01 or (sl ^ p["switch_cover"]).volume() > 0.01:
+            kn = p["knob_sw"].translate([0, pos, 0])
+            if ((sl ^ lever).volume() > 0.01 or (sl ^ p["switch_cover"]).volume() > 0.01 or
+                    (kn ^ p["switch_cover"]).volume() > 0.01 or (kn ^ p["tray"]).volume() > 0.01):
                 problems.append(f"{side}: つまみがレバーの位置 {pos:+.2f} で動けない")
+            # 基板を留めたあと、カバー (つまみ付き) を横から差し込めるか
+            sx, sy, d = cu.PWR[side]
+            for du in (6.0, 4.0, 2.0, 1.0, 0.5):
+                mv = [d * du, pos * 0, 0]
+                unit = (p["switch_cover"] + sl + kn).translate(mv)
+                for name in ("pcb", "plate", "view_cover", "tray"):
+                    if (unit ^ p[name]).volume() > 0.01:
+                        problems.append(f"{side}: カバーを横から差し込む途中 ({du}mm) で {name} に当たる")
+                if (sl.translate(mv) ^ lever).volume() > 0.01:
+                    problems.append(f"{side}: 差し込む途中でフォークがレバーに当たる ({du}mm)")
     # ボールユニット: キー・基板・プレートに当たらないか (回してロックする途中も)
     for size in (25, 34):
         p = cu.half("right", size)
@@ -204,7 +217,8 @@ def main():
         "ball_hood_34": cu.claw_cover(34)[0],
         "switch_cover_left": on_bed(cu.switch_cover("left"), (0, 90, 0)),      # 外の面を下
         "switch_cover_right": on_bed(cu.switch_cover("right"), (0, -90, 0)),
-        "switch_slider": on_bed(cu.switch_slider("left"), (180, 0, 0)),        # つまみを下
+        "switch_slider": on_bed(cu.switch_slider("left"), (0, -90, 0)),        # フォークの先を下・軸を上
+        "switch_knob": on_bed(cu.switch_knob("left"), (0, 90, 0)),             # 穴のある面を上
         "view_cover_left": on_bed(cu.view_cover("left"), (180, 0, 0)),         # 上の面を下
         "view_cover_right": on_bed(cu.view_cover("right"), (180, 0, 0)),
     }
