@@ -26,6 +26,10 @@ import ball_unit as bu  # noqa: E402
 import kataware_case as k  # noqa: E402
 
 U = k.U
+
+# --- 部品の寸法 (case/parts_dims.json)。環境変数 KATAWARE_DIMS で別のファイル (例: 一番大きい部品の値) に切り替えられる ---
+DIMS_FILE = os.environ.get("KATAWARE_DIMS", os.path.join(HERE, "parts_dims.json"))
+D = {kk: v for kk, v in json.load(open(DIMS_FILE, encoding="utf-8")).items() if not kk.startswith("_")}
 # --- ボールユニットを低くする (構想の値): 土台の底を 1.0mm に (センサー基板の下は 0.5mm) ---
 bu.BASE_FLOOR = 1.0
 bu.SENSOR_TOP = bu.BASE_FLOOR - bu.SENSOR_POCKET + bu.SENSOR_T
@@ -61,17 +65,17 @@ LEDGE34_R, HOOK34_R = 19.2, 18.0   # 土台の外の出っぱり (ツメがこ�
 #   床のくぼみの底 0.5 + 電池 5.0 (ばらつき・ふくらみ +0.3) + すき間 0.1 + 沈む量 0.4 + ソケット 1.85 = 8.15
 FLOOR = 1.5          # トレイの床
 BATTERY_SKIN = 0.5   # 電池のくぼみの底
-BATTERY_T, BATTERY_TOL = 5.0, 0.3   # 電池の厚さ (GA-011 約 5mm) と、ばらつき・ふくらみの見込み
-SOCKET_H = 1.85      # ホットスワップソケットの高さ (基板の裏から)
+BATTERY_T, BATTERY_TOL = D["battery_t"], D["battery_tol"]   # 電池の厚さと、ばらつき・ふくらみの見込み
+SOCKET_H = D["socket_h"]   # ホットスワップソケットの高さ (基板の裏から)
 PORON = 1.9          # 基板の下のポロン (3mm のシートを締めて約 1.9mm)
-NUT_R, NUT_H = 1.9, 1.5           # SMT ナット (外径 3.8mm・高さ 1.5mm)
+NUT_R, NUT_H = D["nut_d"] / 2, D["nut_h"]   # SMT ナット
 TRAVEL = PORON - NUT_H            # 基板が沈める量 0.4mm (ナットの下面と柱の上面のすき間)
 PCB_B = BATTERY_SKIN + BATTERY_T + BATTERY_TOL + 0.1 + TRAVEL + SOCKET_H
 PCB_T = PCB_B + 1.6
 PLATE_B, PLATE_T = PCB_T + 1.0, PCB_T + 2.2
 RIM = PCB_B - 1.5    # トレイの縁 (基板の下面より 1.5mm 低い → 浮いて見える)
 BALL_Z0 = 0.0        # ボールユニットの底 (トレイの床に落とし込む)
-KEY_TOP = PLATE_T + 7.5          # キーキャップの上 (Choc v2 ＋ ロープロファイルのキーキャップの目安)
+KEY_TOP = PLATE_T + D["plate_to_keytop"]   # キーキャップの上 (Choc v2 ＋ ロープロファイルのキーキャップ)
 HOOD34_Z0, HOOD34_TOP = PLATE_T + HOOD34_Z0_ABOVE_PLATE, KEY_TOP + HOOD34_TOP_ABOVE_KEYS
 HOOK34_Z0, HOOK34_Z1 = HOOD34_Z0, HOOD34_Z0 + 1.0
 LEDGE34_Z0, LEDGE34_Z1 = HOOK34_Z1 + 0.1, HOOK34_Z1 + 1.3
@@ -135,7 +139,7 @@ MAG_BOSS = 0.6                    # 溝の真上の床を内側から厚くす�
 MAG_CENTER = {"left": (3.0*U, 1.5*U), "right": (k.RIGHT_X + 2.5*U, 2.0*U)}
 # 電池 (31 × 21 × 5mm・PSE 品) の位置。リングの溝・柱・XIAO をよけた所 (中心・床のくぼみ)
 BATTERY = {"left": (8.5, 26.0), "right": (306.0, 8.0)}   # 目隠しの壁が入るよう、基板の縁から少し離す
-BAT_W, BAT_H = 31.0, 21.0
+BAT_W, BAT_H = D["battery_l"] + 1.0, D["battery_w"] + 1.0   # くぼみ (電池＋すき間)
 
 # --- 四隅の磁石＋ゴム足 ---
 # 持ち運ぶ時は、左手を左右にひっくり返して右手の裏に重ねると、四隅の磁石でくっつく。
@@ -232,14 +236,14 @@ def sockets(side):
     return k.union([k.prism(sh, PCB_B - SOCKET_H, PCB_B + 0.01) for sh in shapes])
 
 
-XIAO_H, XIAO_HALF_W, XIAO_HALF_L = 5.0, 8.9, 10.5   # XIAO の厚さ (USB-C 込み)・半分の幅・半分の長さ
+XIAO_H, XIAO_HALF_W, XIAO_HALF_L = D["xiao_h"], 8.9, 10.5   # XIAO の厚さ (USB-C 込み)・半分の幅・半分の長さ
 # エンコーダー (左手・EC11): 本体の高さ・軸の長さ (基板の上から)・つまみの直径
 ENC = (5.5*U, U)
-ENC_BODY_H, ENC_SHAFT_L, ENC_KNOB_D = 6.5, 15.0, 15.0
+ENC_BODY_H, ENC_SHAFT_L, ENC_KNOB_D = D["enc_body_h"], D["enc_shaft_l"], D["enc_knob_d"]
 # 基板の裏に出る部品の高さ (基板の裏から下へ・mm)。部品の名前の一部で決める
-BACK_HEIGHTS = (("xiao", 5.0), ("jst", 4.25), ("molex", 3.4), ("smt_nut", NUT_H), ("socket", SOCKET_H))
-DIODE_H = 1.35                     # ダイオード (SOD-123・表面実装・基板の裏)
-PIN_H = 2.0                        # 足の出る部品 (エンコーダー・nice!view のピン) を切った後の長さ
+BACK_HEIGHTS = (("xiao", XIAO_H), ("jst", D["jst_h"]), ("molex", D["molex_h"]), ("smt_nut", NUT_H), ("socket", SOCKET_H))
+DIODE_H = D["diode_h"]             # ダイオード (表面実装・基板の裏)
+PIN_H = D["pin_h"]                 # 足の出る部品 (エンコーダー・nice!view のピン) を切った後の長さ
 
 
 def back_parts(side):
@@ -298,7 +302,7 @@ def battery_guides(side):
 # 組み立て: 基板をトレイに留めたあと、カバーを横から差し込み (フォークがレバーをはさむ)、裏からネジで留める。
 # 座標: スイッチの中心から外へ u、奥へ v (左右で v の向きは同じ)
 PWR = {"left": (6*U + 0.5*U + 0.85, 52.5, +1), "right": (k.RIGHT_X - 1.5*U - 0.85, 52.5, -1)}   # config.yaml の pwr_y
-SW_LEVER_Z0, SW_LEVER_Z1 = PCB_T + 0.3, PCB_T + 1.2      # レバーの高さ (PCM12 の想定・実物合わせ)
+SW_LEVER_Z0, SW_LEVER_Z1 = PCB_T + D["pwr_lever_z0"], PCB_T + D["pwr_lever_z1"]      # レバーの高さ
 SW_LEVER_TIP = 3.15               # レバーの先 (スイッチの中心から)
 SW_POS = 0.75                     # レバーの位置 (中心から ±。動く量 1.5mm)
 SWC_V0, SWC_V1 = -4.4, 6.9        # カバーの範囲 (奥行き。手前は XIAO の端と USB-C の切り欠きをよける)
@@ -306,8 +310,8 @@ SWC_POCKET_Z = 3.3                # トレイの壁を、ここまで掘って�
 SWC_BASE_TOP = PCB_B - TRAVEL - 0.45     # 台の上面 (基板の舌が沈んでも当たらない)
 SWC_LEDGE_U, SWC_LEDGE_TOP = 2.35, PCB_T - 0.65   # つまみが乗る段 (舌の端 u 2.15 より外)
 SWC_WALL_U0, SWC_WALL_U1 = 3.625, 5.125   # 外の壁 (トレイの外側の面より 1mm 出る)
-SWC_ROOF_U0, SWC_ROOF_Z0, SWC_ROOF_Z1 = -1.0, PCB_T + 1.85, PCB_T + 3.85   # 屋根 (スイッチ 1.4mm の上を隠す)
-SWC_RECESS_Z = PCB_T + 2.85       # 屋根のくぼみの底 (つまみが入る)
+SWC_ROOF_U0, SWC_ROOF_Z0, SWC_ROOF_Z1 = -1.0, PCB_T + D["pwr_sw_h"] + 0.45, PCB_T + D["pwr_sw_h"] + 2.45   # 屋根 (スイッチの上を隠す)
+SWC_RECESS_Z = SWC_ROOF_Z0 + 1.0   # 屋根のくぼみの底 (つまみが入る)
 SWC_RECESS_V = 3.65               # くぼみの半分の幅 (つまみ 2.6 + 動く量 0.75 + すき間)
 SWC_SLOT = 1.7                    # 屋根のみぞ (つまみの軸が通る・半分の幅)
 SWC_SCREWS = ((1.2, -2.6), (1.2, 4.9))    # カバーをトレイの裏から留めるタッピングネジ M2 (u, v)
@@ -360,9 +364,9 @@ def switch_pocket(side):
 
 # --- nice!view のカバー: 画面のまわりにかぶせる枠 (窓あき)。nice!view の基板のふちに爪で引っかける ---
 VIEW = {"left": (6*U, 2.5*U), "right": (k.RIGHT_X - U, 2.5*U)}
-VIEW_W, VIEW_L = 14.0, 36.0       # nice!view の大きさ (横 × 縦)
-VIEW_PCB_B = PCB_T + 2.5          # nice!view の基板の下面 (ピンヘッダーの樹脂 2.5mm の上に直接はんだ付け)
-VIEW_TOP = VIEW_PCB_B + 2.9       # nice!view の一番上 (基板＋画面 約 2.9mm)
+VIEW_W, VIEW_L = D["view_w"], D["view_l"]   # nice!view の大きさ (横 × 縦)
+VIEW_PCB_B = PCB_T + D["view_mount_h"]   # nice!view の基板の下面 (ピンヘッダー・ソケットの高さ)
+VIEW_TOP = VIEW_PCB_B + D["view_t"]   # nice!view の一番上 (基板＋画面)
 VC_WALL, VC_SKIN, VC_GAP = 1.0, 1.0, 0.2
 VC_WIN_W, VC_WIN_L = 11.2, 31.0   # 窓 (画面の見える所・実物合わせ)
 VC_LIP = 0.4                      # 爪 (基板のふちの下に入る量)
@@ -558,7 +562,7 @@ def half(side, size=25):
     parts["tray"] = tray
     parts["magsafe"] = k.cyl(mx, my, MAG_DEPTH - MAG_T, MAG_DEPTH, MAG_OD/2) - k.cyl(mx, my, -1, 5, MAG_ID/2)
     parts["magnets"] = mags
-    parts["battery"] = k.cube(ex - 15, ey - 10, BATTERY_SKIN, ex + 15, ey + 10, BATTERY_SKIN + BATTERY_T)
+    parts["battery"] = k.cube(ex - D["battery_l"]/2, ey - D["battery_w"]/2, BATTERY_SKIN, ex + D["battery_l"]/2, ey + D["battery_w"]/2, BATTERY_SKIN + BATTERY_T)
     # 柱とガスケット・ネジ (下から留める)
     posts, pads, metal = [], [], []
     for x, y in POSTS[side]:

@@ -2,7 +2,8 @@
 
 使い方 (リポジトリの一番上で):
     npx ergogen@4.1.0 pcb/ergogen -o pcb/ergogen/output   # 先に外形を作る
-    python3 case/mock.py
+    python3 case/mock.py            # case/parts_dims.json の寸法で → case/stl/mock/
+    python3 case/mock.py --worst    # 候補で一番大きい部品の寸法 (case/parts_dims_worst.json) で → case/stl/mock_worst/
 
 できるもの (case/stl/mock/):
     mock_tray_left.stl / mock_tray_right.stl … トレイ (本物と同じ形。柱だけポロンの分まで高くして、上の模型を乗せる)
@@ -16,9 +17,14 @@
 import os
 import sys
 
-import manifold3d as mf
-
 HERE = os.path.dirname(os.path.abspath(__file__))
+# --worst: 候補の中で一番大きい部品の寸法 (case/parts_dims_worst.json) で作る。何も付けなければ case/parts_dims.json
+PROFILE = "worst" if "--worst" in sys.argv else "normal"
+if PROFILE == "worst":
+    os.environ["KATAWARE_DIMS"] = os.path.join(HERE, "parts_dims_worst.json")
+
+import manifold3d as mf  # noqa: E402
+
 sys.path.insert(0, HERE)
 import concept_ukishima as cu  # noqa: E402
 
@@ -71,7 +77,8 @@ def mock_ball(size):
 
 
 def main():
-    out = os.path.join(HERE, "stl", "mock")
+    out = os.path.join(HERE, "stl", "mock" if PROFILE == "normal" else "mock_worst")
+    print(f"寸法: {cu.DIMS_FILE}")
     os.makedirs(out, exist_ok=True)
     bx, by = k.HALVES["right"]["ball"]
     items = {"mock_tray_left": mock_tray("left"), "mock_tray_right": mock_tray("right"),
