@@ -12,6 +12,10 @@
     ball_cover_25.stl / ball_cover_19.stl   … 爪留めカバー (ひねってロック)
     ball_base_34.stl                 … 34mm 専用の受け (土台とカップが一体・固定の爪つき)
     ball_hood_34.stl                 … 34mm のフード (爪 2 本・外側でひねってロック)
+    switch_cover_left.stl / _right   … 電源スイッチのカバー (トレイの縁に裏からネジ 2 本)
+    switch_slider.stl                … カバーの上のつまみ (2 個印刷する・左右共通)
+    view_cover_left.stl / _right     … nice!view のカバー (窓あき・nice!view にはめる)
+STL は印刷する向き (置く面が下) で書き出す。
 
 形と寸法は case/concept_ukishima.py (構想の 3D モデル) と同じものを使い、
 ここでは「印刷する部品」にまとめて、USB の穴・ゴム足・ボールユニットの留め具を足す。
@@ -92,6 +96,13 @@ def tray(side):
     return t - k.union(cut)
 
 
+def on_bed(m, rot=(0, 0, 0)):
+    """印刷する向きに回して、机 (z=0) の上・真ん中に置く"""
+    m = m.rotate(list(rot))
+    b = m.bounding_box()
+    return m.translate([-(b[0] + b[3]) / 2, -(b[1] + b[4]) / 2, -b[2]])
+
+
 def check():
     """ぶつかり・置き場所の確認 (計算)。問題があれば止める"""
     problems = []
@@ -139,6 +150,24 @@ def check():
         posts = sorted((round(x, 2), round(y, 2)) for x, y in cu.POSTS[side])
         if len(nuts) != len(posts) or any(math.dist(a, b) > 0.05 for a, b in zip(nuts, posts)):
             problems.append(f"{side}: 基板のナットとトレイの柱の位置が合わない")
+    # 電源スイッチのカバー・つまみ、nice!view のカバー
+    for side in ("left", "right"):
+        p = cu.half(side, 34 if side == "right" else 25)
+        low = p["pcb"].translate([0, 0, -0.7])              # キーを押して基板が沈んだ時
+        for a, b, label in (("switch_cover", "pcb", "基板"), ("switch_cover", "plate", "プレート"),
+                            ("switch_cover", "tray", "トレイ"), ("slider", "switch_cover", "カバー"),
+                            ("slider", "pcb", "基板"), ("view_cover", "plate", "プレート"),
+                            ("view_cover", "pcb", "基板"), ("view_cover", "ball_base", "ボールユニット")):
+            if b in p and (p[a] ^ p[b]).volume() > 0.01:
+                problems.append(f"{side}: {a} が {label} に当たる")
+        if (p["switch_cover"] ^ low).volume() > 0.01 or (p["slider"] ^ low).volume() > 0.01:
+            problems.append(f"{side}: 基板が沈むとスイッチのカバーに当たる")
+        for pos in (-cu.SW_POS, cu.SW_POS):              # レバーの両方の位置で、つまみがレバーをつかめるか
+            lever = cu._pwr_place(side, cu._uv_cube(1.6, cu.SW_LEVER_TIP, pos - 0.65, pos + 0.65,
+                                                     cu.SW_LEVER_Z0, cu.SW_LEVER_Z1))
+            sl = p["slider"].translate([0, pos, 0])
+            if (sl ^ lever).volume() > 0.01 or (sl ^ p["switch_cover"]).volume() > 0.01:
+                problems.append(f"{side}: つまみがレバーの位置 {pos:+.2f} で動けない")
     # ボールユニット: キー・基板・プレートに当たらないか (回してロックする途中も)
     for size in (25, 34):
         p = cu.half("right", size)
@@ -173,6 +202,11 @@ def main():
         "ball_cover_19": cu.claw_cover(19)[0],
         "ball_base_34": ball_base_34(),
         "ball_hood_34": cu.claw_cover(34)[0],
+        "switch_cover_left": on_bed(cu.switch_cover("left"), (0, 90, 0)),      # 外の面を下
+        "switch_cover_right": on_bed(cu.switch_cover("right"), (0, -90, 0)),
+        "switch_slider": on_bed(cu.switch_slider("left"), (180, 0, 0)),        # つまみを下
+        "view_cover_left": on_bed(cu.view_cover("left"), (180, 0, 0)),         # 上の面を下
+        "view_cover_right": on_bed(cu.view_cover("right"), (180, 0, 0)),
     }
     for name, m in items.items():
         n = len(m.decompose())

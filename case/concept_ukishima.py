@@ -130,6 +130,119 @@ MAG_CENTER = {"left": (3.0*U, 1.5*U), "right": (k.RIGHT_X + 2.5*U, 2.0*U)}
 BATTERY = {"left": (8.0, 26.0), "right": (307.0, 8.0)}
 BAT_W, BAT_H = 31.0, 21.0
 
+# --- 電池のガイド: くぼみ (深さ 1mm) の 4 つの角に L 形の低い壁。電池がずれない ---
+BAT_GUIDE_H, BAT_GUIDE_T, BAT_GUIDE_L = 3.0, 1.2, 6.0
+
+
+def battery_guides(side):
+    ex, ey = BATTERY[side]
+    x0, x1, y0, y1 = ex - BAT_W/2, ex + BAT_W/2, ey - BAT_H/2, ey + BAT_H/2
+    t, L, z0, z1 = BAT_GUIDE_T, BAT_GUIDE_L, FLOOR - 0.01, FLOOR + BAT_GUIDE_H
+    g = []
+    for cx, sx_ in ((x0, -1), (x1, 1)):
+        for cy, sy_ in ((y0, -1), (y1, 1)):
+            xa, xb = sorted((cx, cx + sx_*t))
+            ya, yb = sorted((cy - sy_*(L - t), cy + sy_*t))
+            g.append(k.cube(xa, ya, z0, xb, yb, z1))
+            xa, xb = sorted((cx - sx_*(L - t), cx + sx_*t))
+            ya, yb = sorted((cy, cy + sy_*t))
+            g.append(k.cube(xa, ya, z0, xb, yb, z1))
+    return k.union(g)
+
+
+# --- 電源スイッチ (横のスライドスイッチ PCM12) のカバーとつまみ ---
+# スイッチのレバーは基板の「舌」の端から 1mm 出るだけで、トレイの外側の面より 1mm 奥にある。
+# トレイの縁に「カバー」を留め、カバーの上に出た「つまみ」を指で前後に滑らせると、つまみの下の
+# 「フォーク」がレバーを動かす。フォークは上下に余裕があるので、基板が沈んで (ポロン) も引っかからない。
+# 座標: スイッチの中心から外へ u、奥へ v (左右で v の向きは同じ)
+PWR = {"left": (6*U + 0.5*U + 0.85, 51.5, +1), "right": (k.RIGHT_X - 1.5*U - 0.85, 51.5, -1)}
+SW_LEVER_Z0, SW_LEVER_Z1 = PCB_T + 0.3, PCB_T + 1.2      # レバーの高さ (PCM12 の想定・実物合わせ)
+SW_LEVER_TIP = 3.15               # レバーの先 (スイッチの中心から)
+SW_POS = 0.75                     # レバーの位置 (中心から ±。動く量 1.5mm)
+SWC_V0, SWC_V1 = -5.4, 6.9        # カバーの範囲 (奥行き。手前は USB-C の切り欠きをよける)
+SWC_POCKET_Z = 3.3                # トレイの壁を、ここまで掘ってカバーの台を入れる
+SWC_BASE_TOP = 7.0                # 台の上面 (基板の舌が沈んでも当たらない: 7.85 - 0.7 = 7.15)
+SWC_LEDGE_U, SWC_LEDGE_TOP = 2.35, 8.8    # つまみが乗る段 (舌の端 u 2.15 より外)
+SWC_WALL_U0, SWC_WALL_U1 = 3.625, 5.125   # 外の壁 (トレイの外側の面より 1mm 出る)
+SWC_ROOF_U0, SWC_ROOF_Z0, SWC_ROOF_Z1 = -1.0, 11.3, 12.5   # 屋根 (スイッチの上を隠す)
+SWC_SLOT = 1.7                    # 屋根のみぞ (つまみの軸が通る・半分の幅)
+SWC_SCREWS = ((1.2, -3.4), (1.2, 4.9))    # カバーをトレイの裏から留めるタッピングネジ M2 (u, v)
+
+
+def _pwr_place(side, m):
+    sx, sy, d = PWR[side]
+    if d < 0:
+        m = m.mirror([1, 0, 0])
+    return m.translate([sx, sy, 0])
+
+
+def _uv_cube(u0, u1, v0, v1, z0, z1):
+    return k.cube(u0, v0, z0, u1, v1, z1)
+
+
+def switch_cover(side):
+    m = _uv_cube(0.225, 4.125, SWC_V0, SWC_V1, SWC_POCKET_Z + 0.05, SWC_BASE_TOP)               # 台
+    m = m + _uv_cube(SWC_LEDGE_U, SWC_WALL_U0 + 0.01, SWC_V0, SWC_V1, SWC_BASE_TOP - 0.01, SWC_LEDGE_TOP)   # 段
+    m = m + _uv_cube(SWC_WALL_U0, SWC_WALL_U1, SWC_V0, SWC_V1, SWC_POCKET_Z + 0.05, SWC_ROOF_Z1)  # 外の壁
+    m = m + _uv_cube(SWC_ROOF_U0, SWC_WALL_U1, SWC_V0, SWC_V1, SWC_ROOF_Z0, SWC_ROOF_Z1)          # 屋根
+    m = m - _uv_cube(SWC_ROOF_U0 - 1, 3.45, -SWC_SLOT, SWC_SLOT, SWC_ROOF_Z0 - 0.1, SWC_ROOF_Z1 + 1)   # みぞ
+    for u, v in SWC_SCREWS:
+        m = m - k.cyl(u, v, SWC_POCKET_Z - 1, SWC_BASE_TOP - 0.8, 0.8)          # タッピングの下穴
+    return _pwr_place(side, m)
+
+
+def switch_slider(side):
+    z0, z1 = SW_LEVER_Z0 - 0.7 - 0.15, SWC_ROOF_Z0 - 0.1     # フォーク (基板が 0.7mm 沈んでもレバーをつかむ)
+    gap = 0.8                                                # レバー 1.3mm + すき間
+    m = (_uv_cube(2.4, 3.25, gap, 1.8, z0, z1) + _uv_cube(2.4, 3.25, -1.8, -gap, z0, z1) +
+         _uv_cube(3.25, 3.525, -1.8, 1.8, z0, z1))                                       # フォーク
+    m = m + _uv_cube(2.7, 3.3, -0.8, 0.8, z1 - 0.01, SWC_ROOF_Z1 + 0.11)                 # 軸
+    cap = _uv_cube(1.6, 3.6, -2.6, 2.6, SWC_ROOF_Z1 + 0.1, SWC_ROOF_Z1 + 1.1)          # つまみ
+    for v in (-1.6, 0, 1.6):                                 # すべり止めのみぞ
+        cap = cap - _uv_cube(1.0, 4.2, v - 0.25, v + 0.25, SWC_ROOF_Z1 + 0.8, SWC_ROOF_Z1 + 2)
+    return _pwr_place(side, m + cap)
+
+
+def switch_pocket(side):
+    """トレイの壁を掘る所 (カバーの台が入る) と、裏からのネジ穴"""
+    m = _uv_cube(-0.5, 6.0, SWC_V0 - 0.1, SWC_V1 + 0.1, SWC_POCKET_Z, 30)
+    for u, v in SWC_SCREWS:
+        m = m + k.cyl(u, v, -1, SWC_POCKET_Z + 0.1, 1.15) + k.cyl(u, v, -0.01, 1.2, 2.2, 1.0)
+    return _pwr_place(side, m)
+
+
+# --- nice!view のカバー: 画面のまわりにかぶせる枠 (窓あき)。nice!view の基板のふちに爪で引っかける ---
+VIEW = {"left": (6*U, 2.5*U), "right": (k.RIGHT_X - U, 2.5*U)}
+VIEW_W, VIEW_L = 14.0, 36.0       # nice!view の大きさ (横 × 縦)
+VIEW_PCB_B = PCB_T + 1.3          # nice!view の基板の下面 (ピンヘッダーの高さ・実物合わせ)
+VIEW_TOP = PCB_T + 4.2            # nice!view の一番上 (画面のガラス)
+VC_WALL, VC_SKIN, VC_GAP = 1.0, 1.0, 0.2
+VC_WIN_W, VC_WIN_L = 11.2, 31.0   # 窓 (画面の見える所・実物合わせ)
+VC_LIP = 0.4                      # 爪 (基板のふちの下に入る量)
+
+
+def view_cover(side):
+    vx, vy = VIEW[side]
+    iw, il = VIEW_W/2 + VC_GAP, VIEW_L/2 + VC_GAP
+    ow, ol = iw + VC_WALL, il + VC_WALL
+    z0 = VIEW_PCB_B - 0.65
+    top = VIEW_TOP + VC_SKIN
+    m = k.cube(-ow, -ol, z0, ow, ol, top) - k.cube(-iw, -il, z0 - 1, iw, il, VIEW_TOP + 0.05)
+    # 窓 (上に向かって広がる)
+    win = mf.Manifold.batch_hull([k.cube(-VC_WIN_W/2, -VC_WIN_L/2, VIEW_TOP - 0.1, VC_WIN_W/2, VC_WIN_L/2, VIEW_TOP),
+                                  k.cube(-VC_WIN_W/2 - 1.2, -VC_WIN_L/2 - 1.2, top, VC_WIN_W/2 + 1.2, VC_WIN_L/2 + 1.2, top + 0.01)])
+    m = m - win
+    # 爪 (長い辺だけ。端にはピンがあるのでつけない)
+    for sgn in (-1, 1):
+        x0, x1 = sorted((sgn*iw, sgn*(iw - VC_LIP)))
+        m = m + k.cube(x0, -il + 5, z0, x1, il - 5, VIEW_PCB_B - 0.05)
+    m = m.translate([vx, vy, 0])
+    if k.HALVES[side]["ball"]:                  # ボールユニット (34mm の受け 外径 35.4) のまわりを曲線でよける
+        bx, by = k.HALVES[side]["ball"]
+        m = m - k.cyl(bx, by, -1, 40, U34_R + 0.6)
+    return m
+
+
 def keycap(x, y, z0, z1):
     lo = mf.Manifold.cube([17.8, 17.8, 0.01]).translate([x - 8.9, y - 8.9, z0])
     hi = mf.Manifold.cube([15.8, 15.2, 0.01]).translate([x - 7.9, y - 7.3, z1 - 0.01])
@@ -258,9 +371,12 @@ def half(side, size=25):
     if side == "right":
         bx, by = k.HALVES["right"]["ball"]
         tray = tray - k.cyl(bx, by, -1, FLOOR + 1, (U34_R if size == 34 else bu.UNIT_R) + 0.3)
-    # 電池のくぼみ (底 0.5mm)
+    # 電池のくぼみ (底 0.5mm) と、まわりのガイド
     ex, ey = BATTERY[side]
     tray = tray - k.cube(ex - BAT_W/2, ey - BAT_H/2, BATTERY_SKIN, ex + BAT_W/2, ey + BAT_H/2, FLOOR + 1)
+    tray = tray + battery_guides(side)
+    # 電源スイッチのカバーが入る所
+    tray = tray - switch_pocket(side)
     # MagSafe リングの溝 (裏) と、その真上の床の内側の厚み
     mx, my = MAG_CENTER[side]
     r0, r1 = MAG_ID/2 - MAG_GAP, MAG_OD/2 + MAG_GAP
@@ -293,7 +409,10 @@ def half(side, size=25):
     parts["caps"] = k.union([keycap(x, y, PLATE_T + 4, KEY_TOP) for x, y in KEYS[side]])
     # nice!view
     vx = 6*U if side == "left" else k.RIGHT_X - U
-    parts["view"] = k.cube(vx - 7, 2.5*U - 18, PCB_T, vx + 7, 2.5*U + 18, PCB_T + 4.2)
+    parts["view"] = k.cube(vx - 7, 2.5*U - 18, VIEW_PCB_B, vx + 7, 2.5*U + 18, VIEW_TOP)
+    parts["view_cover"] = view_cover(side)
+    parts["switch_cover"] = switch_cover(side)
+    parts["slider"] = switch_slider(side)
     if side == "left":
         ex, ey = 5.5*U, U
         parts["knob"] = (k.cyl(ex, ey, PCB_T + 1, KEY_TOP + 1.0, 7.5) -
@@ -320,6 +439,7 @@ COLORS = {  # 色・分解図での持ち上げ量
     "tray": ("#e8e4dc", 0), "posts": ("#d2cdc3", 0), "gasket": ("#e98f9c", 8),
     "pcb": ("#202124", 16), "plate": ("#3a3b3f", 26), "switch": ("#8e949b", 34), "caps": ("#f3f0e9", 46),
     "view": ("#11181f", 26), "knob": ("#2b2d31", 46), "screws": ("#a9adb3", 0), "magsafe": ("#8a8f98", -14), "battery": ("#5b7fa6", 4),
+    "view_cover": ("#2b2d31", 40), "switch_cover": ("#2b2d31", 20), "slider": ("#b8432f", 30),
     "ball_base": ("#d9d5cc", 0), "ball_cup": ("#ece7dd", 22), "ball_cover": ("#2b2d31", 44), "ball": ("#b8432f", 62),
 }
 

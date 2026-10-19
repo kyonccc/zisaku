@@ -175,14 +175,14 @@ outlines:
   view_cut_left:        # プレート用: nice!view のところは角ごと切り取る (細い板が残ると折れやすいため)
     - what: rectangle
       where: left_c6_thumb
-      adjust.shift: [4.2, 2.5ky + 2.05]
-      size: [23, 40.7]
+      adjust.shift: [3.5, 2.5ky + 1.375]  # nice!view のカバー (外 16.4 × 38.4mm) が入る大きさ
+      size: [24.4, 42]
       corner: 1
   view_cut_right:
     - what: rectangle
       where: right_e_top
-      adjust.shift: [-23.4, -0.5ky + 2.05]
-      size: [23.3, 40.7]
+      adjust.shift: [-22.7, -0.5ky + 1.375]
+      size: [24.7, 42]
       corner: 1
   plate_trim_right:     # プレート用: ボールの穴と nice!view の切り取りのあいだに残る細い板 (幅 2mm) を落とす
     - what: rectangle
