@@ -67,6 +67,7 @@ def main(out):
 
     mount_view(parts, out)
     top_view(parts, out)
+    ring_view(parts, out)
 
 
 def mount_view(parts, out):
@@ -86,6 +87,25 @@ def mount_view(parts, out):
     W, H, body = ds.section(items, "az", (x, y, 0), ((-14, 15), (-1, 22)),
                             "基板の留め方：下から留める（上からネジが見えない・ポロンで浮かせる）", labels, px=24)
     open(os.path.join(out, "ukishima-mount.svg"), "w").write(ds.svg(W, H, body))
+
+
+def ring_view(parts, out):
+    """MagSafe のメタルリングの溝の断面 (右手・リングの中心から右へ切る)"""
+    mx, my = cu.MAG_CENTER["right"]
+    items = [(n, m) for n, m in parts.items() if n in ("tray", "magsafe", "battery", "posts")]
+    r0, r1 = cu.MAG_ID / 2, cu.MAG_OD / 2
+    labels = [
+        ((r0 + r1) / 2, cu.MAG_DEPTH - cu.MAG_T / 2, f"メタルリング（厚さ 0.4〜0.6mm）", (r1 + 6, 3.0)),
+        (r1 + 0.15, cu.MAG_DEPTH - 0.2, f"溝 深さ {cu.MAG_DEPTH}mm（リング 0.6＋シール 0.1）", (r1 + 6, 2.2)),
+        (r1 - 1, cu.FLOOR + cu.MAG_BOSS / 2, f"床を内側から {cu.MAG_BOSS}mm 厚く（残り {cu.FLOOR + cu.MAG_BOSS - cu.MAG_DEPTH:.1f}mm）", (r1 + 6, 1.4)),
+        (r1 + 4, 0.75, f"トレイの床 {cu.FLOOR}mm", (r1 + 6, 0.6)),
+    ]
+    mat = ds.C.get("magsafe")
+    ds.C["magsafe"] = "#6c7a89"
+    ds.C["battery"] = "#5b7fa6"
+    W, H, body = ds.section(items, "az", (mx, my, 0), ((r0 - 4, r1 + 5), (-0.6, 3.6)),
+                            "MagSafe メタルリングの溝（断面・右手）", labels, px=40)
+    open(os.path.join(out, "ukishima-ring.svg"), "w").write(ds.svg(W, H, body))
 
 
 def top_view(parts, out):
@@ -122,7 +142,7 @@ def top_view(parts, out):
     ex, ey = cu.BATTERY["right"]
     o.append(f'<rect x="{X(ex - cu.BAT_W / 2):.1f}" y="{Y(ey + cu.BAT_H / 2):.1f}" width="{cu.BAT_W * px:.1f}" '
              f'height="{cu.BAT_H * px:.1f}" fill="none" stroke="#5b7fa6" stroke-width="2" stroke-dasharray="7,5"/>')
-    o.append(f'<text x="{X(mx - 20):.1f}" y="{Y(my - 31.5):.1f}" font-size="15" fill="#8e44ad">紫の点線＝裏の MagSafe リング</text>')
+    o.append(f'<text x="{X(mx - 20):.1f}" y="{Y(my - 31.5):.1f}" font-size="15" fill="#8e44ad">紫の点線＝裏の MagSafe メタルリング</text>')
     o.append(f'<text x="{X(ex - 15):.1f}" y="{Y(ey - 13.5):.1f}" font-size="15" fill="#5b7fa6">青の四角＝電池</text>')
     o.append(poly(parts["ball_cup"], "#ece7dd"))
     o.append(poly(parts["ball"], "#b8432f"))
