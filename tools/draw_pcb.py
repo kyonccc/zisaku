@@ -9,6 +9,7 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "case"))
 import kataware_case  # noqa: E402  (Ergogen の DXF から基板の外形を読む)
+import ukishima  # noqa: E402  (浮島: 電池・柱・ユニットの留めネジの位置)
 
 U = 19.05
 WALL = 5.0
@@ -107,6 +108,12 @@ class Board:
         self.text(x, y - 1.5, "電池（裏）", 12, color=C["sub"])
         self.rect(conn_x, conn_y, 4.5, 9, C["back"], C["ink"], rx=0.3, sw=1)   # 電池コネクタ (縦向き)
 
+    def nuts(self, side, dx=0.0):
+        """浮島: 基板の裏の M2 ナット (トレイの柱に下から留める所)"""
+        for x, y in ukishima.cu.POSTS[side]:
+            self.circle(x - dx, y, 2.5, "#fff", C["back"], sw=1.5)
+            self.circle(x - dx, y, 1.2, C["back"], None)
+
     def svg(self):
         return "".join(self.o)
 
@@ -125,12 +132,13 @@ def left_board(ox, oy):
     b.rect(ex, ey, 12, 12, "#d5d8dc", C["enc"], rx=0.8)
     b.circle(ex, ey, 7.5, "none", C["enc"], sw=2)
     b.circle(ex, ey, 3, C["enc"])
-    b.rect(ex, ey - 9.2, 3.7, 1.6, C["back"], None, rx=0.2, op=0.55)
+    b.rect(ex - 9, ey - 9.2, 3.7, 1.6, C["back"], None, rx=0.2, op=0.55)
     b.text(ex, ey + 9, "エンコーダー", 11, color=C["enc"])
     b.xiao(6.5*U - 8, kataware_case.HALVES["left"]["xiao"][1], +1)
     b.view(6*U, 2.5*U)
     b.power(6.5*U + 0.85, 51.5, +1)
-    b.battery(29.0, 0.5*U, 0.5*U + 1, 12)
+    b.battery(*ukishima.BATTERY["left"], 29, 29)
+    b.nuts("left")
     return b.svg()
 
 
@@ -148,8 +156,8 @@ def right_board(ox, oy):
     b.circle(bx, by, UNIT_R, C["unit"], C["ink"], sw=1.5)            # ユニット (34mm)
     b.circle(bx, by, 12.5, C["ball"], None, op=0.85)                  # ボール 25mm
     b.text(bx, by + 2.5, "25mm", 15, color="#fff", weight="bold")
-    for a in kataware_case.BALL_SCREW_ANGLES:                         # 底ネジ (裏から)
-        sx, sy = bx + SCREW_R*math.cos(math.radians(a)), by + SCREW_R*math.sin(math.radians(a))
+    for a in ukishima.TAB_ANGLES:                                     # ユニットをトレイに留めるネジ (トレイの裏から)
+        sx, sy = bx + ukishima.TAB_SCREW_R*math.cos(math.radians(a)), by + ukishima.TAB_SCREW_R*math.sin(math.radians(a))
         b.circle(sx, sy, 1.9, "#fff", C["screw"], sw=2)
         b.o.append(f'<path d="M{b.X(sx)-6:.1f},{b.Y(sy):.1f} h12 M{b.X(sx):.1f},{b.Y(sy)-6:.1f} v12" '
                    f'stroke="{C["screw"]}" stroke-width="1.5"/>')
@@ -163,8 +171,32 @@ def right_board(ox, oy):
     b.xiao(-1.5*U + 8, kataware_case.HALVES["right"]["xiao"][1], -1)
     b.view(-U, 2.5*U)
     b.power(-1.5*U - 0.85, 51.5, -1)
-    b.battery(67.7, 0.5*U, 4.5*U, 12)
+    ex, ey = ukishima.BATTERY["right"]
+    b.battery(ex - kataware_case.RIGHT_X, ey, 286 - kataware_case.RIGHT_X, 29)
+    b.nuts("right", kataware_case.RIGHT_X)
     return b.svg()
+
+
+def plates_view():
+    """プレート (Choc v2・FR4 など) の図面。Ergogen の plate_*.dxf をそのまま描く"""
+    sc, gap = 4.0, 30
+    shapes = [kataware_case.load("plate_left"), kataware_case.load("plate_right")]
+    xs = [sh.bounds for sh in shapes]
+    W = int(sum((b[2] - b[0]) * sc for b in xs) + 3 * gap)
+    H = int(max(b[3] - b[1] for b in xs) * sc + 140)
+    o = [f'<text x="{gap}" y="38" font-size="26" font-weight="bold" fill="{C["ink"]}">プレート（Choc v2・穴 13.8mm 角・耳やネジ穴なし）</text>']
+    x0 = gap
+    for sh, b in zip(shapes, xs):
+        d = ""
+        for poly in ([sh] if sh.geom_type == "Polygon" else list(sh.geoms)):
+            for ring in [poly.exterior] + list(poly.interiors):
+                d += "M" + " L".join(f"{x0 + (x - b[0]) * sc:.1f},{70 + (b[3] - y) * sc:.1f}" for x, y in ring.coords) + " Z "
+        o.append(f'<path d="{d}" fill="#3a3b3f" fill-rule="evenodd" stroke="{C["ink"]}" stroke-width="1"/>')
+        x0 += (b[2] - b[0]) * sc + gap
+    o.append(f'<text x="{gap}" y="{H - 30}" font-size="16" fill="{C["sub"]}">pcb/ergogen/output/outlines/plate_left.dxf ・ plate_right.dxf'
+             f'（FR4 1.2mm で注文できる）</text>')
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" '
+            f'font-family="Noto Sans CJK JP, sans-serif"><rect width="{W}" height="{H}" fill="{C["bg"]}"/>' + "".join(o) + "</svg>")
 
 
 def top_view():
@@ -173,15 +205,15 @@ def top_view():
     H = int(BOARD_H*S + 230)
     oy = 95
     lx, rx = gap, 2*gap + BOARD_W*S
-    o = [f'<text x="{gap}" y="38" font-size="28" font-weight="bold" fill="{C["ink"]}">kataware 基板のイメージ（上から見た図・ガスケットマウント用）</text>',
+    o = [f'<text x="{gap}" y="38" font-size="28" font-weight="bold" fill="{C["ink"]}">kataware 基板のイメージ（上から見た図・浮島）</text>',
          f'<text x="{gap}" y="70" font-size="17" fill="{C["sub"]}">実線 = 基板の表（上）にある物　／　オレンジや点線 = 基板の裏（下）にある物。部品の大きさは目安</text>',
          left_board(lx, oy), right_board(rx, oy),
          f'<text x="{lx + BOARD_W*S/2:.0f}" y="{oy + BOARD_H*S + 30:.0f}" font-size="20" text-anchor="middle" font-weight="bold" fill="{C["ink"]}">左手（24キー＋エンコーダー）</text>',
          f'<text x="{rx + BOARD_W*S/2:.0f}" y="{oy + BOARD_H*S + 30:.0f}" font-size="20" text-anchor="middle" font-weight="bold" fill="{C["ink"]}">右手（22キー＋トラックボール）</text>']
     legend = [
-        (C["back"], "点線の横長の枠 = ホットスワップソケット（裏）、小さい四角 = ダイオード（裏）"),
-        (C["pcb"], "緑の太線 = 基板の外形（ケースの内側より 0.75mm 小さい。内側の「舌」に USB-C と電源）、グレーの点線 = ケースの外形"),
-        (C["screw"], "青い ＋ = ボールユニットを裏からとめるネジ3本（基板には穴なし。ケースの底からユニットへ）"),
+        (C["back"], "点線の横長の枠 = ホットスワップソケット（裏）、小さい四角 = ダイオード（裏）、白い丸 = トレイの柱に留める M2 ナット（裏・8か所）"),
+        (C["pcb"], "緑の太線 = 基板の外形（内側の「舌」に USB-C と電源）、グレーの点線 = トレイの外形"),
+        (C["screw"], "青い ＋ = ボールユニットの耳をトレイの裏からとめるネジ3本（基板には穴なし）"),
     ]
     for i, (col, t) in enumerate(legend):
         y = oy + BOARD_H*S + 70 + i*28
@@ -195,3 +227,4 @@ def top_view():
 if __name__ == "__main__":
     out = sys.argv[1] if len(sys.argv) > 1 else "docs/images"
     open(f"{out}/pcb-top.svg", "w").write(top_view())
+    open(f"{out}/plates-choc.svg", "w").write(plates_view())

@@ -172,6 +172,23 @@ outlines:
       adjust.shift: [-kx, -0.5ky]
       size: [14.6, 36.6]
       corner: 1
+  view_cut_left:        # プレート用: nice!view のところは角ごと切り取る (細い板が残ると折れやすいため)
+    - what: rectangle
+      where: left_c6_thumb
+      adjust.shift: [4.2, 2.5ky + 2.05]
+      size: [23, 40.7]
+      corner: 1
+  view_cut_right:
+    - what: rectangle
+      where: right_e_top
+      adjust.shift: [-23.4, -0.5ky + 2.05]
+      size: [23.3, 40.7]
+      corner: 1
+  plate_trim_right:     # プレート用: ボールの穴と nice!view の切り取りのあいだに残る細い板 (幅 2mm) を落とす
+    - what: rectangle
+      where: right_e_top
+      adjust.shift: [-28.05, -39.15]
+      size: [12, 26]
   keys_choc:            # Choc v2 用プレートのスイッチ穴 (13.8mm 角)
     - what: rectangle
       where: true
@@ -213,40 +230,26 @@ outlines:
       name: ball_cut
 
   # --- プレート (キースイッチを固定する板) ---
-  tabs_left:            # 耳: 上2・下2・外側1・内側1
-    - {what: rectangle, where: left_c0_thumb, adjust.shift: [24.15, 3.5ky + 0.75], size: [tab_w, 4.5]}
-    - {what: rectangle, where: left_c0_thumb, adjust.shift: [82.15, 3.5ky + 0.75], size: [tab_w, 4.5]}
-    - {what: rectangle, where: left_c0_thumb, adjust.shift: [22.15, -0.5ky - 0.75], size: [tab_w, 4.5]}
-    - {what: rectangle, where: left_c0_thumb, adjust.shift: [72.15, -0.5ky - 0.75], size: [tab_w, 4.5]}
-    - {what: rectangle, where: left_c0_thumb, adjust.shift: [-0.5kx - 0.75, 1.5ky], size: [4.5, tab_w]}
-    - {what: rectangle, where: left_c0_thumb, adjust.shift: [6.5kx + 0.75, 21.5], size: [4.5, tab_w]}
-  tabs_right:
-    - {what: rectangle, where: right_e_top, adjust.shift: [71.1, 3.5ky + 0.75 - 3ky], size: [tab_w, 4.5]}
-    - {what: rectangle, where: right_e_top, adjust.shift: [13.1, 3.5ky + 0.75 - 3ky], size: [tab_w, 4.5]}
-    - {what: rectangle, where: right_e_top, adjust.shift: [73.1, -0.5ky - 0.75 - 3ky], size: [tab_w, 4.5]}
-    - {what: rectangle, where: right_e_top, adjust.shift: [23.1, -0.5ky - 0.75 - 3ky], size: [tab_w, 4.5]}
-    - {what: rectangle, where: right_e_top, adjust.shift: [5.5kx + 0.75, 1.5ky - 3ky], size: [4.5, tab_w]}
-    - {what: rectangle, where: right_e_top, adjust.shift: [-1.5kx - 0.75, 21.5 - 3ky], size: [4.5, tab_w]}
+  # 浮島: プレートはスイッチで基板にくっついて、基板といっしょに浮く。耳もネジ穴も無い
   plate_left:
     - what: rectangle
       where: left_c0_thumb
       adjust.shift: [3kx, 1.5ky]
       size: [7kx - 1, 4ky - 1]
       corner: 4.5
-    - name: tabs_left
     - {operation: subtract, name: keys_choc}
     - {operation: subtract, name: encoder_cut}
-    - {operation: subtract, name: view_window_left}
+    - {operation: subtract, name: view_cut_left}
   plate_right:
     - what: rectangle
       where: right_e_top
       adjust.shift: [2kx, -1.5ky]
       size: [7kx - 1, 4ky - 1]
       corner: 4.5
-    - name: tabs_right
     - {operation: subtract, name: keys_choc}
     - {operation: subtract, name: ball_cut}
-    - {operation: subtract, name: view_window_right}
+    - {operation: subtract, name: view_cut_right}
+    - {operation: subtract, name: plate_trim_right}
 
 pcbs:
   # ===================== 左手 =====================
@@ -283,7 +286,7 @@ pcbs:
       encoder_diode:
         what: diode
         where: left_c5_top
-        adjust.shift: [0.5kx, -2ky - 9.2]
+        adjust.shift: [0.5kx - 9, -2ky - 9.2]   # 浮島: 柱 (ナット) をよけて左へ 9mm
         params:
           from: ENC_SW
           to: ROW2
@@ -335,12 +338,21 @@ pcbs:
         params:
           from: BAT_P
           to: BAT_SW
+      # --- 浮島: 基板をトレイの柱に下から留める M2 はんだ付けナット (裏・8 か所。case/ukishima.py の柱と同じ位置) ---
+      mount1: {what: kataware/smt_nut_m2, where: left_c0_thumb, adjust.shift: [0.5kx, 0.5ky], params.side: B}
+      mount2: {what: kataware/smt_nut_m2, where: left_c0_thumb, adjust.shift: [1.5kx, 0.5ky], params.side: B}
+      mount3: {what: kataware/smt_nut_m2, where: left_c0_thumb, adjust.shift: [4.5kx, 0.5ky], params.side: B}
+      mount4: {what: kataware/smt_nut_m2, where: left_c0_thumb, adjust.shift: [5.5kx, 0.5ky], params.side: B}
+      mount5: {what: kataware/smt_nut_m2, where: left_c0_thumb, adjust.shift: [0.5kx, 2.5ky], params.side: B}
+      mount6: {what: kataware/smt_nut_m2, where: left_c0_thumb, adjust.shift: [1.5kx, 2.5ky], params.side: B}
+      mount7: {what: kataware/smt_nut_m2, where: left_c0_thumb, adjust.shift: [4.5kx, 2.5ky], params.side: B}
+      mount8: {what: kataware/smt_nut_m2, where: left_c0_thumb, adjust.shift: [3.5kx, 1.5ky], params.side: B}
       battery:
-        what: lib/molex_picoblade_2p   # Gexa GA-011 (1.25mm ピッチ)。差し込み口は電池のある右向き
+        what: lib/molex_picoblade_2p   # Gexa GA-011 (1.25mm ピッチ)。浮島: 電池 (左端) の右隣。差し込み口は電池のある左向き
         where: left_c0_thumb
         adjust:
-          shift: [0.5kx + 1, 12]
-          rotate: -90
+          shift: [29, 29]
+          rotate: 90
         params:
           side: B
           pos: BAT_P
@@ -420,12 +432,21 @@ pcbs:
         params:
           from: BAT_P
           to: BAT_SW
+      # --- 浮島: 基板をトレイの柱に下から留める M2 はんだ付けナット (裏・8 か所。case/ukishima.py の柱と同じ位置) ---
+      mount1: {what: kataware/smt_nut_m2, where: right_e_top, adjust.shift: [1.5kx, -2.5ky], params.side: B}
+      mount2: {what: kataware/smt_nut_m2, where: right_e_top, adjust.shift: [3.5kx, -2.5ky], params.side: B}
+      mount3: {what: kataware/smt_nut_m2, where: right_e_top, adjust.shift: [0.5kx, -1.5ky], params.side: B}
+      mount4: {what: kataware/smt_nut_m2, where: right_e_top, adjust.shift: [0.5kx, -0.5ky], params.side: B}
+      mount5: {what: kataware/smt_nut_m2, where: right_e_top, adjust.shift: [2.5kx, -0.5ky], params.side: B}
+      mount6: {what: kataware/smt_nut_m2, where: right_e_top, adjust.shift: [4.5kx, -0.5ky], params.side: B}
+      mount7: {what: kataware/smt_nut_m2, where: right_e_top, adjust.shift: [2.5kx, -1.5ky], params.side: B}
+      mount8: {what: kataware/smt_nut_m2, where: right_e_top, adjust.shift: [4.5kx, -1.5ky], params.side: B}
       battery:
-        what: lib/molex_picoblade_2p   # 差し込み口は電池のある左向き
+        what: lib/molex_picoblade_2p   # 浮島: 電池 (右下) の左上。差し込み口は電池のある右向き
         where: right_c12_thumb
         adjust:
-          shift: [-0.5kx, 12]
-          rotate: 90
+          shift: [-28.3, 29]
+          rotate: -90
         params:
           side: B
           pos: BAT_P

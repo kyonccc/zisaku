@@ -1,11 +1,14 @@
-"""kataware ケース (ガスケットマウント) の 3D データ (STL) を作る。
+"""【旧版】kataware ケース (ガスケットマウント) の 3D データ (STL) を作る。
+今の製作用は「浮島」(case/ukishima.py)。この版は参考として残している (出力は case/stl/old_gasket/)。
+プレートの耳は浮島で無くなったので、このケースの溝はプレートに合わない。
+
 
 使い方 (リポジトリの一番上で):
     pip install manifold3d shapely ezdxf
     npx ergogen@4.1.0 pcb/ergogen -o pcb/ergogen/output   # 先に外形を作る
     python3 case/kataware_case.py
 
-できるもの (case/stl/):
+できるもの (case/stl/old_gasket/):
     bottom_left.stl / bottom_right.stl … 下ケース (底と壁)
     top_left.stl    / top_right.stl    … 上ケース (フレーム)
 
@@ -210,7 +213,7 @@ def save_stl(m, path):
 
 
 def main():
-    out = os.path.join(HERE, "stl")
+    out = os.path.join(HERE, "stl", "old_gasket")
     os.makedirs(out, exist_ok=True)
     print(f"高さ: 底板 {FLOOR} / 基板 {PCB_B}〜{PCB_T:.1f} / プレート {PLATE_B:.1f}〜{PLATE_T:.1f} / "
           f"分かれ目 {SPLIT:.1f} / 上ケース上面 {TOP:.1f}")

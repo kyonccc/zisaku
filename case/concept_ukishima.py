@@ -94,6 +94,7 @@ CLAW_STEPS = 28                   # 曲面を作る輪切りの数
 NUT_R, NUT_H = 1.9, 1.5           # SMT ナット (外径 3.8mm・高さ 1.5mm)
 COLLAR_R = 1.5                    # カラー 外径 3mm (内径 2.1mm)
 POST_R = 3.6                      # 柱 (ポロンを受ける面を広く)
+PORON_OD, PORON_ID = 7.0, 4.5     # ポロンの輪 (3mm のシートを φ7 と φ4.5 のポンチで抜く)
 POST_HOLE_R = 1.7                 # 柱の穴 (カラーとのすき間 0.2mm)
 WASHER_R, WASHER_T = 2.5, 0.4     # M2 ワッシャー (外径 5mm)
 SCREW_HEAD_R, SCREW_HEAD_H = 2.0, 0.8
@@ -272,7 +273,7 @@ def half(side, size=25):
     posts, pads, metal = [], [], []
     for x, y in POSTS[side]:
         posts.append(k.cyl(x, y, FLOOR - 0.01, POST_TOP, POST_R))
-        pads.append(k.cyl(x, y, POST_TOP, PCB_B, POST_R - 0.2) - k.cyl(x, y, POST_TOP - 1, PCB_B + 1, NUT_R + 0.4))
+        pads.append(k.cyl(x, y, POST_TOP, PCB_B, PORON_OD / 2) - k.cyl(x, y, POST_TOP - 1, PCB_B + 1, PORON_ID / 2))
         metal += [k.cyl(x, y, NUT_B, PCB_B, NUT_R),                                  # ナット
                   k.cyl(x, y, COLLAR_B, NUT_B, COLLAR_R),                            # カラー
                   k.cyl(x, y, COLLAR_B - WASHER_T, COLLAR_B, WASHER_R),              # ワッシャー

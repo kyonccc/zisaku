@@ -27,7 +27,8 @@
 
 ---
 
-> 💡 **構想中**：デザインと打鍵感を考え直した案「**浮島**」を [docs/concept/](docs/concept/README.md) にまとめています（イメージのみ）。
+> 💡 **製作用の形は「浮島」**です。データ・買う物・3D プリント・組み立ては **[docs/ukishima-build.md](docs/ukishima-build.md)**、考え方と経緯は [docs/concept/](docs/concept/README.md)。
+> このページの「ケース（ガスケットマウント）」の節は古い版の説明です。
 
 ## 2. 仕様
 
@@ -78,7 +79,7 @@
 
 | 工夫 | 効果 | kataware での扱い |
 | --- | --- | --- |
-| **ガスケットマウント** | プレートをゴムやポロン（柔らかいスポンジ）で上下から挟んで浮かせる。底打ちが柔らかく、音も静かになる | **採用**。プレートの6か所の「耳」を上下からポロンで挟む（下の「ケース」の節） |
+| **ガスケットマウント** | プレートをゴムやポロン（柔らかいスポンジ）で上下から挟んで浮かせる。底打ちが柔らかく、音も静かになる | **浮島で採用**：トレイの柱 8 本の上のポロンに基板を乗せ、下から留める（[作り方](docs/ukishima-build.md)） |
 | **プレートの素材を選べるようにする** | FR4（標準・ほどよくしなる）／POM（柔らかく静か）／アルミ（硬くカチッとした感触） | プレートを**交換式**にする（DRESSTHING の「着せ替え」の考え方） |
 | **フォームを入れる** | プレートと基板の間・基板とケース底の間にスポンジを入れ、カチャカチャした響きを抑える | 底側は XIAO と電池の場所を避けて切り抜く |
 | **フレックスカット** | プレートに細い切れ込みを入れて、しなりを足す | プレートの図面に後から追加できる |
@@ -116,6 +117,9 @@
 ![ボールユニットの断面](docs/images/ballunit-section.png)
 
 ボールユニットは、**土台**（ケースに固定）・**カップ**・**カバー**（どちらもボールの大きさごとに差し替え）でできています。
+
+> 浮島では、土台をトレイの床に落とし込み（耳を床の裏から 3 本のネジで留める）、カバーは低い「爪留め」になります。34mm は専用の受けです。
+> カップ・ベアリング・ネジでの調整はこの節と同じ。違う所は [浮島の作り方](docs/ukishima-build.md) と [構想のページ](docs/concept/README.md)。
 
 | 部品 | 中身 |
 | --- | --- |
@@ -187,7 +191,16 @@
 
 `python3 tools/draw_pcb.py docs/images` で作り直せる（位置・外形は `pcb/ergogen/config.yaml` と同じ）。
 
-### ケース（ガスケットマウント）
+### ケース（浮島・製作用）
+
+![浮島](docs/concept/ukishima-hero.png)
+
+低いトレイの柱 8 本の上のポロンに基板（＋プレート）を乗せ、**基板の裏の M2 ナットにトレイの裏からネジで留める**作り。上からネジは見えない。
+トレイの裏に MagSafe メタルリングの溝（テンティング用）。データ・買う物・印刷・組み立ては **[docs/ukishima-build.md](docs/ukishima-build.md)**。
+
+### ケース（旧版：ガスケットマウント）
+
+> ⚠️ 古い版の説明です。データは `case/stl/old_gasket/`。浮島でプレートの耳を無くしたので、今のプレートはこのケースに合いません。
 
 ![ケース](docs/images/case-3d.png)
 ![分解図](docs/images/case-exploded.png)
@@ -226,7 +239,7 @@
 
 #### 作り方・3D プリントの向き
 
-- 3D データ（STL）は `case/stl/`。作り直しは `python3 case/kataware_case.py`（先に Ergogen を実行しておく）
+- 3D データ（STL）は `case/stl/old_gasket/`。作り直しは `python3 case/kataware_case.py`（先に Ergogen を実行しておく）
   - 平面の形はすべて Ergogen の DXF から読み込むので、`config.yaml` を変えればケースも追従する
   - 高さやネジ・穴の位置は `case/kataware_case.py` の上の方にまとめてある
   - ボールユニットは `python3 case/ball_unit.py`
@@ -456,10 +469,10 @@ npx ergogen@4.1.0 pcb/ergogen -o pcb/ergogen/output
 | ファイル | 中身 |
 | --- | --- |
 | `pcbs/left.kicad_pcb` / `pcbs/right.kicad_pcb` | 基板の下書き。KiCad で開いて配線する |
-| `outlines/plate_left.dxf` / `plate_right.dxf` | Choc v2 用プレート（スイッチを固定する板・穴 13.8mm 角）の図面 |
-| `outlines/pcb_*.dxf` | 基板の外形（ガスケットマウント用。右手はボールの穴あり） |
+| `outlines/plate_left.dxf` / `plate_right.dxf` | Choc v2 用プレート（スイッチを固定する板・穴 13.8mm 角）の図面。浮島用（耳・ネジ穴なし） |
+| `outlines/pcb_*.dxf` | 基板の外形（右手はボールの穴あり） |
 | `outlines/board_*.dxf` | ケースの外形（左右同じ 143.35 × 86.2mm、角 R14） |
-| `outlines/cavity_*.dxf` / `top_opening_*.dxf` / `tabs_*.dxf` | ケースの内側・上ケースの開口・プレートの耳（ケースの 3D データが読み込む） |
+| `outlines/cavity_*.dxf` / `top_opening_*.dxf` | ケースの内側・（旧版の）上ケースの開口（ケースの 3D データが読み込む） |
 
 ### スイッチは Choc に絞った理由
 
@@ -478,19 +491,20 @@ MX と Choc のソケットを同じキーに置くと、**穴どうし・穴と
 | 電源スイッチ（Alps SSSS811101 / C&K PCM12） | `Button_Switch_SMD:SW_SPDT_PCM12` | KiCad 標準ライブラリ |
 | センサー用コネクタ J（右手の裏） | `Connector_JST:JST_SH_BM06B-SRSS-TB_1x06-1MP_P1.00mm_Vertical` | KiCad 標準ライブラリ |
 | 電池コネクタ（基板の裏） | `Connector_Molex:Molex_PicoBlade_53261-0271_1x02-1MP_P1.25mm_Horizontal` | KiCad 標準ライブラリ |
+| M2 はんだ付けナット（基板の裏・8 か所） | `kataware:SMT_Nut_M2`（パッド φ5・めっき穴 φ2.4） | kataware 用に作成。買う品番に合わせてパッドを調整 |
 
 - 元の `.kicad_mod` は `pcb/ergogen/lib_src/`、Ergogen 用に変換したものは `pcb/ergogen/footprints/lib/`
   （変換は `python3 tools/import_footprints.py`）
 - 各ピンのつながり（ネット）は、ファームウェアのピン割り当てどおりに入っている
 - **XIAO の電池パッド（BAT+）は XIAO の真下に隠れる**ので、基板のその位置に小さな穴（直径0.7mm）をあけてある。
   XIAO をはんだ付けした後、**基板の表側からこの穴にはんだを流し込む**（nice!view を付ける前に）
-- 簡単な検査：`python3 tools/check_pcb.py`（パッドどうしの近さ・基板の端からの距離）。KiCad の DRC も必ず行う
+- 簡単な検査：`python3 tools/check_pcb.py`（パッドどうしの近さ・基板の端からの距離・裏の部品の重なり・電池の上の部品）。KiCad の DRC も必ず行う
 
 ### 部品データとライセンス（販売するため）
 
 | フォルダ | 中身 | ライセンス |
 | --- | --- | --- |
-| `pcb/ergogen/footprints/kataware/` | Choc v2 スイッチ・nice!view | kataware 用に作成。Choc v2 は Ergogen 内蔵（MIT）をもとにしたもの |
+| `pcb/ergogen/footprints/kataware/` | Choc v2 スイッチ・nice!view・M2 はんだ付けナット | kataware 用に作成。Choc v2 は Ergogen 内蔵（MIT）をもとにしたもの |
 | `pcb/ergogen/footprints/lib/`（元は `lib_src/`） | 電源スイッチ・JST SH コネクタ・PicoBlade コネクタ | KiCad 標準ライブラリ（CC-BY-SA 4.0。**作った基板には適用されない例外つき**なので販売できる） |
 | 同上 | XIAO nRF52840 Plus | Seeed Studio OPL_Kicad_Library（CC-BY-SA 4.0。商用利用可・**出典の表示が必要**）。データを配る時はこの表の表示を残す |
 | `pcb/ergogen/footprints/ceoloide/` | エンコーダー | MIT（[ceoloide/ergogen-footprints](https://github.com/ceoloide/ergogen-footprints)） |
@@ -516,10 +530,12 @@ zisaku/
 │   ├── config.yaml                   … キーの位置・外形・部品の置き場所
 │   ├── footprints/                   … 追加の部品（ceoloide の部品・置き場所の枠・センサー用コネクタ）
 │   └── output/                       … 生成された基板（KiCad）・図面（DXF）
-├── case/                             … ケース（ガスケットマウント）
-│   ├── kataware_case.py              … ケースの 3D データを作るプログラム
-│   ├── ball_unit.py                  … ボールユニット（土台・25mm/19mm カップ）
-│   └── stl/                          … 下ケース・上ケース（左右）・ボールユニットの STL
+├── case/                             … ケース
+│   ├── ukishima.py                   … ★浮島（製作用）の 3D データを作るプログラム
+│   ├── concept_ukishima.py           … 浮島の形（寸法）と、イメージ画像用の 3D モデル
+│   ├── ball_unit.py                  … ボールユニットの形の元（土台・25mm/19mm カップ）
+│   ├── kataware_case.py              … 旧版（ガスケットケース）
+│   └── stl/ukishima/                 … 浮島の STL（トレイ・ボールユニット）。旧版は stl/old_gasket/
 ├── config/
 │   ├── west.yml                      … ZMK本体とトラックボールドライバの取得元
 │   ├── kataware.keymap               … ★キー配置（一番よく編集するファイル）
@@ -640,7 +656,7 @@ Bluetooth に表示される名前は `Kconfig.defconfig` の `ZMK_KEYBOARD_NAME
 
 ## 9. 次にやること（ハードウェア）
 
-1. **部品を決めて買う**：XIAO nRF52840 Plus ×2、PMW3610 ブレイクアウト、25mm ボール、
+1. **部品を決めて買う**（浮島のケースで増える物：ナット・カラー・ネジ・ポロン・メタルリングなどは [浮島の作り方](docs/ukishima-build.md#4-買う物浮島で増える物)）：XIAO nRF52840 Plus ×2、PMW3610 ブレイクアウト、25mm ボール、
    ボール支持用ベアリング 681X（1.5 × 4 × 2mm）＋ 軸用 M1.4 × 6mm なべタッピングネジ ×3組（19mm カップも作るなら ×6組）、nice!view ×2、水平スライドスイッチ Alps SSSS811101 ×2、ロータリーエンコーダー（押し込み付き・薄型）×1、Kailh Choc v2 スイッチ ×46、Choc 用ホットスワップソケット ×46、ダイオード（1N4148 など）×47、PSE 認証済みリポ電池 Gexa GA-011 ×2、1.25mm ピッチ 2ピンコネクタ ×2
 2. **キー配置を決める**：[Keyboard Layout Editor](http://www.keyboard-layout-editor.com/) や
    [Ergogen](https://ergogen.xyz/) で配置を決める（Ergogen は配置から基板の下書きまで作れます）

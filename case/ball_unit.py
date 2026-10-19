@@ -1,9 +1,12 @@
-"""kataware ボールユニット (土台 + 交換カップ) の 3D データ (STL) を作る。
+"""kataware ボールユニット (土台 + 交換カップ) の形の元になるデータ。
+
+浮島 (今の製作用) は case/ukishima.py がこのファイルの形を使い、高さだけ変えて STL を作る。
+このファイルを直接実行すると、【旧版】ガスケットケース用の STL (case/stl/old_gasket/) ができる。
 
 使い方 (リポジトリの一番上で):
     python3 case/ball_unit.py
 
-できるもの (case/stl/):
+できるもの (case/stl/old_gasket/・旧版):
     ball_base.stl    … 土台。ケースの底に裏から皿ネジ M2 × 3本でとめる。PMW3610 センサーを中に置く
     ball_cup_25.stl  … 25mm ボール用カップ (ベアリング3個)
     ball_cup_19.stl  … 19mm ボール用カップ (ベアリング3個)
@@ -275,7 +278,7 @@ def bearings(size):
 
 
 def main():
-    out = os.path.join(HERE, "stl")
+    out = os.path.join(HERE, "stl", "old_gasket")
     os.makedirs(out, exist_ok=True)
     b = base()
     k.save_stl(b, os.path.join(out, "ball_base.stl"))
