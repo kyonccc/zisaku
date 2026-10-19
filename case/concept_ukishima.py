@@ -31,10 +31,30 @@ bu.BASE_FLOOR = 1.0
 bu.SENSOR_TOP = bu.BASE_FLOOR - bu.SENSOR_POCKET + bu.SENSOR_T
 bu.BALL_BOTTOM = bu.SENSOR_TOP + bu.LENS_H + bu.LENS_GAP
 
-# --- 34mm ボール (画像用): 土台は同じ (外径 34mm)。ボールが外径いっぱいなので専用のカップと低いリングを使う ---
-# ベアリングはボールの下寄り (55°) で支え、爪はキーのない 3 か所でキーキャップより上を外へふくらむ
+# --- 34mm ボール: 専用ユニット (人差し指と中指で転がす向き) ---
+# 34mm はボールが重く、指で押す力も大きいので、25 / 19mm と土台を共用しない。
+#  - 土台とカップを一体に (受けの壁が 2 重にならない分、壁が厚い)。外径 35.4mm (基板の穴 36mm に収まる)
+#  - ボールの一番太い所 (赤道) がキーキャップより上にあるので、ボールの下半分を囲むリングは作れない
+#    (リングがボールに引っかかって、カバーが外せなくなる)。カバーは「赤道より下ではボールの外側だけ」を通る形にする
+#  - 爪 3 本: 45° (キーの角のあいだ) は土台と一体の「固定の爪」。170° と 250° はカバーの爪
+#  - カバーは、キーも基板もない左手前の空き (140〜290°) を囲む「フード」。外側でひねってロックする
+#  - 指は右手前から来る (ボールの手前に手のひら) ので、そこ (爪のすき間 155° の真ん中) を広くあける
 bu.CUPS[34] = {"R": 17.0, "contact": 55}
-RING_TOP_34 = 17.5                # 34mm のリングの上面 (ボールが太いので低くして、壁の厚さを確保)
+U34_R = 17.7                      # 34mm ユニットの外径 (半径)。基板・プレートの穴 (半径 18) とのすき間 0.3mm
+U34_TOP = 16.0                    # 一体型の受けの上面
+CLAWS_34 = (45, 170, 250)         # 爪の向き (すき間 125° / 80° / 155°)
+FIXED_CLAW_34 = 45                # 土台と一体の爪
+FIXED34_ROOT_W, FIXED34_MAX_R = 11.0, 20.0     # 固定の爪: キーの角のあいだ (約 6mm) に収まる幅・ふくらみ
+CLAW34_ROOT_W, CLAW34_TIP_W, CLAW34_TIP_T = 18.0, 5.0, 2.6
+CLAW34_BULGE = 1.2                # 34mm の爪の中ほどを厚くする量
+# フード (カバー): 左手前の空きを囲む C 形の壁。ひねってロック (さし込む時は +30° の位置)
+HOOD34_A = (140, 290)             # フードの範囲 (ロックした時)
+HOOD34_IN, HOOD34_OUT = 19.4, 21.4
+HOOD34_Z0, HOOD34_TOP = 11.9, 19.5    # 下はプレートの上面 (11.65) より上・上はキーキャップより上
+LOCK34_A = (180, 260)             # ツメの位置 (ロックした時)。基板の切り欠きの中
+LOCK34_W = 20.0                   # ツメの幅 (角度)
+LEDGE34_Z0, LEDGE34_Z1, LEDGE34_R = 13.0, 14.2, 19.2   # 土台の外の出っぱり (ツメがこの下に入る)
+HOOK34_Z0, HOOK34_Z1, HOOK34_R = 11.9, 12.9, 18.0      # フードの内側のツメ
 
 # --- 高さ (机から) ---
 FLOOR = 1.5          # トレイの床
@@ -100,30 +120,20 @@ def keycap(x, y, z0, z1):
     return mf.Manifold.batch_hull([lo, hi])
 
 
-def claw_cover(size):
-    """低いリング＋爪 3 本の「爪留め」カバー。ひねってロックする部分は ball_unit と同じ (34mm は未設計)"""
+def claws(size, cz, rin, ring_top, r_base, angles, root_w, tip_w, tip_t, low_max=None, bulge=0.0):
+    """爪 (リングの外周から曲線で立ち上がり、ボールにそって先が 0.7mm かぶる)"""
     R_ = bu.CUPS[size]["R"]
-    cz = bu.BALL_BOTTOM + R_
-    ring_top = RING_TOP_34 if size == 34 else RING_TOP
-    ring = k.cyl(0, 0, bu.CUP_TOP, ring_top, bu.UNIT_R)
-    if size != 34:
-        ring = ring - k.cyl(0, 0, bu.CUP_TOP - 1, ring_top + 1, R_ + 0.8)
-    # 上の外側の角を丸く見せる面取り
-    ring = ring - (k.cyl(0, 0, ring_top - 0.8, ring_top + 0.01, bu.UNIT_R + 1) -
-                   k.cyl(0, 0, ring_top - 0.8, ring_top + 0.01, bu.UNIT_R, bu.UNIT_R - 0.8))
-    rin = R_ + 0.3                                           # 爪の内側 (ボールとのすき間 0.3mm)
     tip_r = R_ - CLAW_OVER                                   # 爪の先の半径
     tip_z = cz + (rin**2 - tip_r**2) ** 0.5                  # 爪の先の高さ (ボールの赤道より上)
-    claws = []
-    r_base = bu.UNIT_R                                       # 根元の外側 = リングの外周
-    r_tip = tip_r + CLAW_TIP_T                               # 先の外側
+    r_tip = tip_r + tip_t                                    # 先の外側
     z_root = ring_top - 0.8
     h = tip_z - z_root
 
     def ball_r(z):
         return math.sqrt(max(rin**2 - (z - cz)**2, 0))
     t_root = r_base - ball_r(z_root)                         # 根元の厚さ (ボールの外側へ)
-    for a in CLAWS:
+    out = []
+    for a in angles:
         slices = []
         for i in range(CLAW_STEPS + 1):
             t = i / CLAW_STEPS
@@ -131,16 +141,43 @@ def claw_cover(size):
             # 外側の面: 根元では縦 (リングの外周に接する)、先に向かって内側へ曲がる
             r_out = r_tip + (r_base - r_tip) * math.cos(math.pi / 2 * t)
             # 大きいボール (34mm) は赤道がリングより上なので、ボールの丸みに沿って外へふくらませる
-            r_out = max(r_out, ball_r(z) + t_root + (CLAW_TIP_T - t_root) * t)
+            r_out = max(r_out, ball_r(z) + t_root + (tip_t - t_root) * t + bulge * math.sin(math.pi * t))
+            if low_max and z < KEY_TOP + 0.5:
+                r_out = min(r_out, low_max)                  # キーキャップの高さまではふくらませない
             # 幅: 根元は広く、先へ向かって曲線で細くなる
-            w = CLAW_TIP_W + (CLAW_ROOT_W - CLAW_TIP_W) * (1 - t) ** 2.2
+            w = tip_w + (root_w - tip_w) * (1 - t) ** 2.2
             half = math.degrees(w / 2 / r_out)
             slices.append(bu.sector(0, r_out, a - half, a + half, z - 0.01, z))
-        claws.append(k.union([mf.Manifold.batch_hull([slices[n], slices[n + 1]]) for n in range(CLAW_STEPS)]))
-    m = ring + k.union(claws)
-    m = m - mf.Manifold.sphere(rin, 128).translate([0, 0, cz])              # 爪の内側をボールに沿わせる
+        out.append(k.union([mf.Manifold.batch_hull([slices[n], slices[n + 1]]) for n in range(CLAW_STEPS)]))
+    return k.union(out), tip_z
+
+
+def chamfer_top(m, z, r):
+    """上の外側の角を丸く見せる面取り"""
+    return m - (k.cyl(0, 0, z - 0.8, z + 0.01, r + 1) - k.cyl(0, 0, z - 0.8, z + 0.01, r, r - 0.8))
+
+
+def claw_cover(size):
+    """低いリング＋爪 3 本の「爪留め」カバー。ひねってロックする"""
+    R_ = bu.CUPS[size]["R"]
+    cz = bu.BALL_BOTTOM + R_
+    rin = R_ + 0.3                                           # 爪の内側 (ボールとのすき間 0.3mm)
+    ball = mf.Manifold.sphere(rin, 160).translate([0, 0, cz])
     if size == 34:
-        return m, tip_z
+        a0, a1 = HOOD34_A
+        hood = chamfer_top(bu.sector(HOOD34_IN, HOOD34_OUT, a0, a1, HOOD34_Z0, HOOD34_TOP), HOOD34_TOP, HOOD34_OUT)
+        hooks = k.union([bu.sector(HOOK34_R, HOOD34_IN + 0.1, L - LOCK34_W/2, L + LOCK34_W/2, HOOK34_Z0, HOOK34_Z1)
+                         for L in LOCK34_A])
+        cl, tip_z = claws(34, cz, rin, HOOD34_TOP, HOOD34_OUT, [a for a in CLAWS_34 if a != FIXED_CLAW_34],
+                          CLAW34_ROOT_W, CLAW34_TIP_W, CLAW34_TIP_T, bulge=CLAW34_BULGE)
+        m = hood + hooks + (cl - k.cyl(0, 0, 0, HOOD34_Z0 + 0.5, 40))
+        # 赤道より下ではボールの外側だけ (上へ抜ける)・土台にも触れない
+        m = m - k.cyl(0, 0, 0, cz, R_ + 0.3) - k.cyl(0, 0, 0, U34_TOP + 0.5, U34_R + 0.2)
+        return m - ball, tip_z
+    ring = k.cyl(0, 0, bu.CUP_TOP, RING_TOP, bu.UNIT_R) - k.cyl(0, 0, bu.CUP_TOP - 1, RING_TOP + 1, R_ + 0.8)
+    ring = chamfer_top(ring, RING_TOP, bu.UNIT_R)
+    cl, tip_z = claws(size, cz, rin, RING_TOP, bu.UNIT_R, CLAWS, CLAW_ROOT_W, CLAW_TIP_W, CLAW_TIP_T)
+    m = (ring + cl) - ball                                                  # 爪の内側をボールに沿わせる
     spigot = (k.cyl(0, 0, bu.RECESS_Z + 0.2, bu.CUP_TOP + 0.01, bu.SPIGOT_R) -
               k.cyl(0, 0, bu.RECESS_Z, bu.CUP_TOP + 1, R_ + 0.5))
     lugs = k.union([bu.sector(bu.SPIGOT_R - 0.3, bu.LUG_R, L - bu.LUG_W/2, L + bu.LUG_W/2,
@@ -148,15 +185,50 @@ def claw_cover(size):
     return m + spigot + lugs, tip_z
 
 
-def ball_cup(size):
-    if size != 34:
-        return bu.cup(size)
-    keep = bu.LUG_ANGLES, bu.CLEAR
-    bu.LUG_ANGLES, bu.CLEAR = (), 0.5          # 34mm: ひねるロックの溝はまだ無し (専用のロックは今後)
-    try:
-        return bu.cup(34)
-    finally:
-        bu.LUG_ANGLES, bu.CLEAR = keep
+def base34():
+    """34mm 専用: 土台とカップが一体の受け。底は 25 / 19mm の土台と同じ (センサー・ネジ 3 本・ケーブルの出口)"""
+    R = 17.0
+    cz = bu.BALL_BOTTOM + R
+    m = k.cyl(0, 0, 0, U34_TOP, U34_R)
+    m = m - k.cyl(0, 0, bu.BASE_FLOOR, bu.CUP_BOTTOM, U34_R - 1.5)                       # センサーの部屋
+    bosses, cut = [], []
+    for a in k.BALL_SCREW_ANGLES:
+        x, y = bu.polar(k.BALL_SCREW_R, a)
+        bosses.append(k.cyl(x, y, 0, bu.CUP_BOTTOM, bu.BOSS_R))
+        cut.append(k.cyl(x, y, -1, bu.INSERT_DEPTH, bu.INSERT_R))
+    m = (m + k.union(bosses)) - k.union(cut)
+    cut = [
+        k.cube(-bu.SENSOR_W/2 - 0.2, -bu.SENSOR_L/2 - 0.2, bu.BASE_FLOOR - bu.SENSOR_POCKET,
+               bu.SENSOR_W/2 + 0.2, bu.SENSOR_L/2 + 0.2, bu.BASE_FLOOR + 1),
+        bu.rot_z(k.cube(-4.5, U34_R - 3, bu.BASE_FLOOR - bu.SENSOR_POCKET, 4.5, U34_R + 1, 5.5), bu.CABLE_ANGLE - 90),
+        mf.Manifold.sphere(R + 0.5, 160).translate([0, 0, cz]),                          # ボールの受け
+        k.cyl(0, 0, bu.CUP_BOTTOM - 1, cz, bu.LENS_HOLE_R),                               # センサーの窓
+    ]
+    # ベアリング (ボールの下寄り 55° で支える)。軸のネジはユニットの外から締める
+    t = math.radians(bu.CUPS[34]["contact"])
+    d = R + bu.BRG_R
+    for a in bu.BRG_ANGLES:
+        w = bu.BRG_W/2 + bu.BRG_SIDE
+        pocket = (bu.along_x_cyl(bu.BRG_R + 0.4, 2*w) + k.cube(-w, -(bu.BRG_R + 0.4), 0, w, bu.BRG_R + 0.4, 20))
+        reach = math.sqrt(U34_R**2 - (d*math.cos(t))**2) + 1
+        head0 = w + bu.NEAR_WALL
+        screw = (bu.x_cyl(bu.SCREW_PASS_R, 0, head0 + 0.1) + bu.x_cyl(bu.SCREW_HEAD_R, head0, reach) +
+                 bu.x_cyl(bu.SCREW_PILOT_R, -(head0 - bu.NEAR_WALL + bu.SCREW_L - bu.NEAR_WALL + 0.8), 0))
+        place = lambda m_, a=a: bu.rot_z(m_, a - 90).translate(
+            [d*math.cos(t)*math.cos(math.radians(a)), d*math.cos(t)*math.sin(math.radians(a)), cz - d*math.sin(t)])
+        cut += [place(pocket), place(screw)]
+    m = m - k.union(cut)
+    # 固定の爪 (土台と一体・回らないのでキーの角のあいだいっぱいまで太くできる)
+    rin = R + 0.3
+    fixed, _ = claws(34, cz, rin, U34_TOP + 0.8, U34_R, (FIXED_CLAW_34,), FIXED34_ROOT_W, CLAW34_TIP_W,
+                     CLAW34_TIP_T, low_max=FIXED34_MAX_R, bulge=CLAW34_BULGE)
+    m = m + (fixed - mf.Manifold.sphere(rin, 160).translate([0, 0, cz]))
+    # ロックの出っぱり (左手前・基板の切り欠きの中)。フードのツメがこの下に入る。手前に小さな山 (カチッ)
+    m = m + k.union([bu.sector(U34_R - 0.5, LEDGE34_R, L - LOCK34_W/2 - 1, L + LOCK34_W/2 + 1, LEDGE34_Z0, LEDGE34_Z1)
+                     for L in LOCK34_A])
+    m = m + k.union([bu.sector(U34_R - 0.5, HOOK34_R + 0.3, L + LOCK34_W/2 + 1.5, L + LOCK34_W/2 + 4,
+                               HOOK34_Z0 + 0.1, HOOK34_Z1 - 0.1) for L in LOCK34_A])
+    return m, {"cz": cz}
 
 
 def half(side, size=25):
@@ -169,7 +241,7 @@ def half(side, size=25):
     tray = k.prism(outer, 0, RIM) - k.prism(outer.buffer(-4.0), FLOOR, RIM + 1)
     if side == "right":
         bx, by = k.HALVES["right"]["ball"]
-        tray = tray - k.cyl(bx, by, -1, FLOOR + 1, bu.UNIT_R + 0.3)
+        tray = tray - k.cyl(bx, by, -1, FLOOR + 1, (U34_R if size == 34 else bu.UNIT_R) + 0.3)
     parts["tray"] = tray
     # 柱とガスケット・ネジ (下から留める)
     posts, pads, metal = [], [], []
@@ -205,10 +277,14 @@ def half(side, size=25):
 
         def at(m):
             return m.translate([bx, by, BALL_Z0])
-        cup, info = ball_cup(size)
         cover, _ = claw_cover(size)
-        parts["ball_base"] = at(bu.base())
-        parts["ball_cup"] = at(cup)
+        if size == 34:
+            base, info = base34()
+            parts["ball_base"] = at(base)
+        else:
+            cup, info = bu.cup(size)
+            parts["ball_base"] = at(bu.base())
+            parts["ball_cup"] = at(cup)
         parts["ball_cover"] = at(cover)
         parts["ball"] = at(mf.Manifold.sphere(bu.CUPS[size]["R"], 128).translate([0, 0, info["cz"]]))
     return parts
