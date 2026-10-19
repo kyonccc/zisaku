@@ -51,22 +51,30 @@ CLAW34_BULGE = 1.2                # 34mm の爪の中ほどを厚くする量
 # フード (カバー): 左手前の空きを囲む C 形の壁。ひねってロック (さし込む時は +30° の位置)
 HOOD34_A = (140, 290)             # フードの範囲 (ロックした時)
 HOOD34_IN, HOOD34_OUT = 19.4, 21.4
-HOOD34_Z0, HOOD34_TOP = 11.9, 19.5    # 下はプレートの上面 (11.65) より上・上はキーキャップより上
+HOOD34_Z0_ABOVE_PLATE, HOOD34_TOP_ABOVE_KEYS = 0.25, 0.4   # フードの下はプレートの上面より上・上はキーキャップより上
 LOCK34_A = (180, 260)             # ツメの位置 (ロックした時)。基板の切り欠きの中
 LOCK34_W = 20.0                   # ツメの幅 (角度)
-LEDGE34_Z0, LEDGE34_Z1, LEDGE34_R = 13.0, 14.2, 19.2   # 土台の外の出っぱり (ツメがこの下に入る)
-HOOK34_Z0, HOOK34_Z1, HOOK34_R = 11.9, 12.9, 18.0      # フードの内側のツメ
+LEDGE34_R, HOOK34_R = 19.2, 18.0   # 土台の外の出っぱり (ツメがこの下に入る)・フードの内側のツメ
 
 # --- 高さ (机から) ---
+# 基板の下の高さは、一番きびしい「電池の上にソケットが来る所」で決める (docs/ukishima-build.md の高さの表):
+#   床のくぼみの底 0.5 + 電池 5.0 (ばらつき・ふくらみ +0.3) + すき間 0.1 + 沈む量 0.4 + ソケット 1.85 = 8.15
 FLOOR = 1.5          # トレイの床
-BATTERY_SKIN = 0.5   # 電池のくぼみの底 (電池の上面 = 0.5 + 5.0 = 5.5mm)
-PCB_B = BATTERY_SKIN + 5.0 + 0.5 + 1.85   # 電池 → 0.5mm → ソケット (1.85mm) → 基板の下面
+BATTERY_SKIN = 0.5   # 電池のくぼみの底
+BATTERY_T, BATTERY_TOL = 5.0, 0.3   # 電池の厚さ (GA-011 約 5mm) と、ばらつき・ふくらみの見込み
+SOCKET_H = 1.85      # ホットスワップソケットの高さ (基板の裏から)
+PORON = 1.9          # 基板の下のポロン (3mm のシートを締めて約 1.9mm)
+NUT_R, NUT_H = 1.9, 1.5           # SMT ナット (外径 3.8mm・高さ 1.5mm)
+TRAVEL = PORON - NUT_H            # 基板が沈める量 0.4mm (ナットの下面と柱の上面のすき間)
+PCB_B = BATTERY_SKIN + BATTERY_T + BATTERY_TOL + 0.1 + TRAVEL + SOCKET_H
 PCB_T = PCB_B + 1.6
 PLATE_B, PLATE_T = PCB_T + 1.0, PCB_T + 2.2
 RIM = PCB_B - 1.5    # トレイの縁 (基板の下面より 1.5mm 低い → 浮いて見える)
-PORON = 1.9          # 基板の下のポロン (3mm のシートを締めて約 1.9mm)
 BALL_Z0 = 0.0        # ボールユニットの底 (トレイの床に落とし込む)
-KEY_TOP = PLATE_T + 7.5
+KEY_TOP = PLATE_T + 7.5          # キーキャップの上 (Choc v2 ＋ ロープロファイルのキーキャップの目安)
+HOOD34_Z0, HOOD34_TOP = PLATE_T + HOOD34_Z0_ABOVE_PLATE, KEY_TOP + HOOD34_TOP_ABOVE_KEYS
+HOOK34_Z0, HOOK34_Z1 = HOOD34_Z0, HOOD34_Z0 + 1.0
+LEDGE34_Z0, LEDGE34_Z1 = HOOK34_Z1 + 0.1, HOOK34_Z1 + 1.3
 
 # --- 爪留めカバー ---
 RING_TOP = KEY_TOP + 0.3          # リングの上面 (キーキャップとほぼ同じ高さ)
@@ -91,7 +99,6 @@ CLAW_STEPS = 28                   # 曲面を作る輪切りの数
 # (1.2mm の FR4 / POM にネジ山を切ると山が少なく、すぐ潰れるので、ナットは基板の側に付ける)
 # 下から: ネジの頭＋ワッシャー (床のくぼみ) → カラー (ねじの無い筒・長さで締めすぎを防ぐ) が柱の穴を「触れずに」通る
 # → 基板の裏のナット。基板は柱の上のポロンだけに乗っていて、浮いたまま (キーを押すとポロンが縮む)
-NUT_R, NUT_H = 1.9, 1.5           # SMT ナット (外径 3.8mm・高さ 1.5mm)
 COLLAR_R = 1.5                    # カラー 外径 3mm (内径 2.1mm)
 POST_R = 3.6                      # 柱 (ポロンを受ける面を広く)
 PORON_OD, PORON_ID = 7.0, 4.5     # ポロンの輪 (3mm のシートを φ7 と φ4.5 のポンチで抜く)
@@ -100,7 +107,6 @@ WASHER_R, WASHER_T = 2.5, 0.4     # M2 ワッシャー (外径 5mm)
 SCREW_HEAD_R, SCREW_HEAD_H = 2.0, 0.8
 POST_TOP = PCB_B - PORON
 NUT_B = PCB_B - NUT_H             # ナットの下面 (柱の上面とのすき間 = 押した時に動ける量)
-TRAVEL = NUT_B - POST_TOP         # 基板が沈める量 0.4mm (電池の上のソケットが電池に当たらない量)
 COLLAR_B = NUT_B - 5.0            # カラー 長さ 5mm (市販の長さ)
 RECESS_D = COLLAR_B               # 床の裏のくぼみの深さ (ワッシャーの上面 = カラーの下面)
 
@@ -111,8 +117,8 @@ KEYS = {
 # 柱 (キーの角どうしのすき間)。トレイ裏の MagSafe リングの溝・電池をよけて、
 # どのキーからも柱が近くなるように計算で選んだ (キーと一番近い柱の距離は前の並びと同じくらい)
 POSTS = {
-    "left": [(a*U, b*U) for a, b in ((0.5, 0.5), (1.5, 0.5), (4.5, 0.5), (5.5, 0.5), (0.5, 2.5), (1.5, 2.5),
-                                     (4.5, 2.5), (3.5, 1.5))],
+    "left": [(a*U, b*U) for a, b in ((0.5, 0.5), (1.5, 0.5), (4.5, 0.5), (0.5, 2.5), (1.5, 2.5),
+                                     (4.5, 2.5), (3.5, 1.5))] + [(5.5*U, 17.0)],   # 最後: エンコーダーの真下 (足のあいだ)
     "right": [(k.RIGHT_X + a*U, b*U) for a, b in ((1.5, 0.5), (3.5, 0.5), (0.5, 1.5), (0.5, 2.5), (2.5, 2.5),
                                                  (4.5, 2.5), (2.5, 1.5), (4.5, 1.5))],
 }
@@ -226,6 +232,45 @@ def sockets(side):
     return k.union([k.prism(sh, PCB_B - check_pcb.SOCKET_H, PCB_B + 0.01) for sh in shapes])
 
 
+XIAO_H, XIAO_HALF_W, XIAO_HALF_L = 5.0, 8.9, 10.5   # XIAO の厚さ (USB-C 込み)・半分の幅・半分の長さ
+# 基板の裏に出る部品の高さ (基板の裏から下へ・mm)。部品の名前の一部で決める
+BACK_HEIGHTS = (("xiao", 5.0), ("jst", 4.25), ("molex", 3.4), ("smt_nut", NUT_H), ("socket", SOCKET_H))
+DIODE_H = 1.35                     # ダイオード (SOD-123・表面実装・基板の裏)
+PIN_H = 2.0                        # 足の出る部品 (エンコーダー・nice!view のピン) を切った後の長さ
+
+
+def back_parts(side):
+    """基板の裏に出る部品を、高さのある形にする (確かめる用)。{名前: 形}"""
+    try:
+        sys.path.insert(0, os.path.join(HERE, "..", "tools"))
+        import check_pcb
+        from shapely import affinity
+        from shapely.geometry import MultiPoint
+    except ImportError:
+        return {}
+    f = os.path.join(HERE, "..", "pcb", "ergogen", "output", "pcbs", f"{side}.kicad_pcb")
+    if not os.path.exists(f):
+        return {}
+    out = {}
+    for ref, name, shp in check_pcb.back_bodies(f):
+        h = next((v for key, v in BACK_HEIGHTS if key in name.lower()), None)
+        if h is None:
+            continue
+        shp = affinity.scale(shp, 1, -1, origin=(0, 0))
+        out[ref] = k.prism(shp, PCB_B - h, PCB_B + 0.01)
+    pads = check_pcb.pad_shapes(f)
+    diodes = {}
+    for ref, num, cu_, shp, net, kind in pads:
+        if ref.startswith("D") and kind == "smd" and "B" in cu_:
+            diodes.setdefault(ref, []).append(affinity.scale(shp, 1, -1, origin=(0, 0)))
+        elif kind == "thru_hole" and not ref.startswith(("D", "H", "MCU")):     # 足の出る部品 (ダイオードは表面実装を使う)
+            out[f"{ref}-{num}"] = k.prism(affinity.scale(shp, 1, -1, origin=(0, 0)), PCB_B - PIN_H, PCB_B + 0.01)
+    for ref, shs in diodes.items():
+        hull = MultiPoint([pt for sh in shs for pt in sh.exterior.coords]).convex_hull
+        out[ref] = k.prism(hull, PCB_B - DIODE_H, PCB_B + 0.01)
+    return out
+
+
 def battery_guides(side):
     ex, ey = BATTERY[side]
     x0, x1, y0, y1 = ex - BAT_W/2, ex + BAT_W/2, ey - BAT_H/2, ey + BAT_H/2
@@ -249,20 +294,20 @@ def battery_guides(side):
 # 持ち運びで勝手に ON にならないよう、つまみは屋根のくぼみに沈めてある (上面が屋根より 0.1mm 低い)。
 # 組み立て: 基板をトレイに留めたあと、カバーを横から差し込み (フォークがレバーをはさむ)、裏からネジで留める。
 # 座標: スイッチの中心から外へ u、奥へ v (左右で v の向きは同じ)
-PWR = {"left": (6*U + 0.5*U + 0.85, 51.5, +1), "right": (k.RIGHT_X - 1.5*U - 0.85, 51.5, -1)}
+PWR = {"left": (6*U + 0.5*U + 0.85, 52.5, +1), "right": (k.RIGHT_X - 1.5*U - 0.85, 52.5, -1)}   # config.yaml の pwr_y
 SW_LEVER_Z0, SW_LEVER_Z1 = PCB_T + 0.3, PCB_T + 1.2      # レバーの高さ (PCM12 の想定・実物合わせ)
 SW_LEVER_TIP = 3.15               # レバーの先 (スイッチの中心から)
 SW_POS = 0.75                     # レバーの位置 (中心から ±。動く量 1.5mm)
-SWC_V0, SWC_V1 = -5.4, 6.9        # カバーの範囲 (奥行き。手前は USB-C の切り欠きをよける)
+SWC_V0, SWC_V1 = -4.4, 6.9        # カバーの範囲 (奥行き。手前は XIAO の端と USB-C の切り欠きをよける)
 SWC_POCKET_Z = 3.3                # トレイの壁を、ここまで掘ってカバーの台を入れる
-SWC_BASE_TOP = 7.0                # 台の上面 (基板の舌が沈んでも当たらない: 7.85 - 0.4 = 7.45)
-SWC_LEDGE_U, SWC_LEDGE_TOP = 2.35, 8.8    # つまみが乗る段 (舌の端 u 2.15 より外)
+SWC_BASE_TOP = PCB_B - TRAVEL - 0.45     # 台の上面 (基板の舌が沈んでも当たらない)
+SWC_LEDGE_U, SWC_LEDGE_TOP = 2.35, PCB_T - 0.65   # つまみが乗る段 (舌の端 u 2.15 より外)
 SWC_WALL_U0, SWC_WALL_U1 = 3.625, 5.125   # 外の壁 (トレイの外側の面より 1mm 出る)
-SWC_ROOF_U0, SWC_ROOF_Z0, SWC_ROOF_Z1 = -1.0, 11.3, 13.3   # 屋根 (スイッチの上を隠す。つまみが沈む分だけ厚い)
-SWC_RECESS_Z = 12.3               # 屋根のくぼみの底 (つまみが入る)
+SWC_ROOF_U0, SWC_ROOF_Z0, SWC_ROOF_Z1 = -1.0, PCB_T + 1.85, PCB_T + 3.85   # 屋根 (スイッチ 1.4mm の上を隠す)
+SWC_RECESS_Z = PCB_T + 2.85       # 屋根のくぼみの底 (つまみが入る)
 SWC_RECESS_V = 3.65               # くぼみの半分の幅 (つまみ 2.6 + 動く量 0.75 + すき間)
 SWC_SLOT = 1.7                    # 屋根のみぞ (つまみの軸が通る・半分の幅)
-SWC_SCREWS = ((1.2, -3.4), (1.2, 4.9))    # カバーをトレイの裏から留めるタッピングネジ M2 (u, v)
+SWC_SCREWS = ((1.2, -2.6), (1.2, 4.9))    # カバーをトレイの裏から留めるタッピングネジ M2 (u, v)
 
 
 def _pwr_place(side, m):
@@ -313,8 +358,8 @@ def switch_pocket(side):
 # --- nice!view のカバー: 画面のまわりにかぶせる枠 (窓あき)。nice!view の基板のふちに爪で引っかける ---
 VIEW = {"left": (6*U, 2.5*U), "right": (k.RIGHT_X - U, 2.5*U)}
 VIEW_W, VIEW_L = 14.0, 36.0       # nice!view の大きさ (横 × 縦)
-VIEW_PCB_B = PCB_T + 1.3          # nice!view の基板の下面 (ピンヘッダーの高さ・実物合わせ)
-VIEW_TOP = PCB_T + 4.2            # nice!view の一番上 (画面のガラス)
+VIEW_PCB_B = PCB_T + 2.5          # nice!view の基板の下面 (ピンヘッダーの樹脂 2.5mm の上に直接はんだ付け)
+VIEW_TOP = VIEW_PCB_B + 2.9       # nice!view の一番上 (基板＋画面 約 2.9mm)
 VC_WALL, VC_SKIN, VC_GAP = 1.0, 1.0, 0.2
 VC_WIN_W, VC_WIN_L = 11.2, 31.0   # 窓 (画面の見える所・実物合わせ)
 VC_LIP = 0.4                      # 爪 (基板のふちの下に入る量)
@@ -497,6 +542,11 @@ def half(side, size=25):
     tray = tray - k.cube(ex - BAT_W/2, ey - BAT_H/2, BATTERY_SKIN, ex + BAT_W/2, ey + BAT_H/2, FLOOR + 5)
     # 電源スイッチのカバーが入る所
     tray = tray - switch_pocket(side)
+    # XIAO の USB-C 側の端は壁の上に 1.5mm はみ出すので、その下だけ壁を低く掘る (外側の縁は残す)
+    xb = k.HALVES[side]["xiao"]
+    xd = k.HALVES[side]["dir"]
+    x0, x1 = sorted((xb[0] + xd * 7.0, xb[0] + xd * (XIAO_HALF_L + 0.6)))
+    tray = tray - k.cube(x0, xb[1] - XIAO_HALF_W - 0.5, PCB_B - XIAO_H - TRAVEL - 0.3, x1, xb[1] + XIAO_HALF_W + 0.5, 30)
     # MagSafe リングの溝 (裏) と、その真上の床の内側の厚み
     mx, my = MAG_CENTER[side]
     r0, r1 = MAG_ID/2 - MAG_GAP, MAG_OD/2 + MAG_GAP
@@ -505,7 +555,7 @@ def half(side, size=25):
     parts["tray"] = tray
     parts["magsafe"] = k.cyl(mx, my, MAG_DEPTH - MAG_T, MAG_DEPTH, MAG_OD/2) - k.cyl(mx, my, -1, 5, MAG_ID/2)
     parts["magnets"] = mags
-    parts["battery"] = k.cube(ex - 15, ey - 10, BATTERY_SKIN, ex + 15, ey + 10, BATTERY_SKIN + 5.0)
+    parts["battery"] = k.cube(ex - 15, ey - 10, BATTERY_SKIN, ex + 15, ey + 10, BATTERY_SKIN + BATTERY_T)
     # 柱とガスケット・ネジ (下から留める)
     posts, pads, metal = [], [], []
     for x, y in POSTS[side]:

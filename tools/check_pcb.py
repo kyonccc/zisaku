@@ -27,15 +27,25 @@ PCBS = os.path.join(HERE, "..", "pcb", "ergogen", "output", "pcbs")
 GAP, EDGE = 0.2, 0.3
 
 
+def modules(root):
+    """部品の一覧 (古い書き方の module と、KiCad 8 の footprint の両方)"""
+    return find_all(root, "module") + find_all(root, "footprint")
+
+
+def ref_of(m):
+    refs = [unq(t[2]) for t in find_all(m, "fp_text") if t[1] == "reference"]
+    refs += [unq(p[2]) for p in find_all(m, "property") if unq(p[1]) == "Reference"]
+    return refs[0] if refs else unq(m[1])
+
+
 def pad_shapes(path):
     root = parse(open(path, encoding="utf-8").read())
     res = []
-    for m in find_all(root, "module"):
+    for m in modules(root):
         at = find(m, "at")
         X, Y = float(at[1]), float(at[2])
         r = float(at[3]) if len(at) > 3 else 0.0
-        refs = [unq(t[2]) for t in find_all(m, "fp_text") if t[1] == "reference"]
-        ref = refs[0] if refs else unq(m[1])
+        ref = ref_of(m)
         rr = math.radians(r)
         for p in find_all(m, "pad"):
             a = find(p, "at")
@@ -63,15 +73,14 @@ def back_bodies(path):
     """基板の裏の部品の外形 (KiCad の座標)。コートヤードがあればそれ、無ければ裏のパッドのまわり"""
     root = parse(open(path, encoding="utf-8").read())
     res = []
-    for m in find_all(root, "module"):
+    for m in modules(root):
         is_socket = "choc" in unq(m[1]).lower() or "hotswap" in unq(m[1]).lower()
         if unq(find(m, "layer")[1]) != "B.Cu" and not is_socket:   # スイッチの部品は表扱いだが、ソケットは裏
             continue
         at = find(m, "at")
         X, Y = float(at[1]), float(at[2])
         rr = math.radians(float(at[3]) if len(at) > 3 else 0.0)
-        refs = [unq(t[2]) for t in find_all(m, "fp_text") if t[1] == "reference"]
-        ref = refs[0] if refs else unq(m[1])
+        ref = ref_of(m)
 
         def g(x, y):
             return (X + x*math.cos(rr) + y*math.sin(rr), Y - x*math.sin(rr) + y*math.cos(rr))

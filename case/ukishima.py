@@ -175,9 +175,24 @@ def check():
                                     ("ball_base", "ボールユニット"), ("ball_cup", "カップ"), ("screws", "ネジ・カラー")):
                     if name in p and (sz ^ p[name]).volume() > 0.01:
                         problems.append(f"{side}: ソケットが{label}に当たる ({when})")
+        # 基板の裏のすべての部品 (XIAO・コネクタ・ナット・ダイオード・足): 一番沈んだ時もトレイなどに当たらないか
+        bat_tol = p["battery"].translate([0, 0, 0]) + k.cube(*[v for v in p["battery"].bounding_box()][:2],
+                                                              cu.BATTERY_SKIN, *[v for v in p["battery"].bounding_box()][3:5],
+                                                              cu.BATTERY_SKIN + cu.BATTERY_T + cu.BATTERY_TOL)
+        for ref, solid in cu.back_parts(side).items():
+            low_s = solid.translate([0, 0, -cu.TRAVEL])
+            for name in ("tray", "gasket", "switch_cover", "slider", "ball_base", "ball_cup", "screws", "magnets"):
+                if ref.startswith("H") and name in ("gasket", "screws"):
+                    continue                               # ナットはポロンの輪の中・ネジがねじ込まれる (設計どおり)
+                if name in p and (low_s ^ p[name]).volume() > 0.01:
+                    problems.append(f"{side}: 基板の裏の部品 {ref} が {name} に当たる (一番沈んだ時)")
+            if (low_s ^ bat_tol).volume() > 0.01:
+                problems.append(f"{side}: 基板の裏の部品 {ref} が電池 (厚めの電池) に当たる")
+            if not ref.startswith("H") and (low_s ^ p["posts"]).volume() > 0.01:
+                problems.append(f"{side}: 基板の裏の部品 {ref} が柱に当たる")
         # 電池の上のソケット: 基板が一番沈んでも電池に当たらないか
         sock_bottom = cu.PCB_B - 1.85 - cu.TRAVEL
-        if sock_bottom < cu.BATTERY_SKIN + 5.0 + 0.05:
+        if sock_bottom < cu.BATTERY_SKIN + cu.BATTERY_T + cu.BATTERY_TOL + 0.05:
             problems.append(f"{side}: 基板が沈むとソケットが電池に当たる ({sock_bottom:.2f}mm)")
         for a, b, label in (("switch_cover", "pcb", "基板"), ("switch_cover", "plate", "プレート"),
                             ("switch_cover", "tray", "トレイ"), ("slider", "switch_cover", "カバー"),

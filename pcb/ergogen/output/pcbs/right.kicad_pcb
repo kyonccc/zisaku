@@ -1734,7 +1734,7 @@
     
 
       (module "Button_Switch_SMD:SW_SPDT_PCM12" (layer F.Cu) (tedit 0)
-      (at 189.625 -51.50000000000001 -90)
+      (at 189.625 -52.50000000000001 -90)
       (fp_text reference "PWR1" (at 0 -3.2 -90) (layer F.SilkS) hide (effects (font (size 1 1) (thickness 0.15)) ))
       (fp_text value "SW_SPDT_PCM12" (at 0 0 -90) (layer F.Fab) hide (effects (font (size 0.8 0.8) (thickness 0.12)) ))
       (fp_line (start -3.45 -0.07) (end -3.45 0.72) (layer F.SilkS) (width 0.12))

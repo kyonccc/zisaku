@@ -1878,7 +1878,7 @@
     
 
       (module "Button_Switch_SMD:SW_SPDT_PCM12" (layer F.Cu) (tedit 0)
-      (at 124.675 -51.5 90)
+      (at 124.675 -52.5 90)
       (fp_text reference "PWR1" (at 0 -3.2 90) (layer F.SilkS) hide (effects (font (size 1 1) (thickness 0.15)) ))
       (fp_text value "SW_SPDT_PCM12" (at 0 0 90) (layer F.Fab) hide (effects (font (size 0.8 0.8) (thickness 0.12)) ))
       (fp_line (start -3.45 -0.07) (end -3.45 0.72) (layer F.SilkS) (width 0.12))
@@ -1956,7 +1956,7 @@
     
 
       (module "kataware:SMT_Nut_M2" (layer B.Cu) (tedit 0)
-      (at 104.775 -9.525 0)
+      (at 104.775 -17 0)
       (fp_text reference "H4" (at 0 3.6 0) (layer B.SilkS) hide (effects (font (size 0.8 0.8) (thickness 0.12)) (justify mirror)))
       (fp_text value "SMT_Nut_M2" (at 0 0 0) (layer B.Fab) hide (effects (font (size 0.8 0.8) (thickness 0.12))))
       (fp_circle (center 0 0) (end 1.9 0) (layer B.Fab) (width 0.1))

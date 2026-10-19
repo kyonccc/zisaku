@@ -137,7 +137,7 @@ def left_board(ox, oy):
     b.text(ex, ey + 9, "エンコーダー", 11, color=C["enc"])
     b.xiao(6.5*U - 8, kataware_case.HALVES["left"]["xiao"][1], +1)
     b.view(6*U, 2.5*U)
-    b.power(6.5*U + 0.85, 51.5, +1)
+    b.power(6.5*U + 0.85, 52.5, +1)
     b.battery(*ukishima.BATTERY["left"], 48, 29)
     b.nuts("left")
     return b.svg()
@@ -171,7 +171,7 @@ def right_board(ox, oy):
     b.text(hx, hy - 4.2, "J", 11, color=C["back"])
     b.xiao(-1.5*U + 8, kataware_case.HALVES["right"]["xiao"][1], -1)
     b.view(-U, 2.5*U)
-    b.power(-1.5*U - 0.85, 51.5, -1)
+    b.power(-1.5*U - 0.85, 52.5, -1)
     ex, ey = ukishima.BATTERY["right"]
     b.battery(ex - kataware_case.RIGHT_X, ey, 267 - kataware_case.RIGHT_X, 10)
     b.nuts("right", kataware_case.RIGHT_X)

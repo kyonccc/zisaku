@@ -33,7 +33,7 @@ units:
   xiao_y: 38.5   # XIAO の中心の高さ (親指の段から)。USB-C は内側の側面に出す。ボールの穴に当たらない高さ
   ball_x: -8     # 右手のボールの中心 (Y の列の左隣 [ ] の列が 0)。これより右は N・Enter のキーキャップに当たる
   ball_y: 11     # 同じく親指の段から。これより上は ] のキーキャップに当たる
-  pwr_y: 51.5    # 電源スイッチの中心の高さ (親指の段から)
+  pwr_y: 52.5    # 電源スイッチの中心の高さ (親指の段から)。浮島: スイッチのカバーが XIAO の端に重ならない高さ
   tab_w: 8       # プレートの耳 (ガスケットで挟む所) の幅
 
 points:
@@ -342,7 +342,7 @@ pcbs:
       mount1: {what: kataware/smt_nut_m2, where: left_c0_thumb, adjust.shift: [0.5kx, 0.5ky], params.side: B}
       mount2: {what: kataware/smt_nut_m2, where: left_c0_thumb, adjust.shift: [1.5kx, 0.5ky], params.side: B}
       mount3: {what: kataware/smt_nut_m2, where: left_c0_thumb, adjust.shift: [4.5kx, 0.5ky], params.side: B}
-      mount4: {what: kataware/smt_nut_m2, where: left_c0_thumb, adjust.shift: [5.5kx, 0.5ky], params.side: B}
+      mount4: {what: kataware/smt_nut_m2, where: left_c0_thumb, adjust.shift: [5.5kx, 17], params.side: B}   # エンコーダーの真下 (足のあいだ)
       mount5: {what: kataware/smt_nut_m2, where: left_c0_thumb, adjust.shift: [0.5kx, 2.5ky], params.side: B}
       mount6: {what: kataware/smt_nut_m2, where: left_c0_thumb, adjust.shift: [1.5kx, 2.5ky], params.side: B}
       mount7: {what: kataware/smt_nut_m2, where: left_c0_thumb, adjust.shift: [4.5kx, 2.5ky], params.side: B}

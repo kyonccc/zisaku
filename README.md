@@ -651,7 +651,7 @@ Bluetooth に表示される名前は `Kconfig.defconfig` の `ZMK_KEYBOARD_NAME
 ## 9. 次にやること（ハードウェア）
 
 1. **部品を決めて買う**（浮島のケースで増える物：ナット・カラー・ネジ・ポロン・メタルリングなどは [浮島の作り方](docs/ukishima-build.md#4-買う物浮島で増える物)）：XIAO nRF52840 Plus ×2、PMW3610 ブレイクアウト、25mm ボール、
-   ボール支持用ベアリング 681X（1.5 × 4 × 2mm）＋ 軸用 M1.4 × 6mm なべタッピングネジ ×3組（19mm カップも作るなら ×6組）、nice!view ×2、水平スライドスイッチ Alps SSSS811101 ×2、ロータリーエンコーダー（押し込み付き・薄型）×1、Kailh Choc v2 スイッチ ×46、Choc 用ホットスワップソケット ×46、ダイオード（1N4148 など）×47、PSE 認証済みリポ電池 Gexa GA-011 ×2、1.25mm ピッチ 2ピンコネクタ ×2
+   ボール支持用ベアリング 681X（1.5 × 4 × 2mm）＋ 軸用 M1.4 × 6mm なべタッピングネジ ×3組（19mm カップも作るなら ×6組）、nice!view ×2、水平スライドスイッチ Alps SSSS811101 ×2、ロータリーエンコーダー（押し込み付き・薄型）×1、Kailh Choc v2 スイッチ ×46、Choc 用ホットスワップソケット ×46、ダイオード 1N4148W（SOD-123・表面実装・基板の裏）×47、PSE 認証済みリポ電池 Gexa GA-011 ×2、1.25mm ピッチ 2ピンコネクタ ×2
 2. **キー配置を決める**：[Keyboard Layout Editor](http://www.keyboard-layout-editor.com/) や
    [Ergogen](https://ergogen.xyz/) で配置を決める（Ergogen は配置から基板の下書きまで作れます）
 3. **基板設計**：[KiCad](https://www.kicad.org/) で回路図 → 基板。上の配線表どおりにつなぐ
