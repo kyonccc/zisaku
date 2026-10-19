@@ -211,6 +211,21 @@ def battery_screen(side):
     return k.union(parts) if parts else None
 
 
+def sockets(side):
+    """基板の裏のホットスワップソケット (本体＋パッド) の 3D の形。確かめる用・絵用"""
+    try:
+        sys.path.insert(0, os.path.join(HERE, "..", "tools"))
+        import check_pcb
+        from shapely import affinity
+        f = os.path.join(HERE, "..", "pcb", "ergogen", "output", "pcbs", f"{side}.kicad_pcb")
+        shapes = [affinity.scale(b[2], 1, -1, origin=(0, 0)) for b in check_pcb.back_bodies(f) if b[1] == "socket"]
+    except (ImportError, FileNotFoundError):
+        return None
+    if not shapes:
+        return None
+    return k.union([k.prism(sh, PCB_B - check_pcb.SOCKET_H, PCB_B + 0.01) for sh in shapes])
+
+
 def battery_guides(side):
     ex, ey = BATTERY[side]
     x0, x1, y0, y1 = ex - BAT_W/2, ex + BAT_W/2, ey - BAT_H/2, ey + BAT_H/2
@@ -462,6 +477,19 @@ def half(side, size=25):
     scr = battery_screen(side)
     if scr is not None:
         tray = tray + scr
+    # ソケットの真下は、トレイの縁を少し削る (外側の列のソケットが縁の角の丸みにかかる所)
+    try:
+        sys.path.insert(0, os.path.join(HERE, "..", "tools"))
+        import check_pcb
+        from shapely import affinity
+        from shapely.ops import unary_union
+        f = os.path.join(HERE, "..", "pcb", "ergogen", "output", "pcbs", f"{side}.kicad_pcb")
+        sock = unary_union([affinity.scale(b[2], 1, -1, origin=(0, 0)).buffer(0.5)
+                            for b in check_pcb.back_bodies(f) if b[1] == "socket"])
+        if not sock.is_empty:
+            tray = tray - k.prism(sock, PCB_B - check_pcb.SOCKET_H - TRAVEL - 0.25, 30)
+    except (ImportError, FileNotFoundError):
+        pass
     # 四隅の磁石とゴム足
     mboss, mcut, mags = magnet_feet(side)
     tray = (tray + mboss) - mcut
@@ -496,6 +524,9 @@ def half(side, size=25):
     parts["screws"] = k.union(metal)
     # 基板・プレート (プレートには穴なし)
     parts["pcb"] = k.prism(pcb, PCB_B, PCB_T)
+    so = sockets(side)
+    if so is not None:
+        parts["sockets"] = so
     parts["plate"] = k.prism(plate, PLATE_B, PLATE_T)
     # スイッチとキーキャップ
     parts["switch"] = k.union([k.cube(x - 6.9, y - 6.9, PLATE_T, x + 6.9, y + 6.9, PLATE_T + 3) for x, y in KEYS[side]])
@@ -531,7 +562,7 @@ def half(side, size=25):
 COLORS = {  # 色・分解図での持ち上げ量
     "tray": ("#e8e4dc", 0), "posts": ("#d2cdc3", 0), "gasket": ("#e98f9c", 8),
     "pcb": ("#202124", 16), "plate": ("#3a3b3f", 26), "switch": ("#8e949b", 34), "caps": ("#f3f0e9", 46),
-    "view": ("#11181f", 26), "knob": ("#2b2d31", 46), "screws": ("#a9adb3", 0), "magsafe": ("#8a8f98", -14), "battery": ("#5b7fa6", 4), "magnets": ("#8a8f98", -14),
+    "view": ("#11181f", 26), "knob": ("#2b2d31", 46), "screws": ("#a9adb3", 0), "magsafe": ("#8a8f98", -14), "battery": ("#5b7fa6", 4), "magnets": ("#8a8f98", -14), "sockets": ("#e8e8e8", 16),
     "view_cover": ("#2b2d31", 40), "switch_cover": ("#2b2d31", 20), "slider": ("#b8432f", 30),
     "ball_base": ("#d9d5cc", 0), "ball_cup": ("#ece7dd", 22), "ball_cover": ("#2b2d31", 44), "ball": ("#b8432f", 62),
 }

@@ -106,7 +106,8 @@ class Board:
     def battery(self, x, y, conn_x, conn_y):
         self.rect(x, y, 30, 20, C["bat"], C["bat"], dash="6 4", op=0.12, rx=1.5)
         self.text(x, y - 1.5, "電池（裏）", 12, color=C["sub"])
-        self.rect(conn_x, conn_y, 4.5, 9, C["back"], C["ink"], rx=0.3, sw=1)   # 電池コネクタ (縦向き)
+        self.rect(conn_x, conn_y, 9, 4.5, C["back"], C["ink"], rx=0.3, sw=1)   # 電池コネクタ (横向き)
+        self.text(conn_x, conn_y + 6.5, "電池コネクタ", 9, color=C["back"])
 
     def nuts(self, side, dx=0.0):
         """浮島: 基板の裏の M2 ナット (トレイの柱に下から留める所)"""
@@ -137,7 +138,7 @@ def left_board(ox, oy):
     b.xiao(6.5*U - 8, kataware_case.HALVES["left"]["xiao"][1], +1)
     b.view(6*U, 2.5*U)
     b.power(6.5*U + 0.85, 51.5, +1)
-    b.battery(*ukishima.BATTERY["left"], 29, 29)
+    b.battery(*ukishima.BATTERY["left"], 48, 29)
     b.nuts("left")
     return b.svg()
 
@@ -163,7 +164,7 @@ def right_board(ox, oy):
                    f'stroke="{C["screw"]}" stroke-width="1.5"/>')
     # センサーへのケーブルの端子 (裏・ボールの穴のすぐ上)
     # センサーのケーブルをつなぐコネクタ J (裏・Enter と N のあいだ。JST SH 6ピン)
-    hx, hy = U, 10.4
+    hx, hy = 247 - kataware_case.RIGHT_X, 29
     b.rect(hx, hy, 8, 4.4, "none", C["back"], dash="4 3", rx=0.3, sw=1.2)
     for k in range(6):
         b.rect(hx + (k - 2.5)*1.0, hy + 1.3, 0.6, 1.5, C["back"], None, rx=0.1)
@@ -172,7 +173,7 @@ def right_board(ox, oy):
     b.view(-U, 2.5*U)
     b.power(-1.5*U - 0.85, 51.5, -1)
     ex, ey = ukishima.BATTERY["right"]
-    b.battery(ex - kataware_case.RIGHT_X, ey, 286 - kataware_case.RIGHT_X, 29)
+    b.battery(ex - kataware_case.RIGHT_X, ey, 267 - kataware_case.RIGHT_X, 10)
     b.nuts("right", kataware_case.RIGHT_X)
     return b.svg()
 

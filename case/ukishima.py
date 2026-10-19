@@ -163,6 +163,18 @@ def check():
         low = p["pcb"].translate([0, 0, -cu.TRAVEL])        # キーを押して基板が一番沈んだ時
         if (p["tray"] ^ low).volume() > 0.01:
             problems.append(f"{side}: 基板が沈むとトレイ (電池の目隠しなど) に当たる")
+        # 基板の裏のソケット: 止まっている時も、基板が一番沈んだ時も、トレイ・柱・ポロン・カバーなどに当たらないか
+        so = p.get("sockets")
+        if so is None:
+            problems.append(f"{side}: ソケットの形が読めない (先に Ergogen を実行)")
+        else:
+            for dz, when in ((0, "止まっている時"), (-cu.TRAVEL, "基板が一番沈んだ時")):
+                sz = so.translate([0, 0, dz])
+                for name, label in (("tray", "トレイ"), ("posts", "柱"), ("gasket", "ポロン"), ("battery", "電池"),
+                                    ("switch_cover", "電源スイッチのカバー"), ("slider", "つまみ"),
+                                    ("ball_base", "ボールユニット"), ("ball_cup", "カップ"), ("screws", "ネジ・カラー")):
+                    if name in p and (sz ^ p[name]).volume() > 0.01:
+                        problems.append(f"{side}: ソケットが{label}に当たる ({when})")
         # 電池の上のソケット: 基板が一番沈んでも電池に当たらないか
         sock_bottom = cu.PCB_B - 1.85 - cu.TRAVEL
         if sock_bottom < cu.BATTERY_SKIN + 5.0 + 0.05:

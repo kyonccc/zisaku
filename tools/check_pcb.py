@@ -64,7 +64,8 @@ def back_bodies(path):
     root = parse(open(path, encoding="utf-8").read())
     res = []
     for m in find_all(root, "module"):
-        if unq(find(m, "layer")[1]) != "B.Cu":
+        is_socket = "choc" in unq(m[1]).lower() or "hotswap" in unq(m[1]).lower()
+        if unq(find(m, "layer")[1]) != "B.Cu" and not is_socket:   # スイッチの部品は表扱いだが、ソケットは裏
             continue
         at = find(m, "at")
         X, Y = float(at[1]), float(at[2])
@@ -87,8 +88,9 @@ def back_bodies(path):
                 res.append((ref, unq(m[1]), Point(g(float(cc[1]), float(cc[2]))).buffer(r)))
         if pts:
             res.append((ref, unq(m[1]), MultiPoint(pts).convex_hull))
-        elif "choc" in unq(m[1]).lower() or "hotswap" in unq(m[1]).lower():
-            sm = []
+        elif is_socket:
+            # Kailh Choc ホットスワップソケット (CPG135001S30) の樹脂の本体のおおよその形 (部品の座標)
+            sm = [g(x, y) for x, y in SOCKET_BODY]
             for pd in find_all(m, "pad"):
                 if pd[2] == "smd":
                     a = find(pd, "at")
@@ -100,6 +102,9 @@ def back_bodies(path):
     return res
 
 
+SOCKET_BODY = [(-2.0, -4.25), (-2.0, -7.7), (-1.5, -8.2), (1.5, -8.2), (2.0, -7.7), (2.0, -6.2),
+               (7.0, -6.2), (7.0, -1.5), (2.5, -1.5), (2.0, -4.25)]
+SOCKET_H = 1.85                    # ソケットの高さ (基板の裏から)
 TALL = ("xiao", "jst", "molex", "smt_nut")     # 電池の上に置けない (背が 2.35mm より高い・ネジが通る)
 
 
