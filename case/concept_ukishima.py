@@ -64,7 +64,7 @@ PCB_B = BATTERY_SKIN + 5.0 + 0.5 + 1.85   # 電池 → 0.5mm → ソケット (1
 PCB_T = PCB_B + 1.6
 PLATE_B, PLATE_T = PCB_T + 1.0, PCB_T + 2.2
 RIM = PCB_B - 1.5    # トレイの縁 (基板の下面より 1.5mm 低い → 浮いて見える)
-PORON = 2.2          # 基板の下のポロン (3mm のシートを締めて約 2.2mm)
+PORON = 1.9          # 基板の下のポロン (3mm のシートを締めて約 1.9mm)
 BALL_Z0 = 0.0        # ボールユニットの底 (トレイの床に落とし込む)
 KEY_TOP = PLATE_T + 7.5
 
@@ -100,6 +100,7 @@ WASHER_R, WASHER_T = 2.5, 0.4     # M2 ワッシャー (外径 5mm)
 SCREW_HEAD_R, SCREW_HEAD_H = 2.0, 0.8
 POST_TOP = PCB_B - PORON
 NUT_B = PCB_B - NUT_H             # ナットの下面 (柱の上面とのすき間 = 押した時に動ける量)
+TRAVEL = NUT_B - POST_TOP         # 基板が沈める量 0.4mm (電池の上のソケットが電池に当たらない量)
 COLLAR_B = NUT_B - 5.0            # カラー 長さ 5mm (市販の長さ)
 RECESS_D = COLLAR_B               # 床の裏のくぼみの深さ (ワッシャーの上面 = カラーの下面)
 
@@ -127,7 +128,7 @@ MAG_DEPTH = MAG_T + MAG_TAPE      # 溝の深さ 0.7mm: 0.6mm のリングで裏
 MAG_BOSS = 0.6                    # 溝の真上の床を内側から厚くする量 (溝の上に残る床 0.8 → 1.4mm)
 MAG_CENTER = {"left": (3.0*U, 1.5*U), "right": (k.RIGHT_X + 2.5*U, 2.0*U)}
 # 電池 (31 × 21 × 5mm・PSE 品) の位置。リングの溝・柱・XIAO をよけた所 (中心・床のくぼみ)
-BATTERY = {"left": (8.0, 26.0), "right": (307.0, 8.0)}
+BATTERY = {"left": (8.5, 26.0), "right": (306.0, 8.0)}   # 目隠しの壁が入るよう、基板の縁から少し離す
 BAT_W, BAT_H = 31.0, 21.0
 
 # --- 四隅の磁石＋ゴム足 ---
@@ -162,6 +163,54 @@ def magnet_feet(side):
 BAT_GUIDE_H, BAT_GUIDE_T, BAT_GUIDE_L = 3.0, 1.2, 6.0
 
 
+# --- 電池の目隠し: 基板の縁とトレイの縁のすき間から電池が見えないよう、電池の近くの基板の縁の内側に低い壁 ---
+# 基板の下 (縁から 0.3〜1.1mm 内側) に立てる。高さは基板が沈んでも当たらない所まで。裏の部品 (ソケット等) はよける
+SCREEN_IN, SCREEN_OUT = 0.3, 1.1
+SCREEN_TOP = PCB_B - TRAVEL - 0.25
+SCREEN_REACH = 9.0                # 電池からこの距離までの縁に立てる
+
+
+SCREEN_LIP = 2.0                  # 上の「ひさし」(内側へ。上から斜めにのぞいても電池が見えない)
+SCREEN_LOW_TOP = PCB_B - 1.85 - TRAVEL - 0.25   # ソケットの下は、ソケットに当たらない高さまで
+
+
+def battery_screen(side):
+    from shapely.geometry import box as sbox
+    from shapely.ops import unary_union
+    pcb = k.load(f"pcb_{side}")
+    pcb = pcb.buffer(-1.0, join_style=2).buffer(1.0, join_style=2)     # 細い帯 (ソケット用) をならして、縁をなめらかに
+    ex, ey = BATTERY[side]
+    bat = sbox(ex - BAT_W/2, ey - BAT_H/2, ex + BAT_W/2, ey + BAT_H/2)
+    near = bat.buffer(SCREEN_REACH, join_style=2)
+    band = pcb.buffer(-SCREEN_IN, join_style=2).difference(pcb.buffer(-SCREEN_OUT, join_style=2)).intersection(near)
+    lip = pcb.buffer(-SCREEN_OUT + 0.01, join_style=2).difference(
+        pcb.buffer(-SCREEN_OUT - SCREEN_LIP, join_style=2)).intersection(near)
+    sockets, tall = [], []
+    try:                                   # 基板の裏の部品 (ソケットは低い壁、XIAO・コネクタ・ナットはよける)
+        sys.path.insert(0, os.path.join(HERE, "..", "tools"))
+        import check_pcb
+        from shapely import affinity
+        f = os.path.join(HERE, "..", "pcb", "ergogen", "output", "pcbs", f"{side}.kicad_pcb")
+        for ref, name, shp in check_pcb.back_bodies(f):
+            shp = affinity.scale(shp, 1, -1, origin=(0, 0)).buffer(0.5)
+            (sockets if name == "socket" else tall).append(shp)
+    except (ImportError, FileNotFoundError):
+        pass
+    sockets, tall = unary_union(sockets), unary_union(tall)
+    band = band.difference(tall).difference(bat.buffer(0.3))
+    lip = lip.difference(tall).difference(sockets)                     # 電池の上に張り出してよい (高さが違う)
+    hi = band.difference(sockets)
+    lo = band.intersection(sockets)
+    parts = []
+    if not hi.is_empty:
+        parts.append(k.prism(hi, FLOOR - 0.01, SCREEN_TOP))
+    if not lo.is_empty:
+        parts.append(k.prism(lo, FLOOR - 0.01, SCREEN_LOW_TOP))
+    if not lip.is_empty:
+        parts.append(k.prism(lip, SCREEN_TOP - 0.6, SCREEN_TOP))
+    return k.union(parts) if parts else None
+
+
 def battery_guides(side):
     ex, ey = BATTERY[side]
     x0, x1, y0, y1 = ex - BAT_W/2, ex + BAT_W/2, ey - BAT_H/2, ey + BAT_H/2
@@ -191,7 +240,7 @@ SW_LEVER_TIP = 3.15               # レバーの先 (スイッチの中心から
 SW_POS = 0.75                     # レバーの位置 (中心から ±。動く量 1.5mm)
 SWC_V0, SWC_V1 = -5.4, 6.9        # カバーの範囲 (奥行き。手前は USB-C の切り欠きをよける)
 SWC_POCKET_Z = 3.3                # トレイの壁を、ここまで掘ってカバーの台を入れる
-SWC_BASE_TOP = 7.0                # 台の上面 (基板の舌が沈んでも当たらない: 7.85 - 0.7 = 7.15)
+SWC_BASE_TOP = 7.0                # 台の上面 (基板の舌が沈んでも当たらない: 7.85 - 0.4 = 7.45)
 SWC_LEDGE_U, SWC_LEDGE_TOP = 2.35, 8.8    # つまみが乗る段 (舌の端 u 2.15 より外)
 SWC_WALL_U0, SWC_WALL_U1 = 3.625, 5.125   # 外の壁 (トレイの外側の面より 1mm 出る)
 SWC_ROOF_U0, SWC_ROOF_Z0, SWC_ROOF_Z1 = -1.0, 11.3, 13.3   # 屋根 (スイッチの上を隠す。つまみが沈む分だけ厚い)
@@ -410,6 +459,9 @@ def half(side, size=25):
     ex, ey = BATTERY[side]
     tray = tray - k.cube(ex - BAT_W/2, ey - BAT_H/2, BATTERY_SKIN, ex + BAT_W/2, ey + BAT_H/2, FLOOR + 1)
     tray = tray + battery_guides(side)
+    scr = battery_screen(side)
+    if scr is not None:
+        tray = tray + scr
     # 四隅の磁石とゴム足
     mboss, mcut, mags = magnet_feet(side)
     tray = (tray + mboss) - mcut

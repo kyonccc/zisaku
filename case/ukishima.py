@@ -160,7 +160,13 @@ def check():
     # 電源スイッチのカバー・つまみ、nice!view のカバー
     for side in ("left", "right"):
         p = cu.half(side, 34 if side == "right" else 25)
-        low = p["pcb"].translate([0, 0, -0.7])              # キーを押して基板が沈んだ時
+        low = p["pcb"].translate([0, 0, -cu.TRAVEL])        # キーを押して基板が一番沈んだ時
+        if (p["tray"] ^ low).volume() > 0.01:
+            problems.append(f"{side}: 基板が沈むとトレイ (電池の目隠しなど) に当たる")
+        # 電池の上のソケット: 基板が一番沈んでも電池に当たらないか
+        sock_bottom = cu.PCB_B - 1.85 - cu.TRAVEL
+        if sock_bottom < cu.BATTERY_SKIN + 5.0 + 0.05:
+            problems.append(f"{side}: 基板が沈むとソケットが電池に当たる ({sock_bottom:.2f}mm)")
         for a, b, label in (("switch_cover", "pcb", "基板"), ("switch_cover", "plate", "プレート"),
                             ("switch_cover", "tray", "トレイ"), ("slider", "switch_cover", "カバー"),
                             ("slider", "pcb", "基板"), ("view_cover", "plate", "プレート"),
