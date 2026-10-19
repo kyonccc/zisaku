@@ -152,8 +152,9 @@ def battery_guides(side):
 
 # --- 電源スイッチ (横のスライドスイッチ PCM12) のカバーとつまみ ---
 # スイッチのレバーは基板の「舌」の端から 1mm 出るだけで、トレイの外側の面より 1mm 奥にある。
-# トレイの縁に「カバー」を留める。カバーの外の壁のみぞから「つまみ」が横に出ていて、前後に滑らせると
-# 内側の「フォーク」がレバーを動かす。フォークは上下に余裕があるので、基板が沈んで (ポロン) も引っかからない。
+# トレイの縁に「カバー」を留め、屋根の上の「つまみ」を前後に滑らせると、つまみの下の「フォーク」がレバーを動かす。
+# フォークは上下に余裕があるので、基板が沈んで (ポロン) も引っかからない。
+# 持ち運びで勝手に ON にならないよう、つまみは屋根のくぼみに沈めてある (上面が屋根より 0.1mm 低い)。
 # 組み立て: 基板をトレイに留めたあと、カバーを横から差し込み (フォークがレバーをはさむ)、裏からネジで留める。
 # 座標: スイッチの中心から外へ u、奥へ v (左右で v の向きは同じ)
 PWR = {"left": (6*U + 0.5*U + 0.85, 51.5, +1), "right": (k.RIGHT_X - 1.5*U - 0.85, 51.5, -1)}
@@ -165,12 +166,10 @@ SWC_POCKET_Z = 3.3                # トレイの壁を、ここまで掘って�
 SWC_BASE_TOP = 7.0                # 台の上面 (基板の舌が沈んでも当たらない: 7.85 - 0.7 = 7.15)
 SWC_LEDGE_U, SWC_LEDGE_TOP = 2.35, 8.8    # つまみが乗る段 (舌の端 u 2.15 より外)
 SWC_WALL_U0, SWC_WALL_U1 = 3.625, 5.125   # 外の壁 (トレイの外側の面より 1mm 出る)
-SWC_ROOF_U0, SWC_ROOF_Z0, SWC_ROOF_Z1 = -1.0, 11.3, 12.5   # 屋根 (スイッチの上を隠す)
-SWC_STEM = 0.6                    # つまみの軸 (半分の太さ・1.2mm 角)
-SWC_STEM_Z = (9.6, 10.8)          # 軸の高さ
-SWC_SLOT = SWC_STEM + 0.75 + 0.15 # 外の壁のみぞ (半分の幅。軸 + 動く量 0.75 + すき間)
-SWC_KNOB_U = (5.25, 7.25)         # つまみ (外の壁から 0.125mm 離す)
-SWC_KNOB_V, SWC_KNOB_Z = 3.0, (8.8, 11.6)
+SWC_ROOF_U0, SWC_ROOF_Z0, SWC_ROOF_Z1 = -1.0, 11.3, 13.3   # 屋根 (スイッチの上を隠す。つまみが沈む分だけ厚い)
+SWC_RECESS_Z = 12.3               # 屋根のくぼみの底 (つまみが入る)
+SWC_RECESS_V = 3.65               # くぼみの半分の幅 (つまみ 2.6 + 動く量 0.75 + すき間)
+SWC_SLOT = 1.7                    # 屋根のみぞ (つまみの軸が通る・半分の幅)
 SWC_SCREWS = ((1.2, -3.4), (1.2, 4.9))    # カバーをトレイの裏から留めるタッピングネジ M2 (u, v)
 
 
@@ -190,32 +189,25 @@ def switch_cover(side):
     m = m + _uv_cube(SWC_LEDGE_U, SWC_WALL_U0 + 0.01, SWC_V0, SWC_V1, SWC_BASE_TOP - 0.01, SWC_LEDGE_TOP)   # 段
     m = m + _uv_cube(SWC_WALL_U0, SWC_WALL_U1, SWC_V0, SWC_V1, SWC_POCKET_Z + 0.05, SWC_ROOF_Z1)  # 外の壁
     m = m + _uv_cube(SWC_ROOF_U0, SWC_WALL_U1, SWC_V0, SWC_V1, SWC_ROOF_Z0, SWC_ROOF_Z1)          # 屋根
-    m = m - _uv_cube(SWC_WALL_U0 - 0.1, SWC_WALL_U1 + 0.1, -SWC_SLOT, SWC_SLOT,
-                     SWC_STEM_Z[0] - 0.15, SWC_STEM_Z[1] + 0.15)                          # 外の壁のみぞ
+    m = m - _uv_cube(SWC_ROOF_U0 - 1, 3.9, -SWC_RECESS_V, SWC_RECESS_V, SWC_RECESS_Z, SWC_ROOF_Z1 + 1)   # くぼみ
+    m = m - _uv_cube(SWC_ROOF_U0 - 1, 3.45, -SWC_SLOT, SWC_SLOT, SWC_ROOF_Z0 - 0.1, SWC_ROOF_Z1 + 1)    # みぞ
     for u, v in SWC_SCREWS:
         m = m - k.cyl(u, v, SWC_POCKET_Z - 1, SWC_BASE_TOP - 0.8, 0.8)          # タッピングの下穴
     return _pwr_place(side, m)
 
 
 def switch_slider(side):
-    """フォーク＋軸 (1 つの部品)。軸を内側から外の壁のみぞに通し、外からつまみをはめる"""
+    """フォーク＋つまみ (1 つの部品)。屋根のみぞに内側から差し込む"""
     z0, z1 = SW_LEVER_Z0 - 0.7 - 0.15, SWC_ROOF_Z0 - 0.1     # フォーク (基板が 0.7mm 沈んでもレバーをつかむ)
     gap = 0.8                                                # レバー 1.3mm + すき間
     m = (_uv_cube(2.4, 3.25, gap, 1.8, z0, z1) + _uv_cube(2.4, 3.25, -1.8, -gap, z0, z1) +
          _uv_cube(3.25, 3.525, -1.8, 1.8, z0, z1))                                       # フォーク
-    m = m + _uv_cube(3.5, SWC_KNOB_U[0] + 1.4, -SWC_STEM, SWC_STEM, *SWC_STEM_Z)        # 軸 (外へ)
-    return _pwr_place(side, m)
-
-
-def switch_knob(side):
-    """つまみ (横に出る)。軸にはめる (穴は 0.05mm ゆるめ・抜ける時は瞬間接着剤を 1 滴)"""
-    u0, u1 = SWC_KNOB_U
-    m = _uv_cube(u0, u1, -SWC_KNOB_V, SWC_KNOB_V, *SWC_KNOB_Z)
-    m = m - _uv_cube(u0 - 0.1, u0 + 1.45, -SWC_STEM - 0.05, SWC_STEM + 0.05,
-                     SWC_STEM_Z[0] - 0.05, SWC_STEM_Z[1] + 0.05)                          # 軸の穴
-    for v in (-2.0, -1.0, 0.0, 1.0, 2.0):                    # すべり止めのみぞ (縦)
-        m = m - _uv_cube(u1 - 0.3, u1 + 1, v - 0.2, v + 0.2, SWC_KNOB_Z[0] - 1, SWC_KNOB_Z[1] + 1)
-    return _pwr_place(side, m)
+    m = m + _uv_cube(2.7, 3.3, -0.8, 0.8, z1 - 0.01, SWC_RECESS_Z + 0.11)                # 軸
+    top = SWC_ROOF_Z1 - 0.1                                  # つまみの上面 (屋根より少し低い)
+    cap = _uv_cube(1.6, 3.6, -2.6, 2.6, SWC_RECESS_Z + 0.1, top)                       # つまみ
+    for v in (-1.6, 0, 1.6):                                 # すべり止めのみぞ
+        cap = cap - _uv_cube(1.0, 4.2, v - 0.25, v + 0.25, top - 0.3, top + 1)
+    return _pwr_place(side, m + cap)
 
 
 def switch_pocket(side):
@@ -428,7 +420,6 @@ def half(side, size=25):
     parts["view_cover"] = view_cover(side)
     parts["switch_cover"] = switch_cover(side)
     parts["slider"] = switch_slider(side)
-    parts["knob_sw"] = switch_knob(side)
     if side == "left":
         ex, ey = 5.5*U, U
         parts["knob"] = (k.cyl(ex, ey, PCB_T + 1, KEY_TOP + 1.0, 7.5) -
@@ -455,7 +446,7 @@ COLORS = {  # 色・分解図での持ち上げ量
     "tray": ("#e8e4dc", 0), "posts": ("#d2cdc3", 0), "gasket": ("#e98f9c", 8),
     "pcb": ("#202124", 16), "plate": ("#3a3b3f", 26), "switch": ("#8e949b", 34), "caps": ("#f3f0e9", 46),
     "view": ("#11181f", 26), "knob": ("#2b2d31", 46), "screws": ("#a9adb3", 0), "magsafe": ("#8a8f98", -14), "battery": ("#5b7fa6", 4),
-    "view_cover": ("#2b2d31", 40), "switch_cover": ("#2b2d31", 20), "slider": ("#b8432f", 30), "knob_sw": ("#b8432f", 30),
+    "view_cover": ("#2b2d31", 40), "switch_cover": ("#2b2d31", 20), "slider": ("#b8432f", 30),
     "ball_base": ("#d9d5cc", 0), "ball_cup": ("#ece7dd", 22), "ball_cover": ("#2b2d31", 44), "ball": ("#b8432f", 62),
 }
 
