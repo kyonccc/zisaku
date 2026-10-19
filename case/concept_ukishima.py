@@ -229,10 +229,13 @@ def sockets(side):
         return None
     if not shapes:
         return None
-    return k.union([k.prism(sh, PCB_B - check_pcb.SOCKET_H, PCB_B + 0.01) for sh in shapes])
+    return k.union([k.prism(sh, PCB_B - SOCKET_H, PCB_B + 0.01) for sh in shapes])
 
 
 XIAO_H, XIAO_HALF_W, XIAO_HALF_L = 5.0, 8.9, 10.5   # XIAO の厚さ (USB-C 込み)・半分の幅・半分の長さ
+# エンコーダー (左手・EC11): 本体の高さ・軸の長さ (基板の上から)・つまみの直径
+ENC = (5.5*U, U)
+ENC_BODY_H, ENC_SHAFT_L, ENC_KNOB_D = 6.5, 15.0, 15.0
 # 基板の裏に出る部品の高さ (基板の裏から下へ・mm)。部品の名前の一部で決める
 BACK_HEIGHTS = (("xiao", 5.0), ("jst", 4.25), ("molex", 3.4), ("smt_nut", NUT_H), ("socket", SOCKET_H))
 DIODE_H = 1.35                     # ダイオード (SOD-123・表面実装・基板の裏)
@@ -532,7 +535,7 @@ def half(side, size=25):
         sock = unary_union([affinity.scale(b[2], 1, -1, origin=(0, 0)).buffer(0.5)
                             for b in check_pcb.back_bodies(f) if b[1] == "socket"])
         if not sock.is_empty:
-            tray = tray - k.prism(sock, PCB_B - check_pcb.SOCKET_H - TRAVEL - 0.25, 30)
+            tray = tray - k.prism(sock, PCB_B - SOCKET_H - TRAVEL - 0.25, 30)
     except (ImportError, FileNotFoundError):
         pass
     # 四隅の磁石とゴム足
@@ -589,8 +592,9 @@ def half(side, size=25):
     parts["slider"] = switch_slider(side)
     if side == "left":
         ex, ey = 5.5*U, U
-        parts["knob"] = (k.cyl(ex, ey, PCB_T + 1, KEY_TOP + 1.0, 7.5) -
-                         k.cyl(ex, ey, KEY_TOP + 0.4, KEY_TOP + 2, 6.2))
+        parts["knob"] = (k.cyl(ex, ey, PCB_T + ENC_BODY_H, PCB_T + ENC_SHAFT_L, ENC_KNOB_D / 2) -
+                         k.cyl(ex, ey, PCB_T + ENC_SHAFT_L - 0.6, PCB_T + ENC_SHAFT_L + 1, ENC_KNOB_D / 2 - 1.3)) + \
+                        k.cube(ex - 6.0, ey - 6.0, PCB_T, ex + 6.0, ey + 6.0, PCB_T + ENC_BODY_H)
     else:
         bx, by = k.HALVES["right"]["ball"]
 

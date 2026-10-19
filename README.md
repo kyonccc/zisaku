@@ -27,6 +27,7 @@
 
 ---
 
+> 💡 **部品リスト（寸法・実測欄つき）と確認用の模型**は [docs/parts-list.md](docs/parts-list.md)。
 > 💡 **製作用の形は「浮島」**です。データ・買う物・3D プリント・組み立ては **[docs/ukishima-build.md](docs/ukishima-build.md)**、考え方と経緯は [docs/concept/](docs/concept/README.md)。
 > このページの「ケース（ガスケットマウント）」の節は古い版の説明です。
 
