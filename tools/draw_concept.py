@@ -73,19 +73,18 @@ def mount_view(parts, out):
     """基板の留め方 (バーガーマウント) の断面。内側の柱 1 本を左右に切る"""
     x, y = cu.POSTS["right"][6]
     items = [(n, m) for n, m in parts.items() if n in ("tray", "posts", "gasket", "pcb", "plate", "switch", "caps", "screws")]
-    st = cu.POST_TOP + cu.SPACER_L
     labels = [
-        (-1.2, st + cu.SCREW_HEAD_H - 0.3, f"M2 極低頭ネジ＋ワッシャー（穴の中に沈む）", (16, 20)),
-        (4.6, cu.PLATE_T - 0.6, "プレート：穴 φ5.6（基板といっしょに浮く）", (16, 17.5)),
-        (2.5, cu.PCB_T + cu.TOP_PORON / 2, f"基板の上のポロン（1mm → 締めて約 {cu.TOP_PORON}mm）", (16, 15)),
-        (4.6, cu.PCB_B + 0.8, "基板：穴 φ4.2（スペーサーに触れない）", (16, 12.5)),
-        (-0.6, cu.POST_TOP + 1.2, f"M2 スペーサー {cu.SPACER_L:.0f}mm（締めすぎ防止）", (16, 10)),
-        (2.7, cu.POST_TOP + cu.PORON / 2, f"基板の下のポロン（3mm → 締めて約 {cu.PORON}mm）", (16, 7.5)),
-        (2.3, cu.POST_TOP - 2, "トレイの柱（トレイと一体で印刷）", (16, 5)),
-        (-1.4, 0.6, "M2 皿ネジ（床に沈む）", (16, 2.5)),
+        (6, cu.PLATE_T - 0.6, "プレート：穴もネジ山もなし（上から見てネジが見えない）", (16, 20)),
+        (6, cu.PCB_B + 0.8, "基板：ポロンに乗って浮いている", (16, 17.5)),
+        (-1.6, cu.NUT_B + 0.7, f"基板の裏の M2 はんだ付けナット（SMT ナット）", (16, 15)),
+        (3.0, cu.POST_TOP + cu.PORON / 2, f"ポロン（3mm → 締めて約 {cu.PORON}mm）", (16, 12.5)),
+        (1.8, cu.POST_TOP + 0.35, f"すき間 {cu.NUT_B - cu.POST_TOP:.1f}mm（押した時に沈める量）", (16, 10)),
+        (1.2, cu.COLLAR_B + 1.5, "カラー 5mm（ねじの無い筒・締めすぎ防止）", (16, 7.5)),
+        (3.3, 3, "トレイの柱（トレイと一体で印刷）", (16, 5)),
+        (-2.2, 0.5, "下から M2 ネジ＋ワッシャー（床のくぼみに沈む）", (16, 2.5)),
     ]
     W, H, body = ds.section(items, "az", (x, y, 0), ((-14, 15), (-1, 22)),
-                            "基板の留め方：バーガーマウント（ビス留め＋ポロンで浮かせる）", labels, px=24)
+                            "基板の留め方：下から留める（上からネジが見えない・ポロンで浮かせる）", labels, px=24)
     open(os.path.join(out, "ukishima-mount.svg"), "w").write(ds.svg(W, H, body))
 
 
@@ -108,13 +107,14 @@ def top_view(parts, out):
 
     bx, by = k.HALVES["right"]["ball"]
     o = ['<text x="30" y="34" font-size="22" font-weight="bold" fill="#333">'
-         '上から見た右手：爪は打鍵の指が通らない所に（グレーの丸は基板を留めるネジ）</text>']
+         '上から見た右手：爪は打鍵の指が通らない所に（青い点線＝基板の下で留めるネジ。上からは見えない）</text>']
     o.append(poly(parts["tray"], "#e8e4dc"))
     o.append(poly(parts["pcb"], "#202124"))
     o.append(poly(parts["view"], "#11181f"))
     o.append(poly(parts["caps"], "#f3f0e9", extra='fill-opacity="0.82"'))
     for x, y in cu.POSTS["right"]:
-        o.append(f'<circle cx="{X(x):.1f}" cy="{Y(y):.1f}" r="{cu.SCREW_HEAD_R * px:.1f}" fill="#a9adb3" stroke="#333"/>')
+        o.append(f'<circle cx="{X(x):.1f}" cy="{Y(y):.1f}" r="{cu.POST_R * px:.1f}" fill="none" stroke="#2e86c1" '
+                 f'stroke-width="2" stroke-dasharray="5,4"/>')
     o.append(poly(parts["ball_cup"], "#ece7dd"))
     o.append(poly(parts["ball"], "#b8432f"))
     o.append(poly(parts["ball_cover"], "#2b2d31"))

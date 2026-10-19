@@ -64,20 +64,22 @@ CLAW_ROOT_W = 14.0                # 爪の幅 (根元・リングの上面で・
 CLAW_TIP_W = 4.0                  # 爪の幅 (先・mm)
 CLAW_STEPS = 28                   # 曲面を作る輪切りの数
 
-# --- 基板の留め方 (バーガーマウント: ビス留めでも、基板はポロンにはさまれて浮いたまま) ---
-# 下から: トレイの床の皿ネジ (M2) → 柱の中 → M2 スペーサー (長さ 5mm) → 基板の穴 (φ4.2) を「触れずに」通る
-# → 基板の上のポロン → ワッシャー → 上から M2 ネジ。ネジの頭はプレートの穴 (φ5.6) の中に沈む (キーキャップに当たらない)
-# プレートはスイッチで基板にくっついているので、基板といっしょに浮く。
-# スペーサーの長さで締めすぎを防ぐ (誰が組んでもポロンのつぶれ具合が同じ)
-TOP_PORON = 0.8                   # 基板の上のポロン (1mm のシートを締めて約 0.8mm)
+# --- 基板の留め方 (下から留める・上から見てネジが見えない) ---
+# 基板の裏に M2 の「はんだ付けナット (SMT ナット)」を付け、トレイの裏から M2 ネジで留める。
+# プレートには穴もネジ山も無い → 上から見えるのはキーとプレートだけ。プレートの素材を替えても加工はいらない
+# (1.2mm の FR4 / POM にネジ山を切ると山が少なく、すぐ潰れるので、ナットは基板の側に付ける)
+# 下から: ネジの頭＋ワッシャー (床のくぼみ) → カラー (ねじの無い筒・長さで締めすぎを防ぐ) が柱の穴を「触れずに」通る
+# → 基板の裏のナット。基板は柱の上のポロンだけに乗っていて、浮いたまま (キーを押すとポロンが縮む)
+NUT_R, NUT_H = 1.9, 1.5           # SMT ナット (外径 3.8mm・高さ 1.5mm)
+COLLAR_R = 1.5                    # カラー 外径 3mm (内径 2.1mm)
+POST_R = 3.6                      # 柱 (ポロンを受ける面を広く)
+POST_HOLE_R = 1.7                 # 柱の穴 (カラーとのすき間 0.2mm)
 WASHER_R, WASHER_T = 2.5, 0.4     # M2 ワッシャー (外径 5mm)
-SPACER_R = 1.75                   # 丸スペーサー 外径 3.5mm
-SPACER_L = PORON + 1.6 + TOP_PORON + WASHER_T     # = 5.0mm (市販の長さ)
-PCB_HOLE_R = 2.1                  # 基板の穴 φ4.2 (スペーサーに触れない)
-PLATE_HOLE_R = 2.8                # プレートの穴 φ5.6 (キーの角どうしのすき間に収まる大きさ)
-SCREW_HEAD_R, SCREW_HEAD_H = 2.0, 0.8     # 上のネジの頭 (φ4・高さ 0.8mm の極低頭)
+SCREW_HEAD_R, SCREW_HEAD_H = 2.0, 0.8
 POST_TOP = PCB_B - PORON
-SCREW_TOP = POST_TOP + SPACER_L + SCREW_HEAD_H    # ネジの頭の上 (プレートの上面より低い)
+NUT_B = PCB_B - NUT_H             # ナットの下面 (柱の上面とのすき間 = 押した時に動ける量)
+COLLAR_B = NUT_B - 5.0            # カラー 長さ 5mm (市販の長さ)
+RECESS_D = COLLAR_B               # 床の裏のくぼみの深さ (ワッシャーの上面 = カラーの下面)
 
 KEYS = {
     "left": [(c*U, r*U) for c in range(5) for r in range(4)] + [(5*U, 0), (5*U, 2*U), (5*U, 3*U), (6*U, 0)],
@@ -169,27 +171,25 @@ def half(side, size=25):
         bx, by = k.HALVES["right"]["ball"]
         tray = tray - k.cyl(bx, by, -1, FLOOR + 1, bu.UNIT_R + 0.3)
     parts["tray"] = tray
-    # 柱とガスケット・ネジ (バーガーマウント)
-    posts, pads, tops, metal = [], [], [], []
+    # 柱とガスケット・ネジ (下から留める)
+    posts, pads, metal = [], [], []
     for x, y in POSTS[side]:
-        posts.append(k.cyl(x, y, FLOOR - 0.01, POST_TOP, 2.6))
-        pads.append(k.cyl(x, y, POST_TOP, PCB_B, 3.0))
-        tops.append(k.cyl(x, y, PCB_T, PCB_T + TOP_PORON, 2.7))
-        st = POST_TOP + SPACER_L
-        metal += [k.cyl(x, y, POST_TOP, st, SPACER_R),
-                  k.cyl(x, y, st - WASHER_T, st, WASHER_R),
-                  k.cyl(x, y, st, st + SCREW_HEAD_H, SCREW_HEAD_R),
-                  k.cyl(x, y, 0, 1.2, 1.9, 1.1), k.cyl(x, y, 1.2, POST_TOP, 1.0)]
-    screw_holes = k.union([k.cyl(x, y, -1, POST_TOP + 1, 1.1) + k.cyl(x, y, -0.01, 1.2, 2.0, 1.1)
-                           for x, y in POSTS[side]])
-    parts["tray"] = parts["tray"] - screw_holes
-    parts["posts"] = k.union(posts) - screw_holes
-    gap = k.union([k.cyl(x, y, POST_TOP - 1, PCB_T + TOP_PORON + 1, SPACER_R + 0.2) for x, y in POSTS[side]])
-    parts["gasket"] = (k.union(pads) + k.union(tops)) - gap
+        posts.append(k.cyl(x, y, FLOOR - 0.01, POST_TOP, POST_R))
+        pads.append(k.cyl(x, y, POST_TOP, PCB_B, POST_R - 0.2) - k.cyl(x, y, POST_TOP - 1, PCB_B + 1, NUT_R + 0.4))
+        metal += [k.cyl(x, y, NUT_B, PCB_B, NUT_R),                                  # ナット
+                  k.cyl(x, y, COLLAR_B, NUT_B, COLLAR_R),                            # カラー
+                  k.cyl(x, y, COLLAR_B - WASHER_T, COLLAR_B, WASHER_R),              # ワッシャー
+                  k.cyl(x, y, COLLAR_B - WASHER_T - SCREW_HEAD_H, COLLAR_B - WASHER_T, SCREW_HEAD_R),
+                  k.cyl(x, y, COLLAR_B, PCB_B - 0.3, 1.0)]                           # ネジ
+    holes = k.union([k.cyl(x, y, -1, POST_TOP + 1, POST_HOLE_R) + k.cyl(x, y, -1, RECESS_D, WASHER_R + 0.3)
+                     for x, y in POSTS[side]])
+    parts["tray"] = parts["tray"] - holes
+    parts["posts"] = k.union(posts) - holes
+    parts["gasket"] = k.union(pads)
     parts["screws"] = k.union(metal)
-    # 基板・プレート
-    parts["pcb"] = k.prism(pcb, PCB_B, PCB_T) - k.union([k.cyl(x, y, 0, 30, PCB_HOLE_R) for x, y in POSTS[side]])
-    parts["plate"] = k.prism(plate, PLATE_B, PLATE_T) - k.union([k.cyl(x, y, 0, 30, PLATE_HOLE_R) for x, y in POSTS[side]])
+    # 基板・プレート (プレートには穴なし)
+    parts["pcb"] = k.prism(pcb, PCB_B, PCB_T)
+    parts["plate"] = k.prism(plate, PLATE_B, PLATE_T)
     # スイッチとキーキャップ
     parts["switch"] = k.union([k.cube(x - 6.9, y - 6.9, PLATE_T, x + 6.9, y + 6.9, PLATE_T + 3) for x, y in KEYS[side]])
     parts["caps"] = k.union([keycap(x, y, PLATE_T + 4, KEY_TOP) for x, y in KEYS[side]])
@@ -236,8 +236,8 @@ def main(out, size=25):
     _, claw_top = claw_cover(25)
     print(f"キーキャップ上 {KEY_TOP:.1f} / リング上面 {RING_TOP:.1f} / 爪の先 {claw_top:.1f} / "
           f"ボールのてっぺん {cz + 12.5:.1f} (19mm: {bu.BALL_BOTTOM + 19:.1f}) / トレイの縁 {RIM:.1f}")
-    print(f"柱の上 {POST_TOP:.2f} / スペーサー {SPACER_L:.2f} / ネジの頭の上 {SCREW_TOP:.2f} "
-          f"(プレートの上面より {PLATE_T - SCREW_TOP:.2f}mm 低い)")
+    print(f"柱の上 {POST_TOP:.2f} / ナットの下 {NUT_B:.2f} (動ける量 {NUT_B - POST_TOP:.2f}) / "
+          f"カラー {COLLAR_B:.2f}〜{NUT_B:.2f} / 床のくぼみ {RECESS_D:.2f} (床 {FLOOR})")
 
 
 if __name__ == "__main__":
