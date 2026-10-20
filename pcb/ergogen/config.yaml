@@ -123,6 +123,10 @@ outlines:
       radius: 18
   ball_cut:             # 穴 + 穴より左下の角 (ここには部品がないので切り落とす)
     - name: ball_hole
+    - what: circle        # 斜めのボールユニット (左手前へ 15〜30°) の分。左と手前だけ約 2mm 広げる (キー・XIAO の方は広げない)
+      where: right_e_top
+      adjust.shift: [ball_x - 4.24, ball_y - 3ky - 4.24]
+      radius: 18
     - what: rectangle
       where: right_e_top
       adjust.shift: [ball_x - 20, ball_y - 3ky - 15]

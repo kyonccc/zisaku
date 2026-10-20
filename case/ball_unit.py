@@ -114,7 +114,7 @@ def along_x_cyl(r, length):
     return mf.Manifold.cylinder(length, r, r, 48, True).rotate([0, 90, 0])
 
 
-def base():
+def base(cable_slot=True):
     m = k.cyl(0, 0, 0, BASE_H, UNIT_R)
     m = m - k.cyl(0, 0, BASE_FLOOR, BASE_H + 1, BASE_IN_R)
     bosses, cut = [], []
@@ -127,11 +127,11 @@ def base():
         # センサー基板のくぼみ (+0.2mm の余裕)
         k.cube(-SENSOR_W/2 - 0.2, -SENSOR_L/2 - 0.2, BASE_FLOOR - SENSOR_POCKET,
                SENSOR_W/2 + 0.2, SENSOR_L/2 + 0.2, BASE_FLOOR + 1),
-        # ケーブルの出口 (基板のコネクタのある Enter の方)
-        rot_z(k.cube(-4.5, BASE_IN_R - 1, BASE_FLOOR - SENSOR_POCKET, 4.5, UNIT_R + 1, 5.5), CABLE_ANGLE - 90),
         # カップの向きを決める切り欠き (奥)
         k.cube(-1.6, BASE_IN_R - 1, BASE_H - 1.5, 1.6, UNIT_R + 1, BASE_H + 1),
     ]
+    if cable_slot:   # ケーブルの出口 (基板のコネクタのある Enter の方)
+        cut.append(rot_z(k.cube(-4.5, BASE_IN_R - 1, BASE_FLOOR - SENSOR_POCKET, 4.5, UNIT_R + 1, 5.5), CABLE_ANGLE - 90))
     return m - k.union(cut)
 
 

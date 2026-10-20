@@ -10,7 +10,8 @@
     mock_tray_left.stl / mock_tray_right.stl … トレイ (本物と同じ形。柱だけポロンの分まで高くして、上の模型を乗せる)
     mock_top_left.stl  / mock_top_right.stl  … 基板＋プレート＋スイッチ＋キーキャップ＋nice!view (カバー込み)
                                                ＋エンコーダー (左) を 1 つにした模型。柱の上に乗せるだけ
-    mock_ball_19.stl / mock_ball_25.stl / mock_ball_34.stl … ボールユニットとボールの外形 (トレイの穴に入れる)
+    mock_ball_19.stl / mock_ball_25.stl / mock_ball_34.stl … ボールユニット (下ケース＋上ケース＋ボール) の外形。
+                                               19 / 25mm は左手前へ傾いた形 (底は平ら)。トレイの穴に入れる
 
 高さはすべて case/concept_ukishima.py の数字 (部品の高さ) から作る。部品を実測して数字を直したら、
 もう一度このプログラムを実行すれば模型も変わる。寸法はすべて mm。z はトレイの底面 (机) が 0。
@@ -66,16 +67,22 @@ def mock_top(side):
 
 
 def mock_ball(size):
+    """ボールユニットの外形 (下ケース＋上ケース＋ボール)。トレイの上の本当の位置 (傾いた形) のまま"""
     R = bu.CUPS[size]["R"]
     cz = bu.BALL_BOTTOM + R
+    T = cu.size_tilt(size)
+    lower, _ = cu.lower_case(34 if size == 34 else 25)
+    cover, _ = cu.claw_cover(size)
     if size == 34:
-        body = k.cyl(0, 0, 0, cu.U34_TOP, cu.U34_R)
-        start = cu.U34_TOP
+        top = cu.U34_TOP
+        a0, a1 = cu.HOOD34_A
+        body = k.cyl(0, 0, 0, top + 0.01, cu.U34_R) + bu.sector(cu.U34_R - 1, cu.HOOD34_IN + 0.5, a0, a1, cu.HOOD34_Z0, cu.HOOD34_Z0 + 0.6)
     else:
-        body = k.cyl(0, 0, 0, cu.RING_TOP, bu.UNIT_R)
-        start = cu.RING_TOP
-    ball = mf.Manifold.sphere(R, 128).translate([0, 0, cz]).trim_by_plane([0, 0, 1], start - 0.01)
-    return body + ball
+        top = cu.RING_TOP
+        body = k.cyl(0, 0, 0, top - 0.8, bu.UNIT_R) + k.cyl(0, 0, 0, top, bu.UNIT_R - 1.0)
+    ball = mf.Manifold.sphere(R, 128).translate([0, 0, cz]).trim_by_plane([0, 0, 1], top - 0.3)
+    m = lower + cu.unit_place(body + cover + ball, T)
+    return m.trim_by_plane([0, 0, 1], 0.0)
 
 
 TILTS = (0, 15, 30)
@@ -141,7 +148,7 @@ def main():
         if (t ^ top).volume() > 0.5:
             print(f"  × {side}: トレイと上の模型が重なる")
     for size in (19, 25, 34):
-        b = items[f"mock_ball_{size}"].translate([bx, by, 0])
+        b = items[f"mock_ball_{size}"]
         for name in ("mock_tray_right", "mock_top_right"):
             if (b ^ items[name]).volume() > 0.5:
                 print(f"  × {size}mm: ボールの模型が {name} に当たる")

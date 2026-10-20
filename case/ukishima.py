@@ -7,10 +7,11 @@
 
 できるもの (case/stl/ukishima/):
     tray_left.stl / tray_right.stl   … トレイ (床・低い枠・柱 8 本・MagSafe の溝・電池のくぼみ)
-    ball_base.stl                    … 19 / 25mm 共用の土台 (センサー入り・トレイに 3 本のネジで留める)
-    ball_cup_25.stl / ball_cup_19.stl       … カップ (ベアリング 3 個)
-    ball_cover_25.stl / ball_cover_19.stl   … 爪留めカバー (ひねってロック)
-    ball_base_34.stl                 … 34mm 専用の受け (土台とカップが一体・固定の爪つき)
+    ball_lower.stl                   … 下ケース (19 / 25mm 共用・センサー入り)。左手前へ傾いた形で、底は平ら。
+                                       トレイの裏から M2 皿ネジ 3 本で留める (耳にインサート)
+    ball_cup_25.stl / ball_cup_19.stl       … 上ケース: カップ (ベアリング 3 個)。ボールの大きさに合わせて交換
+    ball_cover_25.stl / ball_cover_19.stl   … 上ケース: 爪留めカバー (爪 3 本・ひねってロック)
+    ball_lower_34.stl                … 34mm 専用の下ケース (カップと一体・固定の爪つき・真上向き)。下ケースごと交換
     ball_hood_34.stl                 … 34mm のフード (爪 2 本・外側でひねってロック)
     switch_cover_left.stl / _right   … 電源スイッチのカバー (トレイの縁に裏からネジ 2 本)
     switch_slider.stl                … つまみ＋フォーク (2 個印刷する・左右共通)
@@ -35,39 +36,26 @@ k, bu = cu.k, cu.bu
 U = k.U
 BATTERY, BAT_W, BAT_H = cu.BATTERY, cu.BAT_W, cu.BAT_H
 
-# ===== ボールユニットをトレイに留める耳 (3 か所) =====
-# 土台は床の穴 (半径 18) に落とし込み、外の「耳」を床の上に乗せて、床の裏から皿ネジ M2 で留める (耳にインサート)
-TAB_ANGLES = (70, 150, 300)       # 基板の裏の部品 (XIAO・コネクタ・ソケット)・トレイの壁・左下の角の磁石をよけた向き
-TAB_R0, TAB_R1 = 16.5, 22.5       # 耳の内側・外側 (半径)
-TAB_SCREW_R = 20.0                # ネジの位置 (ユニット中心から)
-TAB_W = 7.0                       # 耳の幅
-TAB_H = bu.INSERT_DEPTH + 0.6     # 耳の高さ (床の上から)
-BALL_HOLE_R = max(bu.UNIT_R, cu.U34_R) + 0.3     # 床の穴 (34mm の受けも入る)
+# ===== ボールユニット (下ケース) =====
+# 下ケースは床の穴に入り、外の耳 3 か所 (concept_ukishima.py の LOWER_TABS) を床の上に乗せて、
+# 床の裏から M2 皿ネジで留める (耳にインサート)。19 / 25mm 用と 34mm 用で、耳とネジの位置は同じ
 
 # ===== トレイの穴・ゴム足 =====
 USB_W = 14.0                      # USB-C のプラグが入る切り欠きの幅
 # ゴム足は四隅の磁石の上に貼る (concept_ukishima.py の MAG_*)
 
 
-def tab_ring(z0):
-    """耳 (土台の外側)。z0 = 床の上面"""
-    tabs = []
-    for a in TAB_ANGLES:
-        half = math.degrees(TAB_W / 2 / TAB_SCREW_R)
-        t = bu.sector(TAB_R0, TAB_R1, a - half, a + half, z0, z0 + TAB_H)
-        x, y = bu.polar(TAB_SCREW_R, a)
-        t = t - k.cyl(x, y, z0 - 1, z0 + bu.INSERT_DEPTH, bu.INSERT_R)      # 下からインサート M2
-        tabs.append(t)
-    return k.union(tabs)
-
-
-def ball_base():
-    return bu.base() + tab_ring(cu.FLOOR)
-
-
-def ball_base_34():
-    b, _ = cu.base34()
-    return b + tab_ring(cu.FLOOR)
+def lower_tab_shapes():
+    """耳 (上から見た形) とネジの位置"""
+    from shapely.geometry import MultiPoint
+    _, info = cu.lower_case(25)
+    cx, cy = info["center"]
+    out = []
+    for a in cu.LOWER_TABS:
+        half = math.degrees(cu.LOWER_TAB_W / 2 / cu.LOWER_TAB_SCREW_R)
+        pts = [bu.polar(r, a + s_) for r in (cu.LOWER_TAB_R0, cu.LOWER_TAB_R1) for s_ in (-half, half)]
+        out.append(MultiPoint([(cx + x, cy + y) for x, y in pts]).convex_hull)
+    return out, info["tabs"]
 
 
 def tray(side):
@@ -84,11 +72,8 @@ def tray(side):
         k.cube(ix + d * 2.5 - d * 5 - 2, xy - 6, -1, ix + d * 2.5 - d * 5 + 2, xy + 6, cu.FLOOR + 1),
     ]
     if h["ball"]:
-        bx, by = h["ball"]
-        cut.append(k.cyl(bx, by, -1, cu.FLOOR + 1, BALL_HOLE_R))
-        for a in TAB_ANGLES:
-            x, y = bu.polar(TAB_SCREW_R, a)
-            cut += [k.cyl(bx + x, by + y, -1, cu.FLOOR + 1, 1.15), k.cyl(bx + x, by + y, -0.01, 1.2, 2.2, 1.0)]
+        for x, y in lower_tab_shapes()[1]:                 # 下ケースのネジ (床の裏から皿ネジ M2)
+            cut += [k.cyl(x, y, -1, cu.FLOOR + 1, 1.15), k.cyl(x, y, -0.01, 1.2, 2.2, 1.0)]
     return t - k.union(cut)
 
 
@@ -111,13 +96,8 @@ def check():
         bat = box(ex - BAT_W / 2, ey - BAT_H / 2, ex + BAT_W / 2, ey + BAT_H / 2)
         avoid = [ring, bat.buffer(0.2)] + [Point(p).buffer(2.8 + 0.8) for p in cu.POSTS[side]]
         if h["ball"]:
-            bx, by = h["ball"]
-            avoid.append(Point(bx, by).buffer(BALL_HOLE_R + 0.8))
-            for a in TAB_ANGLES:                                     # ユニットの耳 (上) とネジ (裏)
-                half = math.degrees(TAB_W / 2 / TAB_SCREW_R)
-                pts = [bu.polar(r, a + s_) for r in (TAB_R0, TAB_R1) for s_ in (-half, half)]
-                avoid.append(__import__("shapely.geometry", fromlist=["MultiPoint"]).MultiPoint(
-                    [(bx + x, by + y) for x, y in pts]).convex_hull.buffer(0.5))
+            avoid.append(cu.lower_hole().buffer(0.5))
+            avoid += [s.buffer(0.5) for s in lower_tab_shapes()[0]]      # 下ケースの耳 (上) とネジ (裏)
         xx, xy = h["xiao"]
         avoid.append(box(xx - 9.4, xy - 11, xx + 9.4, xy + 11))      # XIAO (基板の裏で一番低い部品)
         sxp, syp, dp = cu.PWR[side]
@@ -138,12 +118,7 @@ def check():
             from shapely import affinity
             for ref, name, shp in check_pcb.back_bodies(pcbf):
                 shp = affinity.scale(shp, 1, -1, origin=(0, 0))            # KiCad (y 下向き) → y 上向き
-                for a in TAB_ANGLES:
-                    half = math.degrees(TAB_W / 2 / TAB_SCREW_R)
-                    pts = [bu.polar(r, a + s_) for r in (TAB_R0, TAB_R1) for s_ in (-half, half)]
-                    tab = box(0, 0, 0, 0).union(
-                        __import__("shapely.geometry", fromlist=["MultiPoint"]).MultiPoint(
-                            [(bx + x, by + y) for x, y in pts]).convex_hull)
+                for a, tab in zip(cu.LOWER_TABS, lower_tab_shapes()[0]):
                     if tab.buffer(0.5).intersects(shp):
                         problems.append(f"耳 {a}° が基板の裏の部品 {ref} の下に来る")
     # 基板のナット (Ergogen の config.yaml) と、トレイの柱の位置が同じか
@@ -218,24 +193,30 @@ def check():
                         problems.append(f"{side}: カバーを横から差し込む途中 ({du}mm) で {name} に当たる")
                 if (sl.translate(mv) ^ lever).volume() > 0.01:
                     problems.append(f"{side}: 差し込む途中でフォークがレバーに当たる ({du}mm)")
-    # ボールユニット: キー・基板・プレートに当たらないか (回してロックする途中も)
-    for size in (25, 34):
-        p = cu.half("right", size)
-        bx, by = k.HALVES["right"]["ball"]
+    # ボールユニット: キー・基板・プレート・トレイに当たらないか (カバーを回してロックする途中も)
+    tr = tray("right")
+    for size in (19, 25, 34):
+        p = cu.half("right", 34 if size == 34 else 25)
+        T = cu.size_tilt(size)
         cover, _ = cu.claw_cover(size)
-        base = ball_base_34() if size == 34 else ball_base()
+        lower, _ = cu.lower_case(34 if size == 34 else 25)
         for d in (0, 15, 30):
-            cc = cover.rotate([0, 0, d]).translate([bx, by, 0])
-            for name in ("caps", "plate", "pcb", "view"):
+            cc = cu.unit_place(cover.rotate([0, 0, d]), T)
+            for name in ("caps", "plate", "pcb", "view", "view_cover"):
                 for dz in (0, -3) if name == "caps" else (0,):
                     if (cc ^ p[name].translate([0, 0, dz])).volume() > 0.01:
                         problems.append(f"{size}mm: カバーが {name} に当たる (回す角度 {d}°)")
-        bb = base.translate([bx, by, 0])
-        for name in ("caps", "plate", "pcb", "posts", "screws", "battery"):
-            if (bb ^ p[name]).volume() > 0.01:
-                problems.append(f"{size}mm: 受けが {name} に当たる")
-        if (bb ^ tray("right")).volume() > 0.01:
-            problems.append(f"{size}mm: 受けがトレイに当たる")
+        unit = lower + (cu.unit_place(bu.cup(size)[0], T) if size != 34 else lower)
+        for name in ("caps", "plate", "pcb", "posts", "screws", "battery", "view_cover", "sockets"):
+            if name in p and (unit ^ p[name]).volume() > 0.01:
+                problems.append(f"{size}mm: 下ケース・カップが {name} に当たる")
+        if (unit ^ tr).volume() > 0.01:
+            problems.append(f"{size}mm: 下ケースがトレイに当たる")
+        for ref, solid in cu.back_parts("right").items():
+            if (unit ^ solid.translate([0, 0, -cu.TRAVEL])).volume() > 0.01:
+                problems.append(f"{size}mm: 下ケースが基板の裏の部品 {ref} に当たる")
+        if (cu.unit_place(k.cyl(0, 0, -50, 50, 1), T) ^ lower).volume() < 1:
+            problems.append(f"{size}mm: 下ケースの形がおかしい")
     return problems
 
 
@@ -245,12 +226,12 @@ def main():
     items = {
         "tray_left": tray("left"),
         "tray_right": tray("right"),
-        "ball_base": ball_base(),
+        "ball_lower": on_bed(cu.lower_case(25)[0]),                            # 底 (平ら) を下
         "ball_cup_25": bu.cup(25)[0],
         "ball_cup_19": bu.cup(19)[0],
         "ball_cover_25": cu.claw_cover(25)[0],
         "ball_cover_19": cu.claw_cover(19)[0],
-        "ball_base_34": ball_base_34(),
+        "ball_lower_34": on_bed(cu.lower_case(34)[0]),
         "ball_hood_34": cu.claw_cover(34)[0],
         "switch_cover_left": on_bed(cu.switch_cover("left"), (0, 90, 0)),      # 外の面を下
         "switch_cover_right": on_bed(cu.switch_cover("right"), (0, -90, 0)),

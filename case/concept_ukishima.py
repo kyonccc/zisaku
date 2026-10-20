@@ -82,12 +82,12 @@ LEDGE34_Z0, LEDGE34_Z1 = HOOK34_Z1 + 0.1, HOOK34_Z1 + 1.3
 
 # --- 爪留めカバー ---
 RING_TOP = min(KEY_TOP + 0.3, 19.75)   # リングの上面 (キーキャップの高さ。ただし 19mm ボールの爪が残るよう 19.75 まで)
-# 爪の向き (上から見て。0° = 右 = Enter の方)。打鍵の指に当たらない所に置く:
+# 爪の向き (上から見て。0° = 右 = Enter の方)。斜め 3 か所:
 #   45°  … 右の 2 つのキー ([ ] 側と N 側) の角と角のあいだ。リングのまわりでキーから一番遠い (約 6mm)
-#   160° … 内側 (左手側の外)。キーも指もない
-#   275° … 手前。キーも指もない
-# 爪どうしのすき間は 115° / 115° / 130°。一番広い 130° の真ん中 (-20°) が親指の来る向き
-CLAWS = (160, 45, 275)
+#   135° … 左奥。315° … 右手前
+# 親指の来る左手前 (225°・ボールを傾ける向き) に 180° の開き → ボールを前後 (上下スクロール)・左右に転がしても
+# 親指が爪に当たらない。爪はどれも赤道より上でボールにかぶるので、開きが広くてもボールは抜けない
+CLAWS = (45, 135, 315)
 CLAW_OVER = 0.7                   # 爪の先がボールにかぶる幅 (半径で)。これを基準にする
 # 3D プリント (A1 mini などの 0.4mm ノズル・PLA) で折れにくい形
 # 爪の外側の面は、リングの外周 (縦の面) からそのまま立ち上がり、なめらかにボール側へ曲がる
@@ -102,7 +102,7 @@ CLAW_STEPS = 28                   # 曲面を作る輪切りの数
 # 下にくさび形の台を足す。傾けると基板の切り欠きの縁 (左と手前) に当たるので、少し奥 (キーの方) へずらす
 TILT_AZ = 225.0                   # 傾ける向き (上から見て。225° = 左手前)
 TILT_SHIFT = {0: (0.0, 0.0), 15: (1.0, 1.0), 30: (1.5, 1.5)}   # 角度ごとのずらす量 (計算で当たらないと確かめた値)
-TRIAL_CLAWS = (45, 135, 315)      # 爪を斜め 3 か所に → 親指の来る左手前に 180° の開き (上下・左右に転がしても爪に当たらない)
+TRIAL_CLAWS = CLAWS
 
 
 def ball_tilt(m, tilt):
@@ -486,7 +486,7 @@ def claw_cover(size, claw_angles=None):
     return m + spigot + lugs, tip_z
 
 
-def base34():
+def base34(cable_slot=True):
     """34mm 専用: 土台とカップが一体の受け。底は 25 / 19mm の土台と同じ (センサー・ネジ 3 本・ケーブルの出口)"""
     R = 17.0
     cz = bu.BALL_BOTTOM + R
@@ -501,10 +501,12 @@ def base34():
     cut = [
         k.cube(-bu.SENSOR_W/2 - 0.2, -bu.SENSOR_L/2 - 0.2, bu.BASE_FLOOR - bu.SENSOR_POCKET,
                bu.SENSOR_W/2 + 0.2, bu.SENSOR_L/2 + 0.2, bu.BASE_FLOOR + 1),
-        bu.rot_z(k.cube(-4.5, U34_R - 3, bu.BASE_FLOOR - bu.SENSOR_POCKET, 4.5, U34_R + 1, 5.5), bu.CABLE_ANGLE - 90),
         mf.Manifold.sphere(R + 0.5, 160).translate([0, 0, cz]),                          # ボールの受け
         k.cyl(0, 0, bu.CUP_BOTTOM - 1, cz, bu.LENS_HOLE_R),                               # センサーの窓
     ]
+    if cable_slot:
+        cut.append(bu.rot_z(k.cube(-4.5, U34_R - 3, bu.BASE_FLOOR - bu.SENSOR_POCKET, 4.5, U34_R + 1, 5.5),
+                            bu.CABLE_ANGLE - 90))
     # ベアリング (ボールの下寄り 55° で支える)。軸のネジはユニットの外から締める
     t = math.radians(bu.CUPS[34]["contact"])
     d = R + bu.BRG_R
@@ -532,6 +534,131 @@ def base34():
     return m, {"cz": cz}
 
 
+# ===== 斜めのボールユニット (下ケース・上ケース) =====
+# ユニット (土台＝下ケース・カップと爪カバー＝上ケース) を左手前 (TILT_AZ) へ BALL_TILT 度傾けて、できるだけ沈める。
+#  - 沈める深さは「センサー基板の一番低い角の下に LOWER_SKIN の床が残る」まで (センサーが一番下の部品)
+#  - 机より下になる所は切り落とし、底は机と平行に平ら。傾いた底より下 (高い側) は台で埋める (下ケースと一体)
+#  - 下ケースはトレイの床の穴に入り、外の耳 3 か所を床の上に乗せて、トレイの裏から M2 皿ネジで留める (耳にインサート)
+#  - 上ケース (カップ・爪カバー) はボールの大きさごとに交換。34mm は下ケースごと交換
+#  - センサーのケーブルは、下ケースの底の穴から台の中を下りて、右 (コネクタ J の方) の窓から床の上へ出す
+BALL_TILT = 20.0                  # 傾ける角度 (度)。お試しの模型で決める (19 / 25mm)
+TILT_34 = 0.0                     # 34mm は人差し指・中指で転がすので真上向き (傾けるとフードがトレイの外へ出る)
+LOWER_SKIN = 0.6                  # センサー基板の下の床の一番薄い所
+BALL_SHIFT = (0.0, 0.0)           # ユニットを置く位置 (トレイの穴の中心＝基板の ball からのずれ)
+LOWER_TABS = (70, 150, 300)       # 耳の向き (上から見て・下ケースの底の中心から)
+LOWER_TAB_R0, LOWER_TAB_R1, LOWER_TAB_SCREW_R, LOWER_TAB_W = 12.0, 22.5, 20.0, 7.0
+LOWER_TAB_H = bu.INSERT_DEPTH + 0.6
+
+
+def _tilt_z(x, y, z, tilt=None):
+    """ユニットの座標の点が、傾けたあと (沈める前) にどの高さに来るか"""
+    t, a = math.radians(BALL_TILT if tilt is None else tilt), math.radians(TILT_AZ)
+    return z * math.cos(t) - (x * math.cos(a) + y * math.sin(a)) * math.sin(t)
+
+
+def ball_lift(tilt=None):
+    """センサー基板のくぼみの底 (4 隅) が LOWER_SKIN の高さに来る持ち上げ量"""
+    w, l = bu.SENSOR_W / 2 + 0.2, bu.SENSOR_L / 2 + 0.2
+    z0 = bu.BASE_FLOOR - bu.SENSOR_POCKET
+    return LOWER_SKIN - min(_tilt_z(sx * w, sy * l, z0, tilt) for sx in (-1, 1) for sy in (-1, 1))
+
+
+def unit_place(m, tilt=None):
+    """ユニットの座標 (底の中心が原点・z が軸) の形を、トレイの上の本当の位置へ"""
+    tilt = BALL_TILT if tilt is None else tilt
+    bx, by = k.HALVES["right"]["ball"]
+    return ball_tilt(m, tilt).translate([bx + BALL_SHIFT[0], by + BALL_SHIFT[1], ball_lift(tilt)])
+
+
+def _proj(m):
+    """形を真上から見た外形 (shapely)"""
+    from shapely.geometry import Polygon
+    from shapely.ops import unary_union
+    return unary_union([Polygon(p).buffer(0) for p in m.project().to_polygons() if len(p) >= 3])
+
+
+def size_tilt(size):
+    return TILT_34 if size == 34 else BALL_TILT
+
+
+def lower_foot(size=25):
+    """下ケースの底の外形 (傾いた底を真上から見た形)"""
+    r = U34_R if size == 34 else bu.UNIT_R
+    return _proj(unit_place(k.cyl(0, 0, 0, 0.01, r), size_tilt(size)))
+
+
+_LOWER_CACHE = {}
+
+
+def lower_case(size=25):
+    key = (size, BALL_TILT, TILT_34, BALL_SHIFT)
+    if key not in _LOWER_CACHE:
+        _LOWER_CACHE[key] = _lower_case(size)
+    return _LOWER_CACHE[key]
+
+
+def _lower_case(size=25):
+    """下ケース: 傾けた土台＋その下の台。底は z=0 で平ら。19 / 25mm は共用 (size=25)、34mm は専用"""
+    r = U34_R if size == 34 else bu.UNIT_R
+    inner = (U34_R - 3.0) if size == 34 else (bu.BASE_IN_R - 0.3)
+    base = base34(cable_slot=False)[0] if size == 34 else bu.base(cable_slot=False)
+    # 元の土台の底ネジの穴は使わない (トレイへは耳で留める) ので埋める
+    base = base + k.union([k.cyl(*bu.polar(k.BALL_SCREW_R, a), -1, bu.INSERT_DEPTH + 0.01, bu.INSERT_R + 0.01)
+                           for a in k.BALL_SCREW_ANGLES])
+    T = size_tilt(size)
+    m = unit_place(base, T)
+    foot = lower_foot(size)
+    below = unit_place(k.cyl(0, 0, -80, 0.01, r + 30), T)                   # 傾いた底より下
+    m = m + (k.prism(foot, -1, 60) ^ below)
+    # 耳 (床の上に乗る・下からインサート)
+    cx, cy = foot.centroid.x, foot.centroid.y
+    tabs, holes = [], []
+    for a in LOWER_TABS:
+        half_ = math.degrees(LOWER_TAB_W / 2 / LOWER_TAB_SCREW_R)
+        tabs.append(bu.sector(LOWER_TAB_R0, LOWER_TAB_R1, a - half_, a + half_, FLOOR, FLOOR + LOWER_TAB_H).translate([cx, cy, 0]))
+        x, y = bu.polar(LOWER_TAB_SCREW_R, a)
+        holes.append(k.cyl(cx + x, cy + y, FLOOR - 1, FLOOR + bu.INSERT_DEPTH, bu.INSERT_R))
+    room = unit_place(k.cyl(0, 0, bu.BASE_FLOOR - 0.01, 100, r - 1.5), T)      # ユニットの中 (耳が入り込まない。壁とは重ねる)
+    m = m + (k.union(tabs) - room)
+    # センサーのケーブル: 底の穴 → 台の中をまっすぐ下へ → 右の窓から出る
+    sx0 = bu.SENSOR_W / 2 + 0.6
+    slot = unit_place(k.cube(sx0, -4.5, -0.5, inner, 4.5, bu.BASE_FLOOR + 0.2), T)
+    shaft = k.prism(_proj(slot), FLOOR, 60) ^ unit_place(k.cyl(0, 0, -80, bu.BASE_FLOOR, inner), T)
+    sb = slot.bounding_box()
+    # 窓はトレイの床の上 (ケーブルは床の上を通って、基板の裏のコネクタへ)
+    window = k.cube(sb[0], (sb[1] + sb[4]) / 2 - 4.5, FLOOR, sb[0] + 40, (sb[1] + sb[4]) / 2 + 4.5, FLOOR + 4.0)
+    m = m - slot - shaft - (window - room) - k.union(holes)
+    m = m.trim_by_plane([0, 0, 1], 0.0)
+    m = k.union([p for p in m.decompose() if p.volume() > 1.0])          # 計算でできる小さなかけらを除く
+    return m, {"tabs": [(cx + bu.polar(LOWER_TAB_SCREW_R, a)[0],
+                                                       cy + bu.polar(LOWER_TAB_SCREW_R, a)[1]) for a in LOWER_TABS],
+                                              "center": (cx, cy)}
+
+
+def lower_hole():
+    """トレイの床の穴 (25mm 用と 34mm 用、どちらの下ケースも入る)"""
+    from shapely.ops import unary_union
+    return unary_union([_proj(lower_case(s)[0].trim_by_plane([0, 0, -1], -(FLOOR + 0.01))) for s in (25, 34)]).buffer(0.3)
+
+
+def ball_set(size=25):
+    """傾けて置いたユニット一式 (下ケース・カップ・カバー・ボール) と、ボールの中心"""
+    R = bu.CUPS[size]["R"]
+    cz = bu.BALL_BOTTOM + R
+    T = size_tilt(size)
+    lower, info = lower_case(34 if size == 34 else 25)
+    out = {"ball_base": lower}
+    if size == 34:
+        cover, _ = claw_cover(34)
+    else:
+        out["ball_cup"] = unit_place(bu.cup(size)[0], T)
+        cover, _ = claw_cover(size, TRIAL_CLAWS)
+    out["ball_cover"] = unit_place(cover, T)
+    out["ball"] = unit_place(mf.Manifold.sphere(R, 128).translate([0, 0, cz]), T)
+    info["ball_top"] = out["ball"].bounding_box()[5]
+    return out, info
+
+
 def half(side, size=25):
     outer = k.load(f"board_{side}")
     cavity = k.load(f"cavity_{side}")
@@ -542,7 +669,7 @@ def half(side, size=25):
     tray = k.prism(outer, 0, RIM) - k.prism(outer.buffer(-4.0), FLOOR, RIM + 1)
     if side == "right":
         bx, by = k.HALVES["right"]["ball"]
-        tray = tray - k.cyl(bx, by, -1, FLOOR + 1, (U34_R if size == 34 else bu.UNIT_R) + 0.3)
+        tray = tray - k.prism(lower_hole(), -1, FLOOR + 1)
     # 電池のくぼみ (底 0.5mm) と、まわりのガイド
     ex, ey = BATTERY[side]
     tray = tray - k.cube(ex - BAT_W/2, ey - BAT_H/2, BATTERY_SKIN, ex + BAT_W/2, ey + BAT_H/2, FLOOR + 1)
@@ -621,20 +748,8 @@ def half(side, size=25):
                          k.cyl(ex, ey, PCB_T + ENC_SHAFT_L - 0.6, PCB_T + ENC_SHAFT_L + 1, ENC_KNOB_D / 2 - 1.3)) + \
                         k.cube(ex - 6.0, ey - 6.0, PCB_T, ex + 6.0, ey + 6.0, PCB_T + ENC_BODY_H)
     else:
-        bx, by = k.HALVES["right"]["ball"]
-
-        def at(m):
-            return m.translate([bx, by, BALL_Z0])
-        cover, _ = claw_cover(size)
-        if size == 34:
-            base, info = base34()
-            parts["ball_base"] = at(base)
-        else:
-            cup, info = bu.cup(size)
-            parts["ball_base"] = at(bu.base())
-            parts["ball_cup"] = at(cup)
-        parts["ball_cover"] = at(cover)
-        parts["ball"] = at(mf.Manifold.sphere(bu.CUPS[size]["R"], 128).translate([0, 0, info["cz"]]))
+        ball, _ = ball_set(size)
+        parts.update(ball)
     return parts
 
 
