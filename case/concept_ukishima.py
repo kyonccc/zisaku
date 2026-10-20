@@ -97,6 +97,27 @@ CLAW_ROOT_W = 14.0                # 爪の幅 (根元・リングの上面で・
 CLAW_TIP_W = 4.0                  # 爪の幅 (先・mm)
 CLAW_STEPS = 28                   # 曲面を作る輪切りの数
 
+# --- ボールユニットを傾ける (お試し中。角度はまだ決めていない) ---
+# ユニット (土台・カップ・カバー) をそのまま左手前 (225°) へ傾ける。底の低い側の縁が机 (z=0) に来るまで持ち上げ、
+# 下にくさび形の台を足す。傾けると基板の切り欠きの縁 (左と手前) に当たるので、少し奥 (キーの方) へずらす
+TILT_AZ = 225.0                   # 傾ける向き (上から見て。225° = 左手前)
+TILT_SHIFT = {0: (0.0, 0.0), 15: (1.0, 1.0), 30: (1.5, 1.5)}   # 角度ごとのずらす量 (計算で当たらないと確かめた値)
+TRIAL_CLAWS = (45, 135, 315)      # 爪を斜め 3 か所に → 親指の来る左手前に 180° の開き (上下・左右に転がしても爪に当たらない)
+
+
+def ball_tilt(m, tilt):
+    """ユニットの座標 (底の中心が原点) のまま、左手前へ tilt 度傾ける (ユニットの向きは回さない)"""
+    return m.rotate([0, 0, -TILT_AZ]).rotate([0, tilt, 0]).rotate([0, 0, TILT_AZ])
+
+
+def ball_place(m, tilt, r=None):
+    """傾けたユニットをトレイの穴の位置へ置く。r = 土台の半径 (低い側の縁が机に来る高さを決める)"""
+    bx, by = k.HALVES["right"]["ball"]
+    sx, sy = TILT_SHIFT[tilt]
+    lift = (r or bu.UNIT_R) * math.sin(math.radians(tilt))
+    return ball_tilt(m, tilt).translate([bx + sx, by + sy, BALL_Z0 + lift])
+
+
 # --- 基板の留め方 (下から留める・上から見てネジが見えない) ---
 # 基板の裏に M2 の「はんだ付けナット (SMT ナット)」を付け、トレイの裏から M2 ネジで留める。
 # プレートには穴もネジ山も無い → 上から見えるのはキーとプレートだけ。プレートの素材を替えても加工はいらない
@@ -437,7 +458,7 @@ def chamfer_top(m, z, r):
     return m - (k.cyl(0, 0, z - 0.8, z + 0.01, r + 1) - k.cyl(0, 0, z - 0.8, z + 0.01, r, r - 0.8))
 
 
-def claw_cover(size):
+def claw_cover(size, claw_angles=None):
     """低いリング＋爪 3 本の「爪留め」カバー。ひねってロックする"""
     R_ = bu.CUPS[size]["R"]
     cz = bu.BALL_BOTTOM + R_
@@ -456,7 +477,7 @@ def claw_cover(size):
         return m - ball, tip_z
     ring = k.cyl(0, 0, bu.CUP_TOP, RING_TOP, bu.UNIT_R) - k.cyl(0, 0, bu.CUP_TOP - 1, RING_TOP + 1, R_ + 0.8)
     ring = chamfer_top(ring, RING_TOP, bu.UNIT_R)
-    cl, tip_z = claws(size, cz, rin, RING_TOP, bu.UNIT_R, CLAWS, CLAW_ROOT_W, CLAW_TIP_W, CLAW_TIP_T)
+    cl, tip_z = claws(size, cz, rin, RING_TOP, bu.UNIT_R, claw_angles or CLAWS, CLAW_ROOT_W, CLAW_TIP_W, CLAW_TIP_T)
     m = (ring + cl) - ball                                                  # 爪の内側をボールに沿わせる
     spigot = (k.cyl(0, 0, bu.RECESS_Z + 0.2, bu.CUP_TOP + 0.01, bu.SPIGOT_R) -
               k.cyl(0, 0, bu.RECESS_Z, bu.CUP_TOP + 1, R_ + 0.5))

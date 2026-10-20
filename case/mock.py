@@ -4,6 +4,7 @@
     npx ergogen@4.1.0 pcb/ergogen -o pcb/ergogen/output   # 先に外形を作る
     python3 case/mock.py            # case/parts_dims.json の寸法で → case/stl/mock/
     python3 case/mock.py --worst    # 候補で一番大きい部品の寸法 (case/parts_dims_worst.json) で → case/stl/mock_worst/
+    python3 case/mock.py --tilt     # ボールの角度のお試し (25mm・0° / 15° / 30°・左手前へ傾ける) → case/stl/mock_tilt/
 
 できるもの (case/stl/mock/):
     mock_tray_left.stl / mock_tray_right.stl … トレイ (本物と同じ形。柱だけポロンの分まで高くして、上の模型を乗せる)
@@ -77,7 +78,44 @@ def mock_ball(size):
     return body + ball
 
 
+TILTS = (0, 15, 30)
+
+
+def mock_ball_tilt(size, tilt):
+    """角度のお試し: ユニットの外形 (土台＋カップ＋爪留めカバー＋ボール) を左手前へ傾け、下にくさびの台を足す。
+    爪は斜め 3 か所 (cu.TRIAL_CLAWS)。トレイの穴 (半径 18) にそのまま差し替えられる"""
+    R = bu.CUPS[size]["R"]
+    cz = bu.BALL_BOTTOM + R
+    cover, _ = cu.claw_cover(size, cu.TRIAL_CLAWS)
+    ball = mf.Manifold.sphere(R, 128).translate([0, 0, cz]).trim_by_plane([0, 0, 1], cu.RING_TOP - 0.01)
+    unit = k.cyl(0, 0, 0, cu.RING_TOP - 0.8, bu.UNIT_R) + cover + ball
+    m = cu.ball_place(unit, tilt)
+    if tilt:
+        bx, by = k.HALVES["right"]["ball"]
+        below = cu.ball_place(k.cyl(0, 0, -60, 0.01, 40), tilt)       # 傾けた底より下
+        m = m + (k.cyl(bx, by, 0, 40, cu.U34_R - 0.1) ^ below)       # くさびの台 (トレイの穴に入る太さ)
+    return m
+
+
+def main_tilt():
+    out = os.path.join(HERE, "stl", "mock_tilt")
+    os.makedirs(out, exist_ok=True)
+    top, tray = mock_top("right"), mock_tray("right")
+    for t in TILTS:
+        m = mock_ball_tilt(25, t)
+        b = m.bounding_box()
+        hit = [n for n, o in (("上の模型", top), ("トレイ", tray)) if (m ^ o).volume() > 0.05]
+        k.save_stl(m.translate([-(b[0] + b[3]) / 2, -(b[1] + b[4]) / 2, -b[2]]),
+                   os.path.join(out, f"mock_ball_25_tilt{t:02d}.stl"))
+        R = bu.CUPS[25]["R"]
+        top_z = cu.ball_place(k.cyl(0, 0, bu.BALL_BOTTOM + R, bu.BALL_BOTTOM + R + 0.01, 0.01), t).bounding_box()[5] + R
+        print(f"  mock_ball_25_tilt{t:02d}.stl  ({b[3]-b[0]:.0f} × {b[4]-b[1]:.0f} × {b[5]-b[2]:.0f}mm)  "
+              f"ボールの上 {top_z:.1f}mm  {'× ' + '・'.join(hit) + ' に当たる' if hit else '当たりなし'}")
+
+
 def main():
+    if "--tilt" in sys.argv:
+        return main_tilt()
     out = os.path.join(HERE, "stl", "mock" if PROFILE == "normal" else "mock_worst")
     print(f"寸法: {cu.DIMS_FILE}")
     os.makedirs(out, exist_ok=True)
