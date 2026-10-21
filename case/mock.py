@@ -10,6 +10,7 @@
     mock_tray_left.stl / mock_tray_right.stl … トレイ (本物と同じ形。柱だけポロンの分まで高くして、上の模型を乗せる)
     mock_top_left.stl  / mock_top_right.stl  … 基板＋プレート＋スイッチ＋キーキャップ＋nice!view (カバー込み)
                                                ＋エンコーダー (左) を 1 つにした模型。柱の上に乗せるだけ
+    mock_deck.stl                                … ボールのまわりのデッキ (19 / 25mm の時。トレイに乗せる)
     mock_ball_19.stl / mock_ball_25.stl / mock_ball_34.stl … ボールユニットの上の部品 (カップ＋カバー＋ボール) の外形。
                                                トレイと一体の受けの穴に差し込む (受けは左手前へ 20° 傾いている)
 
@@ -133,6 +134,7 @@ def main():
              "mock_top_left": mock_top("left"), "mock_top_right": mock_top("right")}
     for size in (19, 25, 34):
         items[f"mock_ball_{size}"] = mock_ball(size, world=False)      # 印刷はカップの底を下
+    items["mock_deck"] = cu.ball_deck(25).rotate([180, 0, 0])            # デッキ (上の面を下・プレートと同じ色で)
     for name, m in items.items():
         n = len(m.decompose())
         if n != 1:

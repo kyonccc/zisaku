@@ -793,6 +793,150 @@ def ball_clearance():
     return c + unit_place(ring) + unit_place(k.cyl(0, 0, bu.BASE_H - 0.01, 80, HOOD34_OUT + 0.5))
 
 
+LIP_IN = 2.5                      # リップが基板の縁の下へ入る幅
+
+
+def inner_lip(side, outer, pcb):
+    """縁の内側のリップ: 基板の縁の下 LIP_IN まで、基板が沈んでも当たらない高さ。裏の部品・電池の所は低く/よける"""
+    reg = outer.buffer(-0.5).difference(pcb.buffer(-LIP_IN))
+    lip = k.prism(reg, FLOOR - 0.01, PCB_B - TRAVEL - 0.3)
+    for part in back_parts(side).values():
+        b = part.bounding_box()
+        lip = lip - k.prism(_proj(part).buffer(0.6), b[2] - TRAVEL - 0.3, 60)
+    ex, ey = BATTERY[side]
+    lip = lip - k.cube(ex - BAT_W / 2 - 0.3, ey - BAT_H / 2 - 0.3, FLOOR - 1, ex + BAT_W / 2 + 0.3, ey + BAT_H / 2 + 0.3, 60)
+    for x, y in POSTS[side]:                                                # 柱のまわり (ネジ・ナット)
+        lip = lip - k.cyl(x, y, FLOOR, 60, PORON_OD / 2 + 0.5)
+    return lip
+
+
+# ===== ボールのまわりのデッキ (別部品・プレートと同じ色で印刷) =====
+# 基板の四角い外形の中で、ボールのまわりの切り欠きを、プレートの上面の高さまで埋める板。
+# 「プレート＋デッキ」が 1 枚の四角い島に見える。下の「キール」がトレイ (リップ・受けのアール) に乗り、トレイの裏から M2 ネジで留める。
+# 外側の縁の下はトレイを低く削って、基板と同じ影のすき間を見せる。34mm の時はフードがこの角に来るので、デッキは付けない
+DECK_UNDERCUT = 1.5               # デッキの外側の縁の下の影の奥行き (細い所でもキールが残るように)
+DECK_SCREW_R = 0.8                # デッキの下穴 (M2 タッピング)
+
+
+def deck_region():
+    from shapely.geometry import Point, box
+    pcb = k.load("pcb_right")
+    bx, by = k.HALVES["right"]["ball"]
+    rect = box(*pcb.bounds).buffer(-4.25).buffer(4.25)
+    return rect.difference(pcb.buffer(RIM_GAP)).intersection(Point(bx, by).buffer(40)), rect
+
+
+def deck_clearance(size):
+    c = unit_place(k.cyl(0, 0, -80, 80, bu.UNIT_R + 0.4))                   # ユニット (受け・カップ・球押さえ)
+    if size == 34:
+        c = c + ball_clearance()                                             # フードが回る所
+    return c
+
+
+_DECK_CACHE = {}
+
+
+def deck_plan(size=25):
+    """デッキを上から見た形: 四角の切り欠き − ユニットの通る所。細すぎる所 (幅 2mm 未満) は捨てる"""
+    from shapely.geometry import Polygon, MultiPolygon
+    reg, _ = deck_region()
+    sec = _proj(deck_clearance(size).trim_by_plane([0, 0, 1], PCB_B).trim_by_plane([0, 0, -1], -PLATE_T))
+    g = reg.difference(sec).buffer(-1.0, join_style=1).buffer(1.0, join_style=1)
+    polys = [q for q in getattr(g, "geoms", [g]) if q.area > 15.0]
+    return MultiPolygon(polys) if len(polys) > 1 else (polys[0] if polys else Polygon())
+
+
+def deck_band():
+    """デッキの外側の縁の下 (影のすき間): トレイを縁の高さまで低くする帯"""
+    reg, rect = deck_region()
+    return k.prism(reg.difference(rect.buffer(-DECK_UNDERCUT)), RIM, 60) - unit_place(k.cyl(0, 0, -80, 80, bu.UNIT_R + 0.01))
+
+
+def deck_support():
+    """デッキの下にあるトレイ (縁・リップ・受け) の形"""
+    outer, pcb = k.load("board_right"), k.load("pcb_right")
+    solid, voids, _c = socket()
+    tr = k.prism(outer, 0, RIM) - k.prism(outer.buffer(-4.0), FLOOR, RIM + 1) + inner_lip("right", outer, pcb) + solid
+    return tr - voids - deck_band()
+
+
+def ball_deck(size=25):
+    """デッキ (トレイの上の本当の位置・19 / 25mm 用)。上の板＋下の「キール」(外側の縁から影の奥行きだけ内側)。
+    キールの下面はトレイ (リップ・受けのアール) にぴったり乗る"""
+    key = (size, BALL_TILT)
+    if key in _DECK_CACHE:
+        return _DECK_CACHE[key]
+    _, rect = deck_region()
+    plan = deck_plan(size)
+    keel = plan.intersection(rect.buffer(-DECK_UNDERCUT))
+    m = k.prism(plan, PCB_B, PLATE_T) + k.prism(keel, FLOOR, PCB_B + 0.01)
+    m = m - deck_clearance(size) - deck_support()
+    for x, y in deck_screws():
+        m = m - k.cyl(x, y, 0, PCB_B + 2.5, DECK_SCREW_R)
+    pin = deck_pin()
+    if pin:
+        m = m - k.cyl(pin[0], pin[1], 0, deck_pin_top() + 0.3, DECK_PIN_R + 0.15)
+    m = k.union([p for p in m.decompose() if p.volume() > 20.0])
+    _DECK_CACHE[key] = m
+    return m
+
+
+def deck_tray_base():
+    """デッキの下のトレイ (受けとアール) の形"""
+    solid, voids, clips = socket()
+    return solid - voids
+
+
+def deck_screws():
+    """デッキを留めるネジ (トレイの裏から M2 皿) の位置: キールの中 (縁から 1.6mm 以上内側)、ケーブルの通り道をよける"""
+    from shapely.geometry import Point
+    import numpy as np
+    _, rect = deck_region()
+    core = deck_plan(25).intersection(rect.buffer(-DECK_UNDERCUT)).buffer(-1.3)
+    if core.is_empty:
+        return []
+    solid, voids, _c = socket()
+    cup = deck_clearance(25)                                                 # 19 / 25mm のユニット (デッキは 19 / 25mm の時だけ)
+    cands = []
+    b = core.bounds
+    for x in np.arange(b[0], b[2] + 0.01, 0.5):
+        for y in np.arange(b[1], b[3] + 0.01, 0.5):
+            rod = k.cyl(x, y, 0, PCB_B + 2.5, 1.2)
+            if core.contains(Point(x, y)) and (rod ^ voids).volume() < 0.01 and (rod ^ cup).volume() < 0.01:
+                cands.append((float(x), float(y)))
+    if not cands:
+        return []
+    _, rect2 = deck_region()
+    corner = (rect2.bounds[0], rect2.bounds[1])
+    return [min(cands, key=lambda c: math.dist(c, corner) - 0.0)][:1]      # 角に近い 1 本
+
+
+DECK_PIN_R, DECK_PIN_H = 1.0, 2.0  # デッキの向きを決めるピン (トレイと一体・デッキの穴に入る)
+
+
+def deck_pin_top():
+    """ピンの先: ピンの所のトレイ (リップなど) の上面から DECK_PIN_H"""
+    p = deck_pin.__wrapped__() if hasattr(deck_pin, "__wrapped__") else None
+    return PCB_B - TRAVEL - 0.3 + DECK_PIN_H
+
+
+def deck_pin():
+    """位置決めピン: キールの中で、ネジから一番遠い所"""
+    from shapely.geometry import Point
+    import numpy as np
+    _, rect = deck_region()
+    core = deck_plan(25).intersection(rect.buffer(-DECK_UNDERCUT)).buffer(-(DECK_PIN_R + 0.8))
+    sc = deck_screws()
+    if core.is_empty or not sc:
+        return None
+    b = core.bounds
+    hood = ball_clearance()                                                  # 34mm のフード (ピンはトレイに残るのでよける)
+    pts = [(float(x), float(y)) for x in np.arange(b[0], b[2] + 0.01, 0.5) for y in np.arange(b[1], b[3] + 0.01, 0.5)
+           if core.contains(Point(x, y)) and
+           (k.cyl(float(x), float(y), FLOOR, deck_pin_top(), DECK_PIN_R + 0.3) ^ hood).volume() < 0.01]
+    return max(pts, key=lambda q: math.dist(q, sc[0])) if pts else None
+
+
 def half(side, size=25):
     outer = k.load(f"board_{side}")
     cavity = k.load(f"cavity_{side}")
@@ -800,12 +944,17 @@ def half(side, size=25):
     plate = k.load(f"plate_{side}").intersection(cavity.buffer(-0.5, join_style=2))
     parts = {}
     # トレイ (低い枠と床)
-    # トレイ: 床＋全周の縁 (プレートの上面と同じ高さ)。縁の内側は基板・プレート・裏の部品の形に沿って RIM_GAP あける
-    # → 基板とプレートは縁に囲まれた中で、柱のポロンの上に浮く (ガスケット)。ボールのまわりの切り欠きはデッキになる
-    tray = k.prism(outer, 0, FLOOR) + rim_solid(side, outer, pcb, plate)
+    # トレイ: 床＋低い縁 (基板の下面より 1.5mm 低い → 一周同じ影のすき間で、基板とプレートが浮いて見える)
+    # ＋縁の内側のリップ (基板の縁の下に入り、すき間から電池などが見えない)。ボールのまわりは別部品のデッキ
+    tray = k.prism(outer, 0, RIM) - k.prism(outer.buffer(-4.0), FLOOR, RIM + 1) + inner_lip(side, outer, pcb)
     if side == "right":
         solid, voids, clips = socket()                                          # ボールの受け (トレイと一体)
-        tray = ((tray + solid) - voids + clips - ball_clearance()).trim_by_plane([0, 0, 1], 0.0)
+        tray = ((tray + solid) - voids + clips - ball_clearance() - deck_band()).trim_by_plane([0, 0, 1], 0.0)
+        for x, y in deck_screws():                                              # デッキを留めるネジ (裏から M2 皿)
+            tray = tray - k.cyl(x, y, -1, PCB_B + 1, 1.15) - k.cyl(x, y, -0.01, 1.2, 2.2, 1.0)
+        pin = deck_pin()
+        if pin:                                                                 # デッキの位置決めピン
+            tray = tray + k.cyl(pin[0], pin[1], FLOOR, deck_pin_top(), DECK_PIN_R)
         tray = max(tray.decompose(), key=lambda m_: m_.volume())               # 計算でできる薄いかけらを除く
     # 電池のくぼみ (底 0.5mm) と、まわりのガイド
     ex, ey = BATTERY[side]
@@ -884,6 +1033,8 @@ def half(side, size=25):
     else:
         ball, _ = ball_set(size)
         parts.update(ball)
+        if size != 34:
+            parts["deck"] = ball_deck(25)
     return parts
 
 
@@ -892,7 +1043,7 @@ COLORS = {  # 色・分解図での持ち上げ量
     "pcb": ("#202124", 16), "plate": ("#3a3b3f", 26), "switch": ("#8e949b", 34), "caps": ("#f3f0e9", 46),
     "view": ("#11181f", 26), "knob": ("#2b2d31", 46), "screws": ("#a9adb3", 0), "magsafe": ("#8a8f98", -14), "battery": ("#5b7fa6", 4), "magnets": ("#8a8f98", -14), "sockets": ("#e8e8e8", 16),
     "view_cover": ("#2b2d31", 40), "switch_cover": ("#2b2d31", 20), "slider": ("#b8432f", 30),
-    "ball_base": ("#d9d5cc", 0), "ball_cup": ("#ece7dd", 22), "sensor": ("#1f6f4a", 10), "ball_cover": ("#2b2d31", 44), "ball": ("#b8432f", 62),
+    "ball_base": ("#d9d5cc", 0), "ball_cup": ("#ece7dd", 22), "sensor": ("#1f6f4a", 10), "deck": ("#3a3b3f", 26), "ball_cover": ("#2b2d31", 44), "ball": ("#b8432f", 62),
 }
 
 
