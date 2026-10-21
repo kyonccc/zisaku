@@ -242,7 +242,7 @@ def main():
     for p in problems:
         print("  ×", p)
     print("確認: 問題なし" if not problems else f"確認: 問題 {len(problems)} 件")
-    print(f"高さ: 床 {cu.FLOOR} / トレイの縁 {cu.RIM:.1f} / 基板 {cu.PCB_B:.2f}〜{cu.PCB_T:.2f} / "
+    print(f"高さ: 床 {cu.FLOOR} / トレイの縁 {cu.RIM_TOP:.2f} / 基板 {cu.PCB_B:.2f}〜{cu.PCB_T:.2f} / "
           f"プレート上 {cu.PLATE_T:.2f} / キーキャップ上 約 {cu.KEY_TOP:.1f}")
     return 1 if problems else 0
 

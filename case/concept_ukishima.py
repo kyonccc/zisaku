@@ -84,8 +84,12 @@ PCB_B = BATTERY_SKIN + BATTERY_T + BATTERY_TOL + 0.1 + TRAVEL + SOCKET_H
 PCB_T = PCB_B + 1.6
 PLATE_B, PLATE_T = PCB_T + 1.0, PCB_T + 2.2
 RIM = PCB_B - 1.5    # トレイの縁 (基板の下面より 1.5mm 低い → 浮いて見える)
+RIM_TOP = None       # 縁の上 (下で PLATE_T に決める)。縁は全周、プレートの上面と同じ高さ (デッキ)
+RIM_GAP = 0.6        # 縁の内側と基板・プレート・基板の裏の部品とのすき間
+RIM_ROUND = 2.0      # 縁の上の外側の角の丸み
 BALL_Z0 = 0.0        # ボールユニットの底 (トレイの床に落とし込む)
 KEY_TOP = PLATE_T + D["plate_to_keytop"]   # キーキャップの上 (Choc v2 ＋ ロープロファイルのキーキャップ)
+RIM_TOP = PLATE_T                         # 縁の上 = プレートの上面
 HOOD34_Z0, HOOD34_TOP = PLATE_T + HOOD34_Z0_ABOVE_PLATE, KEY_TOP + HOOD34_TOP_ABOVE_KEYS
 HOOK34_Z0, HOOK34_Z1 = HOOD34_Z0, HOOD34_Z0 + 1.0
 LEDGE34_Z0, LEDGE34_Z1 = HOOK34_Z1 + 0.1, HOOK34_Z1 + 1.3
@@ -388,6 +392,7 @@ def switch_slider(side):
 def switch_pocket(side):
     """トレイの壁を掘る所 (カバーの台が入る) と、裏からのネジ穴"""
     m = _uv_cube(-0.5, 6.0, SWC_V0 - 0.1, SWC_V1 + 0.1, SWC_POCKET_Z, 30)
+    m = m + _uv_cube(SWC_ROOF_U0 - 0.5, 6.0, SWC_V0 - 0.1, SWC_V1 + 0.1, SWC_ROOF_Z0 - 0.3, 30)   # 屋根の内側の張り出し (全周の縁をよける)
     for u, v in SWC_SCREWS:
         m = m + k.cyl(u, v, -1, SWC_POCKET_Z + 0.1, 1.15) + k.cyl(u, v, -0.01, 1.2, 2.2, 1.0)
     return _pwr_place(side, m)
@@ -766,6 +771,28 @@ def ball_set(size=25):
     return out, info
 
 
+def rim_solid(side, outer, pcb, plate):
+    """全周の縁 (床の上〜RIM_TOP)。外側の上の角は RIM_ROUND で丸める"""
+    from shapely.ops import unary_union
+    cav = unary_union([pcb, plate] + [_proj(s) for s in back_parts(side).values()]).buffer(RIM_GAP, join_style=1)
+    top, r = RIM_TOP, RIM_ROUND
+    m = k.prism(outer.difference(cav), FLOOR - 0.01, top - r)
+    n = 8
+    for i in range(n):
+        z0, z1 = top - r + r * i / n, top - r + r * (i + 1) / n
+        zm = (z0 + z1) / 2 - (top - r)
+        d = r - math.sqrt(max(r**2 - zm**2, 0))
+        m = m + k.prism(outer.buffer(-d, join_style=1).difference(cav), z0 - 0.01, z1)
+    return m
+
+
+def ball_clearance():
+    """ボールユニット (カップの縁・球押さえ・34mm のフードが回る所) のまわりのデッキを、少しあけてくり抜く形"""
+    c = unit_place(k.cyl(0, 0, bu.BASE_H - 0.01, 80, bu.UNIT_R + 0.4))
+    ring = (k.cyl(0, 0, HOOD34_Z0 - 0.4, bu.BASE_H, HOOD34_OUT + 0.5) - k.cyl(0, 0, HOOD34_Z0 - 1, bu.BASE_H + 1, U34_R))
+    return c + unit_place(ring) + unit_place(k.cyl(0, 0, bu.BASE_H - 0.01, 80, HOOD34_OUT + 0.5))
+
+
 def half(side, size=25):
     outer = k.load(f"board_{side}")
     cavity = k.load(f"cavity_{side}")
@@ -773,19 +800,17 @@ def half(side, size=25):
     plate = k.load(f"plate_{side}").intersection(cavity.buffer(-0.5, join_style=2))
     parts = {}
     # トレイ (低い枠と床)
-    tray = k.prism(outer, 0, RIM) - k.prism(outer.buffer(-4.0), FLOOR, RIM + 1)
+    # トレイ: 床＋全周の縁 (プレートの上面と同じ高さ)。縁の内側は基板・プレート・裏の部品の形に沿って RIM_GAP あける
+    # → 基板とプレートは縁に囲まれた中で、柱のポロンの上に浮く (ガスケット)。ボールのまわりの切り欠きはデッキになる
+    tray = k.prism(outer, 0, FLOOR) + rim_solid(side, outer, pcb, plate)
     if side == "right":
-        bx, by = k.HALVES["right"]["ball"]
         solid, voids, clips = socket()                                          # ボールの受け (トレイと一体)
-        tray = ((tray + solid) - voids + clips).trim_by_plane([0, 0, 1], 0.0)
+        tray = ((tray + solid) - voids + clips - ball_clearance()).trim_by_plane([0, 0, 1], 0.0)
         tray = max(tray.decompose(), key=lambda m_: m_.volume())               # 計算でできる薄いかけらを除く
     # 電池のくぼみ (底 0.5mm) と、まわりのガイド
     ex, ey = BATTERY[side]
     tray = tray - k.cube(ex - BAT_W/2, ey - BAT_H/2, BATTERY_SKIN, ex + BAT_W/2, ey + BAT_H/2, FLOOR + 1)
     tray = tray + battery_guides(side)
-    scr = battery_screen(side)
-    if scr is not None:
-        tray = tray + scr
     # ソケットの真下は、トレイの縁を少し削る (外側の列のソケットが縁の角の丸みにかかる所)
     try:
         sys.path.insert(0, os.path.join(HERE, "..", "tools"))
