@@ -148,8 +148,8 @@ def cup(size):
     # センサーを押さえる足 (4本・基板の角の近く)
     # (基板の 4 隅の近く。真ん中のレンズと、右の辺の真ん中のコネクタをよける)
     lx, ly0, ly1 = SENSOR_W / 2 - 2.0, -(SENSOR_L / 2 - 2.0), SENSOR_L / 2 - 2.0
-    legs = [k.cyl(x, y, SENSOR_TOP, CUP_BOTTOM + 0.5, 1.2) for x, y in
-            (LEGS or ((-lx, ly0), (lx, ly0), (-lx, ly1), (lx, ly1)))]
+    legs = [mf.Manifold()] + [k.cyl(x, y, SENSOR_TOP, CUP_BOTTOM + 0.5, 1.2) for x, y in
+            (LEGS if LEGS is not None else ((-lx, ly0), (lx, ly0), (-lx, ly1), (lx, ly1)))]
     body = body + k.union(legs)
 
     cut = [

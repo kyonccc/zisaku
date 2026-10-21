@@ -28,5 +28,19 @@
   "sensor_t": 1.6,
   "lens_h": 4.0,
   "sensor_conn_h": 2.9,
-  "sensor_chamfer": 9.0
+  "sensor_chamfer": 3.0,
+  "pmw_gap": 2.4,
+  "pmw_pcb_top": 6.05,
+  "pmw_ref": 8.35,
+  "pmw_back": 9.5,
+  "pmw_pkg_l": 16.2,
+  "pmw_pkg_w": 10.9,
+  "pmw_pkg_oc": 4.7,
+  "pmw_lens_l": 12.9,
+  "pmw_lens_w": 8.25,
+  "pmw_lens_oc": 3.7,
+  "spcb_x0": -6.5,
+  "spcb_x1": 9.5,
+  "spcb_y0": -5.5,
+  "spcb_y1": 12.3
 }

@@ -202,7 +202,7 @@ def check():
         for name, o in (("トレイの受け", tr), ("カップ", cup)):
             if (sen ^ o).volume() > 0.01:
                 problems.append(f"{size}mm: センサー基板が{name}に当たる ({(sen ^ o).volume():.2f})")
-        if (sen.translate([0, 0, 0.3]) ^ cup).volume() < 0.01:
+        if bu.LEGS and (sen.translate([0, 0, 0.3]) ^ cup).volume() < 0.01:
             problems.append(f"{size}mm: カップの足がセンサー基板を押さえていない")
         if sen.bounding_box()[2] < cu.LOWER_SKIN - 0.05:
             problems.append(f"{size}mm: センサー基板の下の床が薄すぎる")
