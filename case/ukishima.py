@@ -179,7 +179,17 @@ def check():
                         problems.append(f"{size}mm: カバーが {name} に当たる (回す角度 {d}°)")
             if (cc ^ tr).volume() > 0.01:
                 problems.append(f"{size}mm: カバーがトレイ (受け) に当たる (回す角度 {d}°)")
-        cup = cu.unit_place(cu.cup34() if size == 34 else bu.cup(size)[0], T)
+        cup_l = cu.cup34() if size == 34 else cu.cup_unit(size)
+        cup = cu.unit_place(cup_l, T)
+        # ボールユニットのロック: 差し込む位置 (-20°) で上から入り、ひねる途中も当たらない (最後の山だけは乗り越える)
+        for dz in (6.0, 3.0, 1.0, 0.0):
+            v = (cu.unit_place(cup_l.rotate([0, 0, -cu.UNIT_TURN]).translate([0, 0, dz]), T) ^ tr).volume()
+            if v > 0.01:
+                problems.append(f"{size}mm: ユニットを差し込む途中 ({dz}mm 上) で受けに当たる ({v:.2f})")
+        for d in (-15, -10, -5):
+            v = (cu.unit_place(cup_l.rotate([0, 0, d]), T) ^ tr).volume()
+            if v > 0.6:
+                problems.append(f"{size}mm: ユニットをひねる途中 ({d}°) で受けに当たる ({v:.2f})")
         for name in ("caps", "plate", "pcb", "posts", "screws", "battery", "view_cover", "sockets"):
             if name in p and (cup ^ p[name]).volume() > 0.01:
                 problems.append(f"{size}mm: カップが {name} に当たる")
@@ -210,8 +220,8 @@ def main():
     items = {
         "tray_left": tray("left"),
         "tray_right": tray("right"),
-        "ball_cup_25": bu.cup(25)[0],
-        "ball_cup_19": bu.cup(19)[0],
+        "ball_cup_25": cu.cup_unit(25),
+        "ball_cup_19": cu.cup_unit(19),
         "ball_cover_25": cu.claw_cover(25)[0],
         "ball_cover_19": cu.claw_cover(19)[0],
         "ball_cup_34": cu.cup34(),

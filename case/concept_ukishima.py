@@ -548,6 +548,45 @@ def base34(cable_slot=True):
 CUP34_R = U34_R - 1.8             # カップの外径 (半径)。受けの穴とのすき間 0.3mm (19 / 25mm のカップと同じ)
 
 
+# ----- ボールユニット (カップ＋球押さえ) と受けのロック: 差し込んで反時計回りに 20° ひねる -----
+# (球押さえ・フードは時計回りで締まる。外す時に反時計回りに回すので、カップはそのたびに締まる向き)
+UNIT_LUGS = (60, 180, 300)        # カップの外のツメ (ロックした時の向き)。ベアリングのネジ穴 (0/120/240° 付近) をよける
+UNIT_LUG_W = 9.0                  # ツメの幅 (角度)
+UNIT_TURN = 20.0                  # ひねる角度
+UNIT_LUG_Z0, UNIT_LUG_Z1 = bu.BASE_H - 2.4, bu.BASE_H - 1.4    # ツメの高さ (ユニットの座標)
+UNIT_LUG_R = bu.BASE_IN_R + 0.5   # ツメの先 (半径)。受けの溝は +0.2
+
+
+def unit_lugs():
+    """カップの外のツメ"""
+    return k.union([bu.sector(bu.CUP_R - 0.5, UNIT_LUG_R, L - UNIT_LUG_W / 2, L + UNIT_LUG_W / 2, UNIT_LUG_Z0, UNIT_LUG_Z1)
+                    for L in UNIT_LUGS])
+
+
+def unit_lock_cut():
+    """受けの内側の溝: 差し込む縦の溝 (ロックの -20° の位置) と、ひねる横の溝。ロックの手前に小さな山 (カチッ)"""
+    r0, r1 = bu.BASE_IN_R - 0.1, UNIT_LUG_R + 0.2
+    cut = []
+    for L in UNIT_LUGS:
+        e = L - UNIT_TURN                                                    # 差し込む時のツメの位置
+        cut += [bu.sector(r0, r1, e - UNIT_LUG_W / 2 - 1.0, e + UNIT_LUG_W / 2 + 1.0, UNIT_LUG_Z0 - 0.2, bu.BASE_H + 1),
+                bu.sector(r0, r1, e - UNIT_LUG_W / 2 - 1.0, L + UNIT_LUG_W / 2 + 0.8, UNIT_LUG_Z0 - 0.2, UNIT_LUG_Z1 + 0.2)]
+    m = k.union(cut)
+    bumps = k.union([bu.sector(r0, r1 + 0.1, L - UNIT_LUG_W / 2 - 2.6, L - UNIT_LUG_W / 2 - 1.0,
+                               UNIT_LUG_Z1 + 0.2 - 0.3, UNIT_LUG_Z1 + 0.25) for L in UNIT_LUGS])
+    return m - bumps
+
+
+def _no_key(m, r):
+    """カップの向きを決めるキー (奥の出っぱり) を取る (ロックのツメで向きが決まる)"""
+    return m - (k.cube(-2, r - 0.01, bu.BASE_H - 2, 2, 20, bu.BASE_H) - k.cyl(0, 0, -1, 60, r))
+
+
+def cup_unit(size):
+    """ボールユニットのカップ (受けに差し込んでひねる)。19 / 25mm"""
+    return _no_key(bu.cup(size)[0], bu.CUP_R) + unit_lugs()
+
+
 def cup34():
     """34mm 用のカップ: 受け (トレイと一体・共通) の穴に入る下の部分＋受けの上に乗る縁 (固定の爪・フードのロックの出っぱり)。
     ベアリング 3 個・センサーを押さえる足 4 本"""
@@ -556,8 +595,7 @@ def cup34():
     lx, ly0, ly1 = bu.SENSOR_W / 2 - 2.0, -(bu.SENSOR_L / 2 - 2.0), bu.SENSOR_L / 2 - 2.0
     legs = [k.cyl(x, y, bu.SENSOR_TOP, bu.CUP_BOTTOM + 0.5, 1.2) for x, y in
             ((-lx, ly0), (lx, ly0), (-lx, ly1), (lx, ly1))]
-    key = k.cube(-1.3, CUP34_R - 0.5, bu.BASE_H - 1.4, 1.3, U34_R - 0.2, bu.BASE_H)   # 向きを決めるキー (受けの溝に入る)
-    return m + k.union(legs) + key
+    return m + k.union(legs) + unit_lugs()
 
 
 def sensor_model():
@@ -655,6 +693,10 @@ def socket():
     base = bu.base(cable_slot=False)
     base = base + k.union([k.cyl(*bu.polar(k.BALL_SCREW_R, a), -1, bu.INSERT_DEPTH + 0.01, bu.INSERT_R + 0.01)
                            for a in k.BALL_SCREW_ANGLES])                    # 元の底ネジの穴は使わないので埋める
+    base = base - k.union([k.cyl(*bu.polar(k.BALL_SCREW_R, a), bu.BASE_FLOOR, 20, bu.BOSS_R + 0.01)
+                           for a in k.BALL_SCREW_ANGLES])                    # 元のネジの柱も取る (カップの足がひねる時に通る)
+    base = base + (k.cube(-2, inner - 1.1, bu.BASE_H - 1.6, 2, r + 1.1, bu.BASE_H) ^
+                   (k.cyl(0, 0, -1, 60, r) - k.cyl(0, 0, -1, 60, inner)))       # 向きの溝は使わない (ロックで決まる)
     solid = unit_place(k.cyl(0, 0, 0, bu.BASE_H, r))
     foot = lower_foot()
     below = unit_place(k.cyl(0, 0, -80, 0.01, r + 30))                      # 傾いた底より下 (台)
@@ -670,6 +712,7 @@ def socket():
     solid = max(solid.decompose(), key=lambda m_: m_.volume())             # 切った残りの小さなかけらを除く
     # くり抜く形: 受けの中 (カップの入る穴・センサーの部屋・くぼみ・向きの溝)
     voids = unit_place(k.cyl(0, 0, -80, 80, 400) - base) ^ unit_place(k.cyl(0, 0, -0.01, bu.BASE_H + 5, r + 0.01))
+    voids = voids + unit_place(unit_lock_cut())                             # ボールユニットのロックの溝
     # センサーのケーブル: 底の穴 → 台の中をまっすぐ下へ → 右の窓から床の上へ (基板の裏のコネクタ J へ)
     sx0 = bu.SENSOR_W / 2 + 0.6
     slot = unit_place(k.cube(sx0, -4.5, -0.5, inner - 0.3, 4.5, bu.BASE_FLOOR + 0.2))
@@ -714,7 +757,7 @@ def ball_set(size=25):
         out["ball_cup"] = unit_place(cup34(), T)
         cover, _ = claw_cover(34)
     else:
-        out["ball_cup"] = unit_place(bu.cup(size)[0], T)
+        out["ball_cup"] = unit_place(cup_unit(size), T)
         cover, _ = claw_cover(size)
     out["sensor"] = unit_place(sensor_model(), T)
     out["ball_cover"] = unit_place(cover, T)
