@@ -623,6 +623,28 @@ SENSOR_CLIP_W, SENSOR_CLIP_T, SENSOR_CLIP_HOOK = 3.0, 1.0, 0.35   # センサー
 _SOCKET_CACHE = {}
 
 
+SOCKET_FILLET = 10.0              # 受けの付け根のアールの半径 (床の上)。基板の下では基板の裏の部品より低く切る
+
+
+def socket_fillet(solid, rf=None, steps=25):
+    """受けの付け根の凹のアール: 床 (FLOOR) から高さ rf までの輪切りを、受けの断面を外へ広げて積む"""
+    from shapely.geometry import Polygon
+    rf = SOCKET_FILLET if rf is None else rf
+    out = []
+    for i in range(steps):
+        h1 = rf * (i + 1) / steps
+        z = FLOOR + h1
+        sec = _proj(solid.trim_by_plane([0, 0, 1], z - 0.05).trim_by_plane([0, 0, -1], -z))
+        if sec.is_empty:
+            continue
+        polys = getattr(sec, "geoms", [sec])
+        sec = Polygon(max(polys, key=lambda g: g.area).exterior)
+        hm = rf * (i + 0.5) / steps                                          # この輪切りの真ん中の高さ
+        off = rf - math.sqrt(max(rf**2 - (rf - hm)**2, 0))                   # 円弧 (床で rf、高さ rf で 0)
+        out.append(k.prism(sec.buffer(off, join_style=1), FLOOR - 0.01, FLOOR + h1))
+    return k.union(out)
+
+
 def socket():
     """ボールの受け (トレイと一体)。(足す形, くり抜く形) を返す。19 / 25 / 34mm 共通
     傾けた受け＋その下の台。底は z=0 で平ら (トレイの裏と同じ面)。センサー基板のくぼみ・留めるツメ・ケーブルの通り道つき"""
@@ -637,6 +659,15 @@ def socket():
     foot = lower_foot()
     below = unit_place(k.cyl(0, 0, -80, 0.01, r + 30))                      # 傾いた底より下 (台)
     solid = solid + (k.prism(foot, -1, 60) ^ below)
+    # 付け根のアール (トレイの床から受けの壁へ、なだらかにつなぐ裾。円柱が床から生えて見えないように)
+    fil = socket_fillet(solid)
+    keep_out = [k.prism(k.load("pcb_right").buffer(0.5), PCB_B - TRAVEL - SOCKET_H - 0.4, 60)]   # 基板の下は部品より低く
+    for part in back_parts("right").values():                                # XIAO など背の高い部品はその下まで
+        b = part.bounding_box()
+        keep_out.append(k.prism(_proj(part).buffer(0.8), b[2] - TRAVEL - 0.4, 60))
+    keep_out.append(unit_place(k.cyl(0, 0, HOOD34_Z0 - 1.0, 80, HOOD34_OUT + 1.5)))   # 34mm のフードが回る所
+    solid = solid + (fil - k.union(keep_out))
+    solid = max(solid.decompose(), key=lambda m_: m_.volume())             # 切った残りの小さなかけらを除く
     # くり抜く形: 受けの中 (カップの入る穴・センサーの部屋・くぼみ・向きの溝)
     voids = unit_place(k.cyl(0, 0, -80, 80, 400) - base) ^ unit_place(k.cyl(0, 0, -0.01, bu.BASE_H + 5, r + 0.01))
     # センサーのケーブル: 底の穴 → 台の中をまっすぐ下へ → 右の窓から床の上へ (基板の裏のコネクタ J へ)
@@ -704,6 +735,7 @@ def half(side, size=25):
         bx, by = k.HALVES["right"]["ball"]
         solid, voids, clips = socket()                                          # ボールの受け (トレイと一体)
         tray = ((tray + solid) - voids + clips).trim_by_plane([0, 0, 1], 0.0)
+        tray = max(tray.decompose(), key=lambda m_: m_.volume())               # 計算でできる薄いかけらを除く
     # 電池のくぼみ (底 0.5mm) と、まわりのガイド
     ex, ey = BATTERY[side]
     tray = tray - k.cube(ex - BAT_W/2, ey - BAT_H/2, BATTERY_SKIN, ex + BAT_W/2, ey + BAT_H/2, FLOOR + 1)
