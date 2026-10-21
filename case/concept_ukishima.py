@@ -621,7 +621,7 @@ def sensor_model():
 #  - 受け (下ケース) はトレイと一体。センサー基板はそこに収めたまま (ツメで留める)
 #  - 上ケース (カップ・爪カバー / 34mm はカップ・フード) をボールの大きさごとに交換
 #  - センサーのケーブルは、下ケースの底の穴から台の中を下りて、右 (コネクタ J の方) の窓から床の上へ出す
-BALL_TILT = 20.0                  # 傾ける角度 (度)。お試しの模型で決める (19 / 25mm)
+BALL_TILT = 30.0                  # 傾ける角度 (度)。お試しの模型で決める (19 / 25mm)
 TILT_34 = None                    # None = 19 / 25mm と同じ角度
 LOWER_SKIN = 0.6                  # センサー基板の下の床の一番薄い所
 BALL_SHIFT = (0.0, 0.0)           # ユニットを置く位置 (トレイの穴の中心＝基板の ball からのずれ)
@@ -877,7 +877,12 @@ def ball_deck(size=25):
     pin = deck_pin()
     if pin:
         m = m - k.cyl(pin[0], pin[1], 0, deck_pin_top() + 0.3, DECK_PIN_R + 0.15)
-    m = k.union([p for p in m.decompose() if p.volume() > 20.0])
+    pieces = [p for p in m.decompose() if p.volume() > 20.0]
+    sc = deck_screws()
+    if len(pieces) > 1 and sc:                                               # 分かれたら、ネジのあるかけらだけ残す (留められないので)
+        x, y = sc[0]
+        pieces = [p for p in pieces if (p ^ k.cyl(x, y, PCB_B, PLATE_T, 3.0)).volume() > 0.01] or pieces[:1]
+    m = k.union(pieces)
     _DECK_CACHE[key] = m
     return m
 
