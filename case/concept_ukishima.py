@@ -90,7 +90,8 @@ RIM_ROUND = 2.0      # 縁の上の外側の角の丸み
 BALL_Z0 = 0.0        # ボールユニットの底 (トレイの床に落とし込む)
 KEY_TOP = PLATE_T + D["plate_to_keytop"]   # キーキャップの上 (Choc v2 ＋ ロープロファイルのキーキャップ)
 RIM_TOP = PLATE_T                         # 縁の上 = プレートの上面
-HOOD34_Z0, HOOD34_TOP = PLATE_T + HOOD34_Z0_ABOVE_PLATE, KEY_TOP + HOOD34_TOP_ABOVE_KEYS
+HOOD34_Z0 = PLATE_T + HOOD34_Z0_ABOVE_PLATE
+HOOD34_TOP = U34_TOP + 1.2        # フードの上面: カップの縁のすぐ上 (19 / 25mm のリングと同じく低く)。爪はそのぶん長い
 HOOK34_Z0, HOOK34_Z1 = HOOD34_Z0, HOOD34_Z0 + 1.0
 LEDGE34_Z0, LEDGE34_Z1 = HOOK34_Z1 + 0.1, HOOK34_Z1 + 1.3
 
