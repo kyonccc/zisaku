@@ -99,6 +99,8 @@ LUG_Z0, LUG_H = 13.4, 1.1         # ツメの下面・厚さ (上下のすき間
 DETENT_H = 0.3                    # ロック位置の手前の小さな山 (ここを越える時にカチッとする)
 GRIP_N, GRIP_R = 36, 0.5          # カバー外側のすべり止めの溝 (本数・半径)
 
+LEGS = None                        # カップの足の位置 (センサー基板の形に合わせて外から決める時)
+
 CUPS = {
     25: {"R": 12.5, "contact": 45},   # 接点の角度 (水平から下向き)
     19: {"R": 9.5, "contact": 45},
@@ -147,7 +149,7 @@ def cup(size):
     # (基板の 4 隅の近く。真ん中のレンズと、右の辺の真ん中のコネクタをよける)
     lx, ly0, ly1 = SENSOR_W / 2 - 2.0, -(SENSOR_L / 2 - 2.0), SENSOR_L / 2 - 2.0
     legs = [k.cyl(x, y, SENSOR_TOP, CUP_BOTTOM + 0.5, 1.2) for x, y in
-            ((-lx, ly0), (lx, ly0), (-lx, ly1), (lx, ly1))]
+            (LEGS or ((-lx, ly0), (lx, ly0), (-lx, ly1), (lx, ly1)))]
     body = body + k.union(legs)
 
     cut = [

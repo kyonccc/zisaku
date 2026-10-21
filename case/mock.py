@@ -11,7 +11,7 @@
     mock_top_left.stl  / mock_top_right.stl  … 基板＋プレート＋スイッチ＋キーキャップ＋nice!view (カバー込み)
                                                ＋エンコーダー (左) を 1 つにした模型。柱の上に乗せるだけ
     mock_deck.stl                                … ボールのまわりのデッキ (19 / 25mm の時。トレイに乗せる)
-    mock_ball_19.stl / mock_ball_25.stl / mock_ball_34.stl … ボールユニットの上の部品 (カップ＋カバー＋ボール) の外形。
+    mock_ball_19.stl / mock_ball_25.stl … ボールユニットの上の部品 (カップ＋カバー＋ボール) の外形。
                                                トレイと一体の受けの穴に差し込む (受けは左手前へ 20° 傾いている)
 
 高さはすべて case/concept_ukishima.py の数字 (部品の高さ) から作る。部品を実測して数字を直したら、
@@ -37,7 +37,7 @@ U = k.U
 
 
 def mock_tray(side):
-    p = cu.half(side, 34 if side == "right" else 25)
+    p = cu.half(side, 25)
     t = p["tray"] + p["posts"]
     # 柱の上にポロンの分 (締めた厚さ) を足す → 上の模型が本物の基板の高さに乗る
     t = t + k.union([k.cyl(x, y, cu.POST_TOP - 0.01, cu.PCB_B, cu.PORON_OD / 2) for x, y in cu.POSTS[side]])
@@ -132,9 +132,10 @@ def main():
     bx, by = k.HALVES["right"]["ball"]
     items = {"mock_tray_left": mock_tray("left"), "mock_tray_right": mock_tray("right"),
              "mock_top_left": mock_top("left"), "mock_top_right": mock_top("right")}
-    for size in (19, 25, 34):
+    for size in (19, 25):
         items[f"mock_ball_{size}"] = mock_ball(size, world=False)      # 印刷はカップの底を下
-    items["mock_deck"] = cu.ball_deck(25).rotate([180, 0, 0])            # デッキ (上の面を下・プレートと同じ色で)
+    if cu.ball_deck(25) is not None:
+        items["mock_deck"] = cu.ball_deck(25).rotate([180, 0, 0])        # デッキ (上の面を下・プレートと同じ色で)
     for name, m in items.items():
         n = len(m.decompose())
         if n != 1:
@@ -151,7 +152,7 @@ def main():
         t, top = items[f"mock_tray_{side}"], items[f"mock_top_{side}"]
         if (t ^ top).volume() > 0.5:
             print(f"  × {side}: トレイと上の模型が重なる")
-    for size in (19, 25, 34):
+    for size in (19, 25):
         b = mock_ball(size)
         for name in ("mock_tray_right", "mock_top_right"):
             if (b ^ items[name]).volume() > 0.5:

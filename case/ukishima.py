@@ -10,9 +10,7 @@
                                        右はボールの受け (下ケース・センサー基板のくぼみとツメ・ケーブルの通り道) と一体
     ball_cup_25.stl / ball_cup_19.stl       … 上ケース: カップ (ベアリング 3 個)。ボールの大きさに合わせて交換
     ball_cover_25.stl / ball_cover_19.stl   … 上ケース: 爪留めカバー (爪 3 本・ひねってロック)
-    ball_cup_34.stl                  … 34mm 用のカップ (固定の爪・フードのロックの出っぱりつき)
     ball_deck.stl                    … ボールのまわりのデッキ (19 / 25mm の時。プレートと同じ色で印刷。トレイの裏から M2 ネジ 1 本＋ピン)
-    ball_hood_34.stl                 … 34mm のフード (爪 2 本・外側でひねってロック)
     switch_cover_left.stl / _right   … 電源スイッチのカバー (トレイの縁に裏からネジ 2 本)
     switch_slider.stl                … つまみ＋フォーク (2 個印刷する・左右共通)
     view_cover_left.stl / _right     … nice!view のカバー (窓あき・nice!view にはめる)
@@ -39,7 +37,7 @@ BATTERY, BAT_W, BAT_H = cu.BATTERY, cu.BAT_W, cu.BAT_H
 
 # ===== ボールユニット =====
 # ボールの受け (下ケース) はトレイと一体 (concept_ukishima.py の socket)。センサー基板はそこにツメで留めたまま。
-# ボールの大きさを替える時は、上の部品 (カップ・カバー / 34mm はカップ・フード) だけを替える
+# ボールの大きさを替える時は、上の部品 (カップ・カバー) だけを替える
 
 # ===== トレイの穴・ゴム足 =====
 USB_W = 14.0                      # USB-C のプラグが入る切り欠きの幅
@@ -47,7 +45,7 @@ USB_W = 14.0                      # USB-C のプラグが入る切り欠きの�
 
 
 def tray(side):
-    parts = cu.half(side, 34 if side == "right" else 25)
+    parts = cu.half(side, 25)
     t = parts["tray"] + parts["posts"]
     h = k.HALVES[side]
     xx, xy = h["xiao"]
@@ -107,7 +105,7 @@ def check():
             problems.append(f"{side}: 基板のナットとトレイの柱の位置が合わない")
     # 電源スイッチのカバー・つまみ、nice!view のカバー
     for side in ("left", "right"):
-        p = cu.half(side, 34 if side == "right" else 25)
+        p = cu.half(side, 25)
         low = p["pcb"].translate([0, 0, -cu.TRAVEL])        # キーを押して基板が一番沈んだ時
         if (p["tray"] ^ low).volume() > 0.01:
             problems.append(f"{side}: 基板が沈むとトレイ (電池の目隠しなど) に当たる")
@@ -168,8 +166,8 @@ def check():
                     problems.append(f"{side}: 差し込む途中でフォークがレバーに当たる ({du}mm)")
     # ボールユニット: キー・基板・プレート・トレイに当たらないか (カバーを回してロックする途中も)
     tr = tray("right")
-    for size in (19, 25, 34):
-        p = cu.half("right", 34 if size == 34 else 25)
+    for size in (19, 25):
+        p = cu.half("right", 25)
         T = cu.size_tilt(size)
         cover, _ = cu.claw_cover(size)
         for d in (0, 15, 30):
@@ -180,7 +178,7 @@ def check():
                         problems.append(f"{size}mm: カバーが {name} に当たる (回す角度 {d}°)")
             if (cc ^ tr).volume() > 0.01:
                 problems.append(f"{size}mm: カバーがトレイ (受け) に当たる (回す角度 {d}°)")
-        cup_l = cu.cup34() if size == 34 else cu.cup_unit(size)
+        cup_l = cu.cup_unit(size)
         cup = cu.unit_place(cup_l, T)
         # ボールユニットのロック: 差し込む位置 (-20°) で上から入り、ひねる途中も当たらない (最後の山だけは乗り越える)
         for dz in (6.0, 3.0, 1.0, 0.0):
@@ -211,6 +209,8 @@ def check():
     # デッキ (19 / 25mm の時): 基板・プレート (沈んでも)・キー・ユニット・カバー (回す途中も) に当たらないか、トレイに乗っているか
     deck = cu.ball_deck(25)
     p = cu.half("right", 25)
+    if deck is None:
+        deck = mf.Manifold()
     for name in ("pcb", "plate", "caps", "switch", "view", "view_cover", "switch_cover", "sockets"):
         for dz in (0, -cu.TRAVEL):
             if name in p and (deck ^ p[name].translate([0, 0, dz])).volume() > 0.01:
@@ -226,7 +226,7 @@ def check():
                     problems.append(f"{size}mm: ユニットを差す途中でデッキに当たる")
     if (deck ^ tr).volume() > 0.05:
         problems.append(f"デッキがトレイに食い込む ({(deck ^ tr).volume():.2f})")
-    if (deck.translate([0, 0, -0.2]) ^ tr).volume() < 0.5:
+    if not deck.is_empty() and (deck.translate([0, 0, -0.2]) ^ tr).volume() < 0.5:
         problems.append("デッキがトレイに乗っていない")
     # センサー基板を留めるツメが基板の上にかかっているか (基板を 0.2mm 持ち上げると当たる)
     _, _, clips = cu.socket()
@@ -245,15 +245,14 @@ def main():
         "ball_cup_19": cu.cup_unit(19),
         "ball_cover_25": cu.claw_cover(25)[0],
         "ball_cover_19": cu.claw_cover(19)[0],
-        "ball_cup_34": cu.cup34(),
-        "ball_hood_34": cu.claw_cover(34)[0],
-        "ball_deck": on_bed(cu.ball_deck(25), (180, 0, 0)),                 # 上の面を下 (プレートと同じ色で)
         "switch_cover_left": on_bed(cu.switch_cover("left"), (0, 90, 0)),      # 外の面を下
         "switch_cover_right": on_bed(cu.switch_cover("right"), (0, -90, 0)),
         "switch_slider": on_bed(cu.switch_slider("left"), (180, 0, 0)),        # つまみを下
         "view_cover_left": on_bed(cu.view_cover("left"), (180, 0, 0)),         # 上の面を下
         "view_cover_right": on_bed(cu.view_cover("right"), (180, 0, 0)),
     }
+    if cu.ball_deck(25) is not None:
+        items["ball_deck"] = on_bed(cu.ball_deck(25), (180, 0, 0))           # 上の面を下 (プレートと同じ色で)
     for name, m in items.items():
         n = len(m.decompose())
         if n != 1:

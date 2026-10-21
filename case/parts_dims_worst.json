@@ -27,5 +27,6 @@
   "sensor_l": 20.0,
   "sensor_t": 1.6,
   "lens_h": 4.0,
-  "sensor_conn_h": 2.9
+  "sensor_conn_h": 2.9,
+  "sensor_chamfer": 9.0
 }

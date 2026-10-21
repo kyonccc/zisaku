@@ -37,11 +37,12 @@ bu.BASE_FLOOR = 1.0
 #   コネクタは横向き (JST SH SM06B など・高さ 2.9) を右 (基板のコネクタ J の方 = ユニットの +x) の辺に付け、
 #   ケーブルはその横の床の穴から下ケースの台の中を下りて、右の窓から床の上へ出す
 bu.SENSOR_W, bu.SENSOR_L, bu.SENSOR_T, bu.LENS_H = D["sensor_w"], D["sensor_l"], D["sensor_t"], D["lens_h"]
-# --- 受け (トレイと一体) は 19 / 25 / 34mm 共通: 外径 35.4・穴 32.4。カップの外径はどれも 31.8 ---
-bu.UNIT_R = 17.7
+# --- 受け (トレイと一体) は 19 / 25mm 共通: 外径 34・穴 31。カップの外径は 30.4 (34mm ボールはやめた) ---
+bu.UNIT_R = 17.0
 bu.BASE_IN_R = bu.UNIT_R - bu.BASE_WALL
 bu.CUP_R = bu.BASE_IN_R - 0.3
 SENSOR_CONN_H = D["sensor_conn_h"]
+SENSOR_CHAMFER = D["sensor_chamfer"]   # センサー基板の左手前の角の面取り (傾けた時に一番下に来る角。ここでボールの高さが決まる)
 bu.SENSOR_TOP = bu.BASE_FLOOR - bu.SENSOR_POCKET + bu.SENSOR_T
 bu.BALL_BOTTOM = bu.SENSOR_TOP + bu.LENS_H + bu.LENS_GAP
 
@@ -608,7 +609,7 @@ def sensor_model():
     """センサー基板 (ユニットの座標): 基板・レンズ・横向きコネクタとプラグ (右 = +x の辺)"""
     z0 = bu.BASE_FLOOR - bu.SENSOR_POCKET
     w, l = bu.SENSOR_W / 2, bu.SENSOR_L / 2
-    board = k.cube(-w, -l, z0, w, l, bu.SENSOR_TOP)
+    board = k.prism(sensor_poly(), z0, bu.SENSOR_TOP)
     lens = k.cyl(0, 0, bu.SENSOR_TOP - 0.01, bu.SENSOR_TOP + bu.LENS_H, 4.5)
     conn = k.cube(w - 4.5, -4.0, bu.SENSOR_TOP - 0.01, w + 1.5, 4.0, bu.SENSOR_TOP + SENSOR_CONN_H)   # 6 ピン 1.0mm (幅 8)
     return board + lens + conn
@@ -623,7 +624,7 @@ def sensor_model():
 #  - センサーのケーブルは、下ケースの底の穴から台の中を下りて、右 (コネクタ J の方) の窓から床の上へ出す
 BALL_TILT = 30.0                  # 傾ける角度 (度)。お試しの模型で決める (19 / 25mm)
 TILT_34 = None                    # None = 19 / 25mm と同じ角度
-LOWER_SKIN = 0.6                  # センサー基板の下の床の一番薄い所
+LOWER_SKIN = 0.4                  # センサー基板の下の床の一番薄い所 (印刷 2 層)
 BALL_SHIFT = (0.0, 0.0)           # ユニットを置く位置 (トレイの穴の中心＝基板の ball からのずれ)
 
 
@@ -633,11 +634,52 @@ def _tilt_z(x, y, z, tilt=None):
     return z * math.cos(t) - (x * math.cos(a) + y * math.sin(a)) * math.sin(t)
 
 
+def sensor_poly(margin=0.0):
+    """センサー基板を上から見た形 (ユニットの座標)。左手前 (-x, -y) の角を SENSOR_CHAMFER だけ面取り"""
+    from shapely.geometry import Polygon
+    w, l, c = bu.SENSOR_W / 2, bu.SENSOR_L / 2, SENSOR_CHAMFER
+    p = Polygon([(-w + c, -l), (w, -l), (w, l), (-w, l), (-w, -l + c)])
+    return p.buffer(margin, join_style=2) if margin else p
+
+
+def sensor_legs():
+    """カップの足 (センサー基板を押さえる): 3 つの角の近く＋面取りの内側"""
+    w, l, c = bu.SENSOR_W / 2, bu.SENSOR_L / 2, SENSOR_CHAMFER
+    pts = [(w - 2.0, -(l - 2.0)), (-(w - 2.0), l - 2.0), (w - 2.0, l - 2.0)]
+    from shapely.geometry import Point
+    mx, my = -w + c / 2, -l + c / 2
+    p4 = (mx + 2.4, my + 2.4)                                               # 面取りの内側 (入る時だけ)
+    if math.hypot(*p4) > 4.5 + 1.2 + 0.8 and sensor_poly().buffer(-1.4).contains(Point(p4)):
+        pts.append(p4)
+    return pts
+
+
+def sensor_room_poly():
+    """センサーの部屋 (床〜カップの底): 基板＋足 (カップをひねる時に通る所も)＋コネクタ＋ケーブルの穴"""
+    from shapely.geometry import Point, box
+    from shapely.ops import unary_union
+    w = bu.SENSOR_W / 2
+    g = [sensor_poly(1.0), box(w - 5.0, -4.5, w + 2.0, 4.5), box(w + 0.4, -4.5, bu.BASE_IN_R - 0.3, 4.5)]
+    for x, y in sensor_legs():
+        for d in range(0, -21, -4):
+            a = math.radians(d)
+            g.append(Point(x * math.cos(a) - y * math.sin(a), x * math.sin(a) + y * math.cos(a)).buffer(1.8))
+    return unary_union(g)
+
+
+bu.LEGS = sensor_legs()
+
+
 def ball_lift(tilt=None):
-    """センサー基板のくぼみの底 (4 隅) が LOWER_SKIN の高さに来る持ち上げ量"""
-    w, l = bu.SENSOR_W / 2 + 0.2, bu.SENSOR_L / 2 + 0.2
+    """一番下に来る所が LOWER_SKIN の高さに来る持ち上げ量。調べる所: センサー基板のくぼみの底・センサーの部屋の床・
+    カップが乗る段 (受けの穴の底のふち)"""
+    pts = []
     z0 = bu.BASE_FLOOR - bu.SENSOR_POCKET
-    return LOWER_SKIN - min(_tilt_z(sx * w, sy * l, z0, tilt) for sx in (-1, 1) for sy in (-1, 1))
+    pts += [(x, y, z0) for x, y in sensor_poly(0.2).exterior.coords]
+    pts += [(x, y, bu.BASE_FLOOR) for x, y in sensor_room_poly().exterior.coords]
+    pts += [(bu.BASE_IN_R * math.cos(math.radians(a)), bu.BASE_IN_R * math.sin(math.radians(a)), bu.CUP_BOTTOM)
+            for a in range(0, 360, 5)]
+    return LOWER_SKIN - min(_tilt_z(x, y, z, tilt) for x, y, z in pts)
 
 
 def unit_place(m, tilt=None):
@@ -690,19 +732,17 @@ def socket_fillet(solid, rf=None, steps=25):
 
 
 def socket():
-    """ボールの受け (トレイと一体)。(足す形, くり抜く形) を返す。19 / 25 / 34mm 共通
+    """ボールの受け (トレイと一体)。(足す形, くり抜く形, ツメ) を返す。19 / 25mm 共通
     傾けた受け＋その下の台。底は z=0 で平ら (トレイの裏と同じ面)。センサー基板のくぼみ・留めるツメ・ケーブルの通り道つき"""
     key = (BALL_TILT, BALL_SHIFT, bu.UNIT_R)
     if key in _SOCKET_CACHE:
         return _SOCKET_CACHE[key]
     r, inner = bu.UNIT_R, bu.BASE_IN_R
-    base = bu.base(cable_slot=False)
-    base = base + k.union([k.cyl(*bu.polar(k.BALL_SCREW_R, a), -1, bu.INSERT_DEPTH + 0.01, bu.INSERT_R + 0.01)
-                           for a in k.BALL_SCREW_ANGLES])                    # 元の底ネジの穴は使わないので埋める
-    base = base - k.union([k.cyl(*bu.polar(k.BALL_SCREW_R, a), bu.BASE_FLOOR, 20, bu.BOSS_R + 0.01)
-                           for a in k.BALL_SCREW_ANGLES])                    # 元のネジの柱も取る (カップの足がひねる時に通る)
-    base = base + (k.cube(-2, inner - 1.1, bu.BASE_H - 1.6, 2, r + 1.1, bu.BASE_H) ^
-                   (k.cyl(0, 0, -1, 60, r) - k.cyl(0, 0, -1, 60, inner)))       # 向きの溝は使わない (ロックで決まる)
+    # 受けの中: カップの入る穴 (カップの底から上) / センサーの部屋 (センサーの形に合わせて狭く) / 基板のくぼみ
+    inside = (k.cyl(0, 0, bu.CUP_BOTTOM, 80, inner) +
+              k.cyl(0, 0, bu.GROOVE_Z0 - 0.2, 80, bu.GROOVE_R + 0.2) +        # 上のふち: 球押さえのツメ・カチッの山が少しはみ出す分
+              k.prism(sensor_room_poly(), bu.BASE_FLOOR, bu.CUP_BOTTOM + 0.01) +
+              k.prism(sensor_poly(0.2), bu.BASE_FLOOR - bu.SENSOR_POCKET, bu.BASE_FLOOR + 0.01))
     solid = unit_place(k.cyl(0, 0, 0, bu.BASE_H, r))
     foot = lower_foot()
     below = unit_place(k.cyl(0, 0, -80, 0.01, r + 30))                      # 傾いた底より下 (台)
@@ -713,11 +753,10 @@ def socket():
     for part in back_parts("right").values():                                # XIAO など背の高い部品はその下まで
         b = part.bounding_box()
         keep_out.append(k.prism(_proj(part).buffer(0.8), b[2] - TRAVEL - 0.4, 60))
-    keep_out.append(unit_place(k.cyl(0, 0, HOOD34_Z0 - 1.0, 80, HOOD34_OUT + 1.5)))   # 34mm のフードが回る所
     solid = solid + (fil - k.union(keep_out))
     solid = max(solid.decompose(), key=lambda m_: m_.volume())             # 切った残りの小さなかけらを除く
     # くり抜く形: 受けの中 (カップの入る穴・センサーの部屋・くぼみ・向きの溝)
-    voids = unit_place(k.cyl(0, 0, -80, 80, 400) - base) ^ unit_place(k.cyl(0, 0, -0.01, bu.BASE_H + 5, r + 0.01))
+    voids = unit_place(inside)
     voids = voids + unit_place(unit_lock_cut())                             # ボールユニットのロックの溝
     # センサーのケーブル: 底の穴 → 台の中をまっすぐ下へ → 右の窓から床の上へ (基板の裏のコネクタ J へ)
     sx0 = bu.SENSOR_W / 2 + 0.6
@@ -725,20 +764,25 @@ def socket():
     shaft = k.prism(_proj(slot), FLOOR, 60) ^ unit_place(k.cyl(0, 0, -80, bu.BASE_FLOOR, inner - 0.3))
     sb = slot.bounding_box()
     window = k.cube(sb[0], (sb[1] + sb[4]) / 2 - 4.5, FLOOR, sb[0] + 40, (sb[1] + sb[4]) / 2 + 4.5, FLOOR + 4.0)
-    room = unit_place(k.cyl(0, 0, bu.BASE_FLOOR - bu.SENSOR_POCKET - 0.01, 100, inner))
-    voids = voids + slot + shaft + (window - (solid - room))
-    # センサー基板を留めるツメ (短い辺の真ん中・2 か所)。基板をパチッとはめる → カップを外しても基板は抜けない
+    posts = k.union([k.cyl(x, y, -1, 60, POST_R + 1.0) for x, y in POSTS["right"]])
+    voids = voids + slot + shaft + (window - posts)                         # 窓は受けの台・リップを抜ける (柱は残す)
+    # センサー基板を留めるツメ 2 か所 (奥の辺の真ん中・左の辺の残った所)。基板をパチッとはめる → カップを外しても基板は抜けない。
+    # カップの足がひねる時に通る所はよける
     z0 = bu.BASE_FLOOR - bu.SENSOR_POCKET
-    l = bu.SENSOR_L / 2 + 0.2
+    w, l = bu.SENSOR_W / 2 + 0.2, bu.SENSOR_L / 2 + 0.2
+    cw, T_, H_ = SENSOR_CLIP_W / 2, SENSOR_CLIP_T, SENSOR_CLIP_HOOK
+    ytop = bu.SENSOR_TOP
+    left_y = (-bu.SENSOR_L / 2 + SENSOR_CHAMFER + bu.SENSOR_L / 2) / 2      # 左の辺の、面取りから上の真ん中
     clips = []
-    for sgn in (-1, 1):
-        y0, y1 = sorted((sgn * l, sgn * (l + SENSOR_CLIP_T)))
-        post = k.cube(-SENSOR_CLIP_W / 2, y0, z0, SENSOR_CLIP_W / 2, y1, bu.SENSOR_TOP + 0.9)
-        hy0, hy1 = sorted((sgn * l, sgn * (l - SENSOR_CLIP_HOOK)))
-        hook = mf.Manifold.batch_hull([
-            k.cube(-SENSOR_CLIP_W / 2, hy0, bu.SENSOR_TOP + 0.05, SENSOR_CLIP_W / 2, hy1, bu.SENSOR_TOP + 0.35),
-            k.cube(-SENSOR_CLIP_W / 2, y0 if sgn > 0 else y1 - 0.01, bu.SENSOR_TOP + 0.85, SENSOR_CLIP_W / 2,
-                   (y0 + 0.01) if sgn > 0 else y1, bu.SENSOR_TOP + 0.9)])
+    for (ox, oy, ax) in ((0.0, l, "y"), (-w, left_y, "x")):
+        if ax == "y":   # 奥の辺 (+y)
+            post = k.cube(ox - cw, l, z0, ox + cw, l + T_, ytop + 0.9)
+            hook = mf.Manifold.batch_hull([k.cube(ox - cw, l - H_, ytop + 0.05, ox + cw, l, ytop + 0.35),
+                                           k.cube(ox - cw, l, ytop + 0.85, ox + cw, l + 0.01, ytop + 0.9)])
+        else:           # 左の辺 (-x)
+            post = k.cube(-w - T_, oy - cw, z0, -w, oy + cw, ytop + 0.9)
+            hook = mf.Manifold.batch_hull([k.cube(-w, oy - cw, ytop + 0.05, -w + H_, oy + cw, ytop + 0.35),
+                                           k.cube(-w - 0.01, oy - cw, ytop + 0.85, -w, oy + cw, ytop + 0.9)])
         clips.append(post + hook)
     clips = unit_place(k.union(clips))
     _SOCKET_CACHE[key] = (solid, voids, clips)
@@ -788,10 +832,8 @@ def rim_solid(side, outer, pcb, plate):
 
 
 def ball_clearance():
-    """ボールユニット (カップの縁・球押さえ・34mm のフードが回る所) のまわりのデッキを、少しあけてくり抜く形"""
-    c = unit_place(k.cyl(0, 0, bu.BASE_H - 0.01, 80, bu.UNIT_R + 0.4))
-    ring = (k.cyl(0, 0, HOOD34_Z0 - 0.4, bu.BASE_H, HOOD34_OUT + 0.5) - k.cyl(0, 0, HOOD34_Z0 - 1, bu.BASE_H + 1, U34_R))
-    return c + unit_place(ring) + unit_place(k.cyl(0, 0, bu.BASE_H - 0.01, 80, HOOD34_OUT + 0.5))
+    """ボールユニット (カップの縁・球押さえ) のまわりのトレイを、少しあけてくり抜く形"""
+    return unit_place(k.cyl(0, 0, bu.BASE_H - 0.01, 80, bu.UNIT_R + 0.4))
 
 
 LIP_IN = 2.5                      # リップが基板の縁の下へ入る幅
@@ -828,10 +870,7 @@ def deck_region():
 
 
 def deck_clearance(size):
-    c = unit_place(k.cyl(0, 0, -80, 80, bu.UNIT_R + 0.4))                   # ユニット (受け・カップ・球押さえ)
-    if size == 34:
-        c = c + ball_clearance()                                             # フードが回る所
-    return c
+    return unit_place(k.cyl(0, 0, -80, 80, bu.UNIT_R + 0.4))                # ユニット (受け・カップ・球押さえ)
 
 
 _DECK_CACHE = {}
@@ -867,6 +906,9 @@ def ball_deck(size=25):
     key = (size, BALL_TILT)
     if key in _DECK_CACHE:
         return _DECK_CACHE[key]
+    if not deck_screws():                                                    # ネジを入れる場所もないほど小さい → デッキは作らない
+        _DECK_CACHE[key] = None
+        return None
     _, rect = deck_region()
     plan = deck_plan(size)
     keel = plan.intersection(rect.buffer(-DECK_UNDERCUT))
@@ -955,7 +997,9 @@ def half(side, size=25):
     tray = k.prism(outer, 0, RIM) - k.prism(outer.buffer(-4.0), FLOOR, RIM + 1) + inner_lip(side, outer, pcb)
     if side == "right":
         solid, voids, clips = socket()                                          # ボールの受け (トレイと一体)
-        tray = ((tray + solid) - voids + clips - ball_clearance() - deck_band()).trim_by_plane([0, 0, 1], 0.0)
+        band = deck_band() if ball_deck(25) is not None else mf.Manifold()
+        tray = ((tray + solid) - voids + clips - ball_clearance() - band).trim_by_plane([0, 0, 1], 0.0)
+        tray = tray ^ k.prism(outer, -1, 80)                                    # トレイの外形からはみ出さない
         for x, y in deck_screws():                                              # デッキを留めるネジ (裏から M2 皿)
             tray = tray - k.cyl(x, y, -1, PCB_B + 1, 1.15) - k.cyl(x, y, -0.01, 1.2, 2.2, 1.0)
         pin = deck_pin()
@@ -1039,7 +1083,7 @@ def half(side, size=25):
     else:
         ball, _ = ball_set(size)
         parts.update(ball)
-        if size != 34:
+        if ball_deck(25) is not None:
             parts["deck"] = ball_deck(25)
     return parts
 
