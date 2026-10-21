@@ -10,8 +10,8 @@
     mock_tray_left.stl / mock_tray_right.stl … トレイ (本物と同じ形。柱だけポロンの分まで高くして、上の模型を乗せる)
     mock_top_left.stl  / mock_top_right.stl  … 基板＋プレート＋スイッチ＋キーキャップ＋nice!view (カバー込み)
                                                ＋エンコーダー (左) を 1 つにした模型。柱の上に乗せるだけ
-    mock_ball_19.stl / mock_ball_25.stl / mock_ball_34.stl … ボールユニット (下ケース＋上ケース＋ボール) の外形。
-                                               19 / 25mm は左手前へ傾いた形 (底は平ら)。トレイの穴に入れる
+    mock_ball_19.stl / mock_ball_25.stl / mock_ball_34.stl … ボールユニットの上の部品 (カップ＋カバー＋ボール) の外形。
+                                               トレイと一体の受けの穴に差し込む (受けは左手前へ 20° 傾いている)
 
 高さはすべて case/concept_ukishima.py の数字 (部品の高さ) から作る。部品を実測して数字を直したら、
 もう一度このプログラムを実行すれば模型も変わる。寸法はすべて mm。z はトレイの底面 (机) が 0。
@@ -66,23 +66,25 @@ def mock_top(side):
     return m
 
 
-def mock_ball(size):
-    """ボールユニットの外形 (下ケース＋上ケース＋ボール)。トレイの上の本当の位置 (傾いた形) のまま"""
+def mock_ball(size, world=True):
+    """ボールユニットの上の部品 (カップ＋カバー＋ボール) の外形。トレイと一体の受けの穴に差し込む。
+    world=True: トレイの上の本当の位置 (傾いた形)。False: ユニットの座標 (印刷用・カップの底を下)"""
     R = bu.CUPS[size]["R"]
     cz = bu.BALL_BOTTOM + R
-    T = cu.size_tilt(size)
-    lower, _ = cu.lower_case(34 if size == 34 else 25)
     cover, _ = cu.claw_cover(size)
     if size == 34:
         top = cu.U34_TOP
         a0, a1 = cu.HOOD34_A
-        body = k.cyl(0, 0, 0, top + 0.01, cu.U34_R) + bu.sector(cu.U34_R - 1, cu.HOOD34_IN + 0.5, a0, a1, cu.HOOD34_Z0, cu.HOOD34_Z0 + 0.6)
+        body = (k.cyl(0, 0, bu.CUP_BOTTOM, bu.BASE_H + 0.01, cu.CUP34_R) + k.cyl(0, 0, bu.BASE_H, top + 0.01, cu.U34_R) +
+                bu.sector(cu.U34_R - 1, cu.HOOD34_IN + 0.5, a0, a1, bu.BASE_H + 0.2, bu.BASE_H + 0.8))
     else:
         top = cu.RING_TOP
-        body = k.cyl(0, 0, 0, top - 0.8, bu.UNIT_R) + k.cyl(0, 0, 0, top, bu.UNIT_R - 1.0)
+        body = (k.cyl(0, 0, bu.CUP_BOTTOM, bu.BASE_H + 0.01, bu.CUP_R) + k.cyl(0, 0, bu.BASE_H, top - 0.8, bu.UNIT_R) +
+                k.cyl(0, 0, bu.BASE_H, top, bu.UNIT_R - 1.0))
     ball = mf.Manifold.sphere(R, 128).translate([0, 0, cz]).trim_by_plane([0, 0, 1], top - 0.3)
-    m = (lower + cu.unit_place(body + cover + ball, T)).trim_by_plane([0, 0, 1], 0.0)
-    return k.union([p for p in m.decompose() if p.volume() > 1.0])        # 計算でできる小さなかけらを除く
+    m = body + cover + ball
+    m = k.union([p for p in m.decompose() if p.volume() > 1.0])          # 計算でできる小さなかけらを除く
+    return cu.unit_place(m, cu.size_tilt(size)) if world else m
 
 
 TILTS = (0, 15, 30)
@@ -130,7 +132,7 @@ def main():
     items = {"mock_tray_left": mock_tray("left"), "mock_tray_right": mock_tray("right"),
              "mock_top_left": mock_top("left"), "mock_top_right": mock_top("right")}
     for size in (19, 25, 34):
-        items[f"mock_ball_{size}"] = mock_ball(size)
+        items[f"mock_ball_{size}"] = mock_ball(size, world=False)      # 印刷はカップの底を下
     for name, m in items.items():
         n = len(m.decompose())
         if n != 1:
@@ -148,7 +150,7 @@ def main():
         if (t ^ top).volume() > 0.5:
             print(f"  × {side}: トレイと上の模型が重なる")
     for size in (19, 25, 34):
-        b = items[f"mock_ball_{size}"]
+        b = mock_ball(size)
         for name in ("mock_tray_right", "mock_top_right"):
             if (b ^ items[name]).volume() > 0.5:
                 print(f"  × {size}mm: ボールの模型が {name} に当たる")

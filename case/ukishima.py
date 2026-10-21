@@ -6,12 +6,11 @@
     python3 case/ukishima.py
 
 できるもの (case/stl/ukishima/):
-    tray_left.stl / tray_right.stl   … トレイ (床・低い枠・柱 8 本・MagSafe の溝・電池のくぼみ)
-    ball_lower.stl                   … 下ケース (19 / 25mm 共用・センサー入り)。左手前へ傾いた形で、底は平ら。
-                                       トレイの裏から M2 皿ネジ 3 本で留める (耳にインサート)
+    tray_left.stl / tray_right.stl   … トレイ (床・低い枠・柱 8 本・MagSafe の溝・電池のくぼみ)。
+                                       右はボールの受け (下ケース・センサー基板のくぼみとツメ・ケーブルの通り道) と一体
     ball_cup_25.stl / ball_cup_19.stl       … 上ケース: カップ (ベアリング 3 個)。ボールの大きさに合わせて交換
     ball_cover_25.stl / ball_cover_19.stl   … 上ケース: 爪留めカバー (爪 3 本・ひねってロック)
-    ball_lower_34.stl / ball_cup_34.stl … 34mm 専用の下ケース (固定の爪つき) とカップ。下ケースごと交換
+    ball_cup_34.stl                  … 34mm 用のカップ (固定の爪・フードのロックの出っぱりつき)
     ball_hood_34.stl                 … 34mm のフード (爪 2 本・外側でひねってロック)
     switch_cover_left.stl / _right   … 電源スイッチのカバー (トレイの縁に裏からネジ 2 本)
     switch_slider.stl                … つまみ＋フォーク (2 個印刷する・左右共通)
@@ -27,6 +26,7 @@ import os
 import sys
 
 from shapely.geometry import Point, box
+import manifold3d as mf
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -36,26 +36,13 @@ k, bu = cu.k, cu.bu
 U = k.U
 BATTERY, BAT_W, BAT_H = cu.BATTERY, cu.BAT_W, cu.BAT_H
 
-# ===== ボールユニット (下ケース) =====
-# 下ケースは床の穴に入り、外の耳 3 か所 (concept_ukishima.py の LOWER_TABS) を床の上に乗せて、
-# 床の裏から M2 皿ネジで留める (耳にインサート)。19 / 25mm 用と 34mm 用で、耳とネジの位置は同じ
+# ===== ボールユニット =====
+# ボールの受け (下ケース) はトレイと一体 (concept_ukishima.py の socket)。センサー基板はそこにツメで留めたまま。
+# ボールの大きさを替える時は、上の部品 (カップ・カバー / 34mm はカップ・フード) だけを替える
 
 # ===== トレイの穴・ゴム足 =====
 USB_W = 14.0                      # USB-C のプラグが入る切り欠きの幅
 # ゴム足は四隅の磁石の上に貼る (concept_ukishima.py の MAG_*)
-
-
-def lower_tab_shapes():
-    """耳 (上から見た形) とネジの位置"""
-    from shapely.geometry import MultiPoint
-    _, info = cu.lower_case(25)
-    cx, cy = info["center"]
-    out = []
-    for a in cu.LOWER_TABS:
-        half = math.degrees(cu.LOWER_TAB_W / 2 / cu.LOWER_TAB_SCREW_R)
-        pts = [bu.polar(r, a + s_) for r in (cu.LOWER_TAB_R0, cu.LOWER_TAB_R1) for s_ in (-half, half)]
-        out.append(MultiPoint([(cx + x, cy + y) for x, y in pts]).convex_hull)
-    return out, info["tabs"]
 
 
 def tray(side):
@@ -71,9 +58,6 @@ def tray(side):
         # XIAO のリセットボタンを押す穴 (床)
         k.cube(ix + d * 2.5 - d * 5 - 2, xy - 6, -1, ix + d * 2.5 - d * 5 + 2, xy + 6, cu.FLOOR + 1),
     ]
-    if h["ball"]:
-        for x, y in lower_tab_shapes()[1]:                 # 下ケースのネジ (床の裏から皿ネジ M2)
-            cut += [k.cyl(x, y, -1, cu.FLOOR + 1, 1.15), k.cyl(x, y, -0.01, 1.2, 2.2, 1.0)]
     return t - k.union(cut)
 
 
@@ -96,8 +80,7 @@ def check():
         bat = box(ex - BAT_W / 2, ey - BAT_H / 2, ex + BAT_W / 2, ey + BAT_H / 2)
         avoid = [ring, bat.buffer(0.2)] + [Point(p).buffer(2.8 + 0.8) for p in cu.POSTS[side]]
         if h["ball"]:
-            avoid.append(cu.lower_hole().buffer(0.5))
-            avoid += [s.buffer(0.5) for s in lower_tab_shapes()[0]]      # 下ケースの耳 (上) とネジ (裏)
+            avoid.append(cu.lower_foot().buffer(1.0))                        # ボールの受け (トレイと一体)
         xx, xy = h["xiao"]
         avoid.append(box(xx - 9.4, xy - 11, xx + 9.4, xy + 11))      # XIAO (基板の裏で一番低い部品)
         sxp, syp, dp = cu.PWR[side]
@@ -110,17 +93,6 @@ def check():
                 problems.append(f"{side}: 磁石 ({x:.1f}, {y:.1f}) がほかの部品・穴・溝に近すぎる")
         if not o.buffer(-4.5).contains(Point(mx, my).buffer(cu.MAG_OD / 2 + cu.MAG_GAP)):
             problems.append(f"{side}: MagSafe の溝が壁に近すぎる")
-        if h["ball"]:
-            # 耳 (高さ 床+4.6mm) が基板の裏の部品 (ソケット・XIAO・コネクタ) の下に来ないか
-            sys.path.insert(0, os.path.join(HERE, "..", "tools"))
-            import check_pcb
-            pcbf = os.path.join(HERE, "..", "pcb", "ergogen", "output", "pcbs", f"{side}.kicad_pcb")
-            from shapely import affinity
-            for ref, name, shp in check_pcb.back_bodies(pcbf):
-                shp = affinity.scale(shp, 1, -1, origin=(0, 0))            # KiCad (y 下向き) → y 上向き
-                for a, tab in zip(cu.LOWER_TABS, lower_tab_shapes()[0]):
-                    if tab.buffer(0.5).intersects(shp):
-                        problems.append(f"耳 {a}° が基板の裏の部品 {ref} の下に来る")
     # 基板のナット (Ergogen の config.yaml) と、トレイの柱の位置が同じか
     sys.path.insert(0, os.path.join(HERE, "..", "tools"))
     import check_pcb
@@ -199,34 +171,36 @@ def check():
         p = cu.half("right", 34 if size == 34 else 25)
         T = cu.size_tilt(size)
         cover, _ = cu.claw_cover(size)
-        lower, _ = cu.lower_case(34 if size == 34 else 25)
         for d in (0, 15, 30):
             cc = cu.unit_place(cover.rotate([0, 0, d]), T)
             for name in ("caps", "plate", "pcb", "view", "view_cover"):
                 for dz in (0, -3) if name == "caps" else (0,):
                     if (cc ^ p[name].translate([0, 0, dz])).volume() > 0.01:
                         problems.append(f"{size}mm: カバーが {name} に当たる (回す角度 {d}°)")
+            if (cc ^ tr).volume() > 0.01:
+                problems.append(f"{size}mm: カバーがトレイ (受け) に当たる (回す角度 {d}°)")
         cup = cu.unit_place(cu.cup34() if size == 34 else bu.cup(size)[0], T)
-        unit = lower + cup
-        # センサー基板 (くぼみ・カップの足・ケーブルの穴): 下ケース・カップに食い込まないか、足が基板に届いているか
+        for name in ("caps", "plate", "pcb", "posts", "screws", "battery", "view_cover", "sockets"):
+            if name in p and (cup ^ p[name]).volume() > 0.01:
+                problems.append(f"{size}mm: カップが {name} に当たる")
+        if (cup ^ tr).volume() > 0.01:
+            problems.append(f"{size}mm: カップがトレイの受けに当たる ({(cup ^ tr).volume():.2f})")
+        ball = cu.unit_place(mf.Manifold.sphere(bu.CUPS[size]["R"], 96).translate([0, 0, bu.BALL_BOTTOM + bu.CUPS[size]["R"]]), T)
+        if (ball ^ tr).volume() > 0.01 or (ball ^ cup).volume() > 0.01:
+            problems.append(f"{size}mm: ボールが受け・カップに当たる")
+        # センサー基板: 受け (くぼみ・ツメ) とカップに食い込まないか、カップの足が届いているか、下の床が残るか
         sen = cu.unit_place(cu.sensor_model(), T)
-        for name, o in (("下ケース", lower), ("カップ", cup)):
+        for name, o in (("トレイの受け", tr), ("カップ", cup)):
             if (sen ^ o).volume() > 0.01:
-                problems.append(f"{size}mm: センサー基板が{name}に当たる")
+                problems.append(f"{size}mm: センサー基板が{name}に当たる ({(sen ^ o).volume():.2f})")
         if (sen.translate([0, 0, 0.3]) ^ cup).volume() < 0.01:
             problems.append(f"{size}mm: カップの足がセンサー基板を押さえていない")
         if sen.bounding_box()[2] < cu.LOWER_SKIN - 0.05:
             problems.append(f"{size}mm: センサー基板の下の床が薄すぎる")
-        for name in ("caps", "plate", "pcb", "posts", "screws", "battery", "view_cover", "sockets"):
-            if name in p and (unit ^ p[name]).volume() > 0.01:
-                problems.append(f"{size}mm: 下ケース・カップが {name} に当たる")
-        if (unit ^ tr).volume() > 0.01:
-            problems.append(f"{size}mm: 下ケースがトレイに当たる")
-        for ref, solid in cu.back_parts("right").items():
-            if (unit ^ solid.translate([0, 0, -cu.TRAVEL])).volume() > 0.01:
-                problems.append(f"{size}mm: 下ケースが基板の裏の部品 {ref} に当たる")
-        if (cu.unit_place(k.cyl(0, 0, -50, 50, 1), T) ^ lower).volume() < 1:
-            problems.append(f"{size}mm: 下ケースの形がおかしい")
+    # センサー基板を留めるツメが基板の上にかかっているか (基板を 0.2mm 持ち上げると当たる)
+    _, _, clips = cu.socket()
+    if (cu.unit_place(cu.sensor_model()).translate([0, 0, 0.25]) ^ clips).volume() < 0.001:
+        problems.append("センサー基板を留めるツメが基板にかかっていない")
     return problems
 
 
@@ -236,12 +210,10 @@ def main():
     items = {
         "tray_left": tray("left"),
         "tray_right": tray("right"),
-        "ball_lower": on_bed(cu.lower_case(25)[0]),                            # 底 (平ら) を下
         "ball_cup_25": bu.cup(25)[0],
         "ball_cup_19": bu.cup(19)[0],
         "ball_cover_25": cu.claw_cover(25)[0],
         "ball_cover_19": cu.claw_cover(19)[0],
-        "ball_lower_34": on_bed(cu.lower_case(34)[0]),
         "ball_cup_34": cu.cup34(),
         "ball_hood_34": cu.claw_cover(34)[0],
         "switch_cover_left": on_bed(cu.switch_cover("left"), (0, 90, 0)),      # 外の面を下
