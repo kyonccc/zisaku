@@ -11,6 +11,7 @@
     ball_cup_25.stl / ball_cup_19.stl       … 上ケース: カップ (ベアリング 3 個)。ボールの大きさに合わせて交換
     ball_cover_25.stl / ball_cover_19.stl   … 上ケース: 爪留めカバー (爪 3 本・ひねってロック)
     ball_cup_34.stl                  … 34mm 用のカップ (固定の爪・フードのロックの出っぱりつき)
+    ball_deck.stl                    … ボールのまわりのデッキ (19 / 25mm の時。プレートと同じ色で印刷。トレイの裏から M2 ネジ 1 本＋ピン)
     ball_hood_34.stl                 … 34mm のフード (爪 2 本・外側でひねってロック)
     switch_cover_left.stl / _right   … 電源スイッチのカバー (トレイの縁に裏からネジ 2 本)
     switch_slider.stl                … つまみ＋フォーク (2 個印刷する・左右共通)
@@ -207,6 +208,26 @@ def check():
             problems.append(f"{size}mm: カップの足がセンサー基板を押さえていない")
         if sen.bounding_box()[2] < cu.LOWER_SKIN - 0.05:
             problems.append(f"{size}mm: センサー基板の下の床が薄すぎる")
+    # デッキ (19 / 25mm の時): 基板・プレート (沈んでも)・キー・ユニット・カバー (回す途中も) に当たらないか、トレイに乗っているか
+    deck = cu.ball_deck(25)
+    p = cu.half("right", 25)
+    for name in ("pcb", "plate", "caps", "switch", "view", "view_cover", "switch_cover", "sockets"):
+        for dz in (0, -cu.TRAVEL):
+            if name in p and (deck ^ p[name].translate([0, 0, dz])).volume() > 0.01:
+                problems.append(f"デッキが {name} に当たる")
+    for size in (19, 25):
+        cov, _ = cu.claw_cover(size)
+        for d in (0, 15, 30):
+            if (deck ^ cu.unit_place(cov.rotate([0, 0, d]))).volume() > 0.01:
+                problems.append(f"{size}mm: カバーがデッキに当たる (回す角度 {d}°)")
+        for d in (0, -10, -20):
+            for dz in (0, 3):
+                if (deck ^ cu.unit_place(cu.cup_unit(size).rotate([0, 0, d]).translate([0, 0, dz]))).volume() > 0.01:
+                    problems.append(f"{size}mm: ユニットを差す途中でデッキに当たる")
+    if (deck ^ tr).volume() > 0.05:
+        problems.append(f"デッキがトレイに食い込む ({(deck ^ tr).volume():.2f})")
+    if (deck.translate([0, 0, -0.2]) ^ tr).volume() < 0.5:
+        problems.append("デッキがトレイに乗っていない")
     # センサー基板を留めるツメが基板の上にかかっているか (基板を 0.2mm 持ち上げると当たる)
     _, _, clips = cu.socket()
     if (cu.unit_place(cu.sensor_model()).translate([0, 0, 0.25]) ^ clips).volume() < 0.001:
@@ -226,6 +247,7 @@ def main():
         "ball_cover_19": cu.claw_cover(19)[0],
         "ball_cup_34": cu.cup34(),
         "ball_hood_34": cu.claw_cover(34)[0],
+        "ball_deck": on_bed(cu.ball_deck(25), (180, 0, 0)),                 # 上の面を下 (プレートと同じ色で)
         "switch_cover_left": on_bed(cu.switch_cover("left"), (0, 90, 0)),      # 外の面を下
         "switch_cover_right": on_bed(cu.switch_cover("right"), (0, -90, 0)),
         "switch_slider": on_bed(cu.switch_slider("left"), (180, 0, 0)),        # つまみを下
