@@ -144,8 +144,10 @@ def cup(size):
     # 向きを決めるキー (土台の切り欠きに入る)
     body = body + k.cube(-1.3, CUP_R - 0.5, BASE_H - 1.4, 1.3, UNIT_R - 0.2, BASE_H)
     # センサーを押さえる足 (4本・基板の角の近く)
+    # (基板の 4 隅の近く。真ん中のレンズと、右の辺の真ん中のコネクタをよける)
+    lx, ly0, ly1 = SENSOR_W / 2 - 2.0, -(SENSOR_L / 2 - 2.0), SENSOR_L / 2 - 2.0
     legs = [k.cyl(x, y, SENSOR_TOP, CUP_BOTTOM + 0.5, 1.2) for x, y in
-            ((-6, -8), (6, -8), (-6, 5), (6, 5))]
+            ((-lx, ly0), (lx, ly0), (-lx, ly1), (lx, ly1))]
     body = body + k.union(legs)
 
     cut = [

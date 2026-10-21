@@ -116,17 +116,17 @@ outlines:
       corner: corner
 
   # --- ボールまわり ---
-  ball_hole:            # 基板・プレートの穴。ボールユニット (外径34mm) + すき間1mm
+  ball_hole:            # 基板・プレートの穴。ボールユニット (外径34〜35.4mm・左手前へ傾く) + すき間
     - what: circle
       where: right_e_top
       adjust.shift: [ball_x, ball_y - 3ky]
-      radius: 18
+      radius: 18.3
   ball_cut:             # 穴 + 穴より左下の角 (ここには部品がないので切り落とす)
     - name: ball_hole
     - what: circle        # 斜めのボールユニット (左手前へ 15〜30°) の分。左と手前だけ約 2mm 広げる (キー・XIAO の方は広げない)
       where: right_e_top
       adjust.shift: [ball_x - 4.24, ball_y - 3ky - 4.24]
-      radius: 18
+      radius: 18.4
     - what: rectangle
       where: right_e_top
       adjust.shift: [ball_x - 20, ball_y - 3ky - 15]

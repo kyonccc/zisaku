@@ -11,7 +11,7 @@
                                        トレイの裏から M2 皿ネジ 3 本で留める (耳にインサート)
     ball_cup_25.stl / ball_cup_19.stl       … 上ケース: カップ (ベアリング 3 個)。ボールの大きさに合わせて交換
     ball_cover_25.stl / ball_cover_19.stl   … 上ケース: 爪留めカバー (爪 3 本・ひねってロック)
-    ball_lower_34.stl                … 34mm 専用の下ケース (カップと一体・固定の爪つき・真上向き)。下ケースごと交換
+    ball_lower_34.stl / ball_cup_34.stl … 34mm 専用の下ケース (固定の爪つき) とカップ。下ケースごと交換
     ball_hood_34.stl                 … 34mm のフード (爪 2 本・外側でひねってロック)
     switch_cover_left.stl / _right   … 電源スイッチのカバー (トレイの縁に裏からネジ 2 本)
     switch_slider.stl                … つまみ＋フォーク (2 個印刷する・左右共通)
@@ -206,7 +206,17 @@ def check():
                 for dz in (0, -3) if name == "caps" else (0,):
                     if (cc ^ p[name].translate([0, 0, dz])).volume() > 0.01:
                         problems.append(f"{size}mm: カバーが {name} に当たる (回す角度 {d}°)")
-        unit = lower + (cu.unit_place(bu.cup(size)[0], T) if size != 34 else lower)
+        cup = cu.unit_place(cu.cup34() if size == 34 else bu.cup(size)[0], T)
+        unit = lower + cup
+        # センサー基板 (くぼみ・カップの足・ケーブルの穴): 下ケース・カップに食い込まないか、足が基板に届いているか
+        sen = cu.unit_place(cu.sensor_model(), T)
+        for name, o in (("下ケース", lower), ("カップ", cup)):
+            if (sen ^ o).volume() > 0.01:
+                problems.append(f"{size}mm: センサー基板が{name}に当たる")
+        if (sen.translate([0, 0, 0.3]) ^ cup).volume() < 0.01:
+            problems.append(f"{size}mm: カップの足がセンサー基板を押さえていない")
+        if sen.bounding_box()[2] < cu.LOWER_SKIN - 0.05:
+            problems.append(f"{size}mm: センサー基板の下の床が薄すぎる")
         for name in ("caps", "plate", "pcb", "posts", "screws", "battery", "view_cover", "sockets"):
             if name in p and (unit ^ p[name]).volume() > 0.01:
                 problems.append(f"{size}mm: 下ケース・カップが {name} に当たる")
@@ -232,6 +242,7 @@ def main():
         "ball_cover_25": cu.claw_cover(25)[0],
         "ball_cover_19": cu.claw_cover(19)[0],
         "ball_lower_34": on_bed(cu.lower_case(34)[0]),
+        "ball_cup_34": cu.cup34(),
         "ball_hood_34": cu.claw_cover(34)[0],
         "switch_cover_left": on_bed(cu.switch_cover("left"), (0, 90, 0)),      # 外の面を下
         "switch_cover_right": on_bed(cu.switch_cover("right"), (0, -90, 0)),

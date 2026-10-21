@@ -32,6 +32,12 @@ DIMS_FILE = os.environ.get("KATAWARE_DIMS", os.path.join(HERE, "parts_dims.json"
 D = {kk: v for kk, v in json.load(open(DIMS_FILE, encoding="utf-8")).items() if not kk.startswith("_")}
 # --- ボールユニットを低くする (構想の値): 土台の底を 1.0mm に (センサー基板の下は 0.5mm) ---
 bu.BASE_FLOOR = 1.0
+# --- センサー基板 (PMW3610) の寸法も寸法ファイルから。収め方:
+#   下ケースの床のくぼみ (深さ 0.5) にはめて位置を決め、カップの足 4 本で 4 隅を上から押さえる (ネジなし)。
+#   コネクタは横向き (JST SH SM06B など・高さ 2.9) を右 (基板のコネクタ J の方 = ユニットの +x) の辺に付け、
+#   ケーブルはその横の床の穴から下ケースの台の中を下りて、右の窓から床の上へ出す
+bu.SENSOR_W, bu.SENSOR_L, bu.SENSOR_T, bu.LENS_H = D["sensor_w"], D["sensor_l"], D["sensor_t"], D["lens_h"]
+SENSOR_CONN_H = D["sensor_conn_h"]
 bu.SENSOR_TOP = bu.BASE_FLOOR - bu.SENSOR_POCKET + bu.SENSOR_T
 bu.BALL_BOTTOM = bu.SENSOR_TOP + bu.LENS_H + bu.LENS_GAP
 
@@ -534,6 +540,39 @@ def base34(cable_slot=True):
     return m, {"cz": cz}
 
 
+# ----- 34mm: 下ケースとカップに分ける (センサー基板を上から入れて、カップの足で押さえるため) -----
+CUP34_R = U34_R - 1.8             # カップの外径 (半径)。下ケースの穴とのすき間 0.3mm
+CUP34_TOP = 14.5                  # カップの上面 (ボールの受けの壁が 1.5mm 残る高さ)
+
+
+def lower34():
+    """34mm 用の下ケース: 一体型の受けから、カップの入る穴をくり抜いたもの (外の壁・固定の爪・ロックの出っぱりは残る)"""
+    b, _ = base34(cable_slot=False)
+    m = b - k.cyl(0, 0, bu.CUP_BOTTOM, U34_TOP + 0.01, CUP34_R + 0.3)
+    return m - k.cube(-1.6, CUP34_R - 0.5, bu.CUP_BOTTOM + 5.5, 1.6, CUP34_R + 1.0, U34_TOP + 1)   # 向きを決める溝 (奥)
+
+
+def cup34():
+    """34mm 用のカップ (ベアリング 3 個・センサーを押さえる足 4 本)"""
+    b, _ = base34(cable_slot=False)
+    m = b ^ k.cyl(0, 0, bu.CUP_BOTTOM, CUP34_TOP, CUP34_R)
+    lx, ly0, ly1 = bu.SENSOR_W / 2 - 2.0, -(bu.SENSOR_L / 2 - 2.0), bu.SENSOR_L / 2 - 2.0
+    legs = [k.cyl(x, y, bu.SENSOR_TOP, bu.CUP_BOTTOM + 0.5, 1.2) for x, y in
+            ((-lx, ly0), (lx, ly0), (-lx, ly1), (lx, ly1))]
+    key = k.cube(-1.3, CUP34_R - 0.5, bu.CUP_BOTTOM + 6.0, 1.3, CUP34_R + 0.8, CUP34_TOP)
+    return m + k.union(legs) + key
+
+
+def sensor_model():
+    """センサー基板 (ユニットの座標): 基板・レンズ・横向きコネクタとプラグ (右 = +x の辺)"""
+    z0 = bu.BASE_FLOOR - bu.SENSOR_POCKET
+    w, l = bu.SENSOR_W / 2, bu.SENSOR_L / 2
+    board = k.cube(-w, -l, z0, w, l, bu.SENSOR_TOP)
+    lens = k.cyl(0, 0, bu.SENSOR_TOP - 0.01, bu.SENSOR_TOP + bu.LENS_H, 4.5)
+    conn = k.cube(w - 4.5, -4.0, bu.SENSOR_TOP - 0.01, w + 1.5, 4.0, bu.SENSOR_TOP + SENSOR_CONN_H)   # 6 ピン 1.0mm (幅 8)
+    return board + lens + conn
+
+
 # ===== 斜めのボールユニット (下ケース・上ケース) =====
 # ユニット (土台＝下ケース・カップと爪カバー＝上ケース) を左手前 (TILT_AZ) へ BALL_TILT 度傾けて、できるだけ沈める。
 #  - 沈める深さは「センサー基板の一番低い角の下に LOWER_SKIN の床が残る」まで (センサーが一番下の部品)
@@ -542,7 +581,7 @@ def base34(cable_slot=True):
 #  - 上ケース (カップ・爪カバー) はボールの大きさごとに交換。34mm は下ケースごと交換
 #  - センサーのケーブルは、下ケースの底の穴から台の中を下りて、右 (コネクタ J の方) の窓から床の上へ出す
 BALL_TILT = 20.0                  # 傾ける角度 (度)。お試しの模型で決める (19 / 25mm)
-TILT_34 = 0.0                     # 34mm は人差し指・中指で転がすので真上向き (傾けるとフードがトレイの外へ出る)
+TILT_34 = None                    # None = 19 / 25mm と同じ角度
 LOWER_SKIN = 0.6                  # センサー基板の下の床の一番薄い所
 BALL_SHIFT = (0.0, 0.0)           # ユニットを置く位置 (トレイの穴の中心＝基板の ball からのずれ)
 LOWER_TABS = (70, 150, 300)       # 耳の向き (上から見て・下ケースの底の中心から)
@@ -578,7 +617,7 @@ def _proj(m):
 
 
 def size_tilt(size):
-    return TILT_34 if size == 34 else BALL_TILT
+    return TILT_34 if (size == 34 and TILT_34 is not None) else BALL_TILT
 
 
 def lower_foot(size=25):
@@ -601,7 +640,7 @@ def _lower_case(size=25):
     """下ケース: 傾けた土台＋その下の台。底は z=0 で平ら。19 / 25mm は共用 (size=25)、34mm は専用"""
     r = U34_R if size == 34 else bu.UNIT_R
     inner = (U34_R - 3.0) if size == 34 else (bu.BASE_IN_R - 0.3)
-    base = base34(cable_slot=False)[0] if size == 34 else bu.base(cable_slot=False)
+    base = lower34() if size == 34 else bu.base(cable_slot=False)
     # 元の土台の底ネジの穴は使わない (トレイへは耳で留める) ので埋める
     base = base + k.union([k.cyl(*bu.polar(k.BALL_SCREW_R, a), -1, bu.INSERT_DEPTH + 0.01, bu.INSERT_R + 0.01)
                            for a in k.BALL_SCREW_ANGLES])
@@ -618,7 +657,7 @@ def _lower_case(size=25):
         tabs.append(bu.sector(LOWER_TAB_R0, LOWER_TAB_R1, a - half_, a + half_, FLOOR, FLOOR + LOWER_TAB_H).translate([cx, cy, 0]))
         x, y = bu.polar(LOWER_TAB_SCREW_R, a)
         holes.append(k.cyl(cx + x, cy + y, FLOOR - 1, FLOOR + bu.INSERT_DEPTH, bu.INSERT_R))
-    room = unit_place(k.cyl(0, 0, bu.BASE_FLOOR - 0.01, 100, r - 1.5), T)      # ユニットの中 (耳が入り込まない。壁とは重ねる)
+    room = unit_place(k.cyl(0, 0, bu.BASE_FLOOR - bu.SENSOR_POCKET - 0.01, 100, r - 1.5), T)   # ユニットの中 (耳が入り込まない。壁とは重ねる)
     m = m + (k.union(tabs) - room)
     # センサーのケーブル: 底の穴 → 台の中をまっすぐ下へ → 右の窓から出る
     sx0 = bu.SENSOR_W / 2 + 0.6
@@ -649,10 +688,12 @@ def ball_set(size=25):
     lower, info = lower_case(34 if size == 34 else 25)
     out = {"ball_base": lower}
     if size == 34:
+        out["ball_cup"] = unit_place(cup34(), T)
         cover, _ = claw_cover(34)
     else:
         out["ball_cup"] = unit_place(bu.cup(size)[0], T)
-        cover, _ = claw_cover(size, TRIAL_CLAWS)
+        cover, _ = claw_cover(size)
+    out["sensor"] = unit_place(sensor_model(), T)
     out["ball_cover"] = unit_place(cover, T)
     out["ball"] = unit_place(mf.Manifold.sphere(R, 128).translate([0, 0, cz]), T)
     info["ball_top"] = out["ball"].bounding_box()[5]
@@ -758,7 +799,7 @@ COLORS = {  # 色・分解図での持ち上げ量
     "pcb": ("#202124", 16), "plate": ("#3a3b3f", 26), "switch": ("#8e949b", 34), "caps": ("#f3f0e9", 46),
     "view": ("#11181f", 26), "knob": ("#2b2d31", 46), "screws": ("#a9adb3", 0), "magsafe": ("#8a8f98", -14), "battery": ("#5b7fa6", 4), "magnets": ("#8a8f98", -14), "sockets": ("#e8e8e8", 16),
     "view_cover": ("#2b2d31", 40), "switch_cover": ("#2b2d31", 20), "slider": ("#b8432f", 30),
-    "ball_base": ("#d9d5cc", 0), "ball_cup": ("#ece7dd", 22), "ball_cover": ("#2b2d31", 44), "ball": ("#b8432f", 62),
+    "ball_base": ("#d9d5cc", 0), "ball_cup": ("#ece7dd", 22), "sensor": ("#1f6f4a", 10), "ball_cover": ("#2b2d31", 44), "ball": ("#b8432f", 62),
 }
 
 

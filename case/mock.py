@@ -81,8 +81,8 @@ def mock_ball(size):
         top = cu.RING_TOP
         body = k.cyl(0, 0, 0, top - 0.8, bu.UNIT_R) + k.cyl(0, 0, 0, top, bu.UNIT_R - 1.0)
     ball = mf.Manifold.sphere(R, 128).translate([0, 0, cz]).trim_by_plane([0, 0, 1], top - 0.3)
-    m = lower + cu.unit_place(body + cover + ball, T)
-    return m.trim_by_plane([0, 0, 1], 0.0)
+    m = (lower + cu.unit_place(body + cover + ball, T)).trim_by_plane([0, 0, 1], 0.0)
+    return k.union([p for p in m.decompose() if p.volume() > 1.0])        # 計算でできる小さなかけらを除く
 
 
 TILTS = (0, 15, 30)

@@ -22,5 +22,10 @@
   "pwr_sw_h": 1.4,
   "pwr_lever_z0": 0.3,
   "pwr_lever_z1": 1.2,
-  "plate_to_keytop": 10.8
+  "plate_to_keytop": 10.8,
+  "sensor_w": 16.0,
+  "sensor_l": 20.0,
+  "sensor_t": 1.6,
+  "lens_h": 3.0,
+  "sensor_conn_h": 2.9
 }
